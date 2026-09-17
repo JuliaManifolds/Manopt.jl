@@ -217,6 +217,14 @@ end
         @test X == s
         @test get_gradient(M, sco4, s) == s # cached
         @test sco4.objective.functions[:costgradient].i == 7
+        # a parameter change invalidates the cached values
+        sc = TestScaledCost(1.0)
+        sco5 = objective_cache_factory(M, ManifoldGradientObjective(sc, (M, q) -> q), :Simple)
+        @test get_cost(M, sco5, q) == norm(q)
+        @test sco5.c_valid
+        Manopt.set_parameter!(sco5, :Cost, :s, 2.0)
+        @test !sco5.c_valid
+        @test get_cost(M, sco5, q) == 2 * norm(q)
     end
     @testset "ManifoldCachedObjective on Cost&Grad" begin
         M = Sphere(2)

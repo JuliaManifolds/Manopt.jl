@@ -454,7 +454,7 @@ function trust_regions!(
         _dmho = decorate_objective!(M, mho; objective_type = objective_type, _p = p),
         sub_kwargs = (;),
         sub_objective = decorate_objective!(
-            M, TrustRegionModelObjective(_dmho); sub_kwargs...
+            TangentSpace(M, p), TrustRegionModelObjective(_dmho); sub_kwargs...
         ),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
         sub_stopping_criterion::StoppingCriterion = StopAfterIteration(manifold_dimension(M)) |
@@ -635,12 +635,15 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     # Update the Hessian approximation, unwrap the original Hessian function
     # and update it if it is an approximate Hessian.
     update_hessian!(M, get_hessian_function(mho, true), trs.p, trs.p_proposal, trs.Y)
+    # use the report of the sub solver if provided
+    exceeded = get_parameter(get_state(trs.sub_state), :TrustRegionExceeded)
+    boundary_reached = isnothing(exceeded) ?
+        (norm(M, trs.p, trs.Y) >= trs.trust_region_radius) : (exceeded === true)
     # Choose the new TR radius based on the model performance.
     # Case (a) performed poorly -> decrease radius
     if ρ < trs.reduction_threshold || !model_decreased || isnan(ρ)
         trs.trust_region_radius *= trs.reduction_factor
-    elseif ρ > trs.augmentation_threshold &&
-            (get_parameter(get_state(trs.sub_state), :TrustRegionExceeded) === true)
+    elseif ρ > trs.augmentation_threshold && boundary_reached
         # (b) performed great and exceed/reach the trust region boundary -> increase radius
         trs.trust_region_radius = min(
             trs.augmentation_factor * trs.trust_region_radius, trs.max_trust_region_radius

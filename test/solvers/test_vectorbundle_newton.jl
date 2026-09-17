@@ -172,6 +172,10 @@ using LinearAlgebra: eigvals
         st_str = Manopt.status_summary(st; context = :default)
         @test occursin("Vector bundle Newton method", st_str)
         @test startswith(repr(st), "VectorBundleNewtonState(")
+        # the state stores a Newton direction, not a gradient
+        @test supertype(typeof(st)) === AbstractManoptSolverState
+        set_iterate!(st, M, y0)
+        @test get_iterate(st) == y0
         # we stopped since the change was small enough
         @test occursin("|Δp| < 1.0e-11:$(Manopt._MANOPT_INDENT)reached", st_str)
         acs = st.stepsize

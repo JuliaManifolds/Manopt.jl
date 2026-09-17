@@ -171,6 +171,19 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
                 get_gradient!(M, Zc!, nlsoRobustJa, p; value_cache = V, jacobian_cache = jc)
                 @test isapprox(M, p, Z, Zc; atol = 1.0e-15)
                 @test isapprox(M, p, Zc, Zc!)
+                # a componentwise robustifier takes the Jacobian from the cache as well
+                calls = Ref(0)
+                Jcount(M, x) = (calls[] += 1; J(M, x))
+                vgf3 = VectorGradientFunction(f, Jcount, 2; jacobian_type = CoefficientVectorialType())
+                nlsoCw = ManifoldNonlinearLeastSquaresObjective(
+                    [vgf3], [ComponentwiseRobustifierFunction(HuberRobustifier())]
+                )
+                Zw = get_gradient(M, nlsoCw, p)
+                @test calls[] > 0
+                calls[] = 0
+                Zwc = get_gradient(M, nlsoCw, p; value_cache = f(M, p), jacobian_cache = [J(M, p)])
+                @test calls[] == 0
+                @test isapprox(M, p, Zw, Zwc; atol = 1.0e-15)
             end
         end
         @testset "Dummy decorator pass through" begin

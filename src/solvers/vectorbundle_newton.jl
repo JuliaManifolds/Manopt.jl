@@ -39,7 +39,7 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 mutable struct VectorBundleNewtonState{
         P, T, Pr, St, C <: AbstractDict{Symbol},
         TStop <: StoppingCriterion, TStep <: Stepsize, TRTM <: AbstractRetractionMethod,
-    } <: AbstractGradientSolverState
+    } <: AbstractManoptSolverState
     callbacks::C
     p::P
     p_trial::P
@@ -75,6 +75,11 @@ function VectorBundleNewtonState(
     )
 end
 additional_callbacks(::Type{<:VectorBundleNewtonState}) = [:BeforeSubsolver, :Stepsize, :Subsolver]
+get_iterate(vbns::VectorBundleNewtonState) = vbns.p
+function set_iterate!(vbns::VectorBundleNewtonState, M::AbstractManifold, p)
+    copyto!(M, vbns.p, p)
+    return vbns
+end
 get_callbacks(vbns::VectorBundleNewtonState) = vbns.callbacks
 
 function Base.show(io::IO, vbns::VectorBundleNewtonState)

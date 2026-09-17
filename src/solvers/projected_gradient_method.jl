@@ -23,7 +23,7 @@ $(_fields(:X; name = "Y"))
 ## Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
-$(_kwargs(:stepsize; name = "backtrack", default = "`[`ArmijoLinesearchStepsize`](@ref)`(M)")) ``β_k`` from ``p_k`` to the candidate ``q_k``
+$(_kwargs(:stepsize; name = "backtrack", default = "`[`ArmijoLinesearchStepsize`](@ref)`(M; stop_increasing_at_step=0)")) ``β_k`` from ``p_k`` to the candidate ``q_k``
 $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`ConstantStepsize`](@ref)`(M)"))
@@ -54,7 +54,7 @@ struct ProjectedGradientMethodState{P, T, C <: AbstractDict{Symbol}, S, S2, SC, 
 end
 function ProjectedGradientMethodState(
         M::AbstractManifold, p = rand(M);
-        backtrack::Stepsize = ArmijoLinesearchStepsize(M),
+        backtrack::Stepsize = ArmijoLinesearchStepsize(M; stop_increasing_at_step = 0),
         callbacks::C = Dict{Symbol, Function}(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(

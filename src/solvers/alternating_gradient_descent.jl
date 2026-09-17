@@ -212,6 +212,7 @@ function (a::ArmijoLinesearchStepsize)(
     else
         copyto!(M[j], X[M, j], agds.p[M, j], gradient[M, j])
     end
+    l = norm(M, agds.p, X)
     a.last_stepsize = linesearch_backtrack!(
         M,
         a.candidate_point,
@@ -223,6 +224,12 @@ function (a::ArmijoLinesearchStepsize)(
         -X;
         gradient = X,
         retraction_method = a.retraction_method,
+        stop_when_stepsize_less = a.stop_when_stepsize_less / l,
+        stop_when_stepsize_exceeds = a.stop_when_stepsize_exceeds / l,
+        stop_increasing_at_step = a.stop_increasing_at_step,
+        stop_decreasing_at_step = a.stop_decreasing_at_step,
+        additional_decrease_condition = a.additional_decrease_condition,
+        additional_increase_condition = a.additional_increase_condition,
         report_messages_in = a.messages,
     )
     return a.last_stepsize

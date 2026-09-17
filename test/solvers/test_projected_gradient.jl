@@ -85,6 +85,8 @@ using Manifolds, Manopt, Random, Test
         "# Solver state for `Manopt.jl`s Projected Gradient Method\n"
     )
     @test startswith(repr(st), "ProjectedGradientMethodState(; ")
+    # the default backtracking of the state keeps the step at most one, as the solver does
+    @test ProjectedGradientMethodState(M).backtrack.stop_increasing_at_step == 0
     stop_when_stationary = st.stop.criteria[2]
     @test Manopt.indicates_convergence(stop_when_stationary)
     @test repr(stop_when_stationary) == "StopWhenProjectedGradientStationary($(stop_when_stationary.threshold))"

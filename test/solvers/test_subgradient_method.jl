@@ -20,6 +20,14 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
     @test get_iterate(sgs) == p0
     sgs.X = [1.0, 0.0]
     f(M, q) = distance(M, q, p)
+    @testset "The tangent vector memory is kept" begin
+        X0 = [7.0, 7.0]
+        sgs_X = SubGradientMethodState(M; p = copy(p0), X = X0, stopping_criterion = StopAfterIteration(1))
+        dmp_X = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, (M, q) -> q - p))
+        initialize_solver!(dmp_X, sgs_X)
+        @test sgs_X.X === X0
+        @test X0 == [0.0, 0.0]
+    end
     @testset "Allocating Subgradient" begin
         function ∂f(M, q)
             if distance(M, p, q) == 0

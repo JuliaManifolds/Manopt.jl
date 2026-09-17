@@ -439,7 +439,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     qns.η .*= α
     # β is 0/0 if the step α η vanishes, for α = 0 or at a critical point
     step_vanishes = iszero(α) || iszero(norm(M, qns.p_old, qns.η))
-    β = step_vanishes ? one(α) : locking_condition_scale(M, qns.direction_update, qns.p_old, qns.η, qns.p, qns.vector_transport_method)
+    β = step_vanishes ? one(α) : locking_condition_scale(M, qns.direction_update, qns.p_old, qns.η, qns.p, get_update_vector_transport(qns.direction_update))
     vector_transport_to!(
         M, qns.sk, qns.p_old, qns.η, qns.p, get_update_vector_transport(qns.direction_update),
     )
@@ -710,13 +710,13 @@ function fill_rho_i!(M::AbstractManifold, p, d::QuasiNewtonLimitedMemoryDirectio
         else
             d.message = "The inner products ⟨s_i,y_i⟩ ≈ 0, i=$i, ignoring summand in approximation."
         end
-    elseif d.nonpositive_curvature_behavior === :byrd && v <= d.sy_tol * norm(M, p, d.memory_y[i])^2
+    elseif d.nonpositive_curvature_behavior === :byrd && real(v) <= real(d.sy_tol) * norm(M, p, d.memory_y[i])^2
         d.ρ[i] = zero(eltype(d.ρ))
         if length(d.message) > 0
             d.message = replace(d.message, " i=" => " i=$i,")
             d.message = replace(d.message, "summand from" => "summands from")
         else
-            d.message = "The inner products ⟨s_i,y_i⟩ <= $(d.sy_tol * norm(M, p, d.memory_y[i])^2), i=$i, removing summand from approximation."
+            d.message = "The inner products ⟨s_i,y_i⟩ <= $(real(d.sy_tol) * norm(M, p, d.memory_y[i])^2), i=$i, removing summand from approximation."
         end
     else
         d.ρ[i] = 1 / v

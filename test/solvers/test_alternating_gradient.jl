@@ -142,4 +142,19 @@ end
             ExponentialRetraction()
         @test Manopt._component_retraction(ProjectionRetraction(), 1) == ProjectionRetraction()
     end
+    @testset "The settings of the Armijo line search are used" begin
+        consulted = Ref(0)
+        cond(M, q) = (consulted[] += 1; true)
+        a = ArmijoLinesearch(;
+            additional_decrease_condition = cond, stop_when_stepsize_exceeds = 1.0e-8,
+            stop_increasing_at_step = 1, stop_decreasing_at_step = 1,
+        )(N)
+        dmp = DefaultManoptProblem(N, objf)
+        agds = AlternatingGradientDescentState(N; p = copy(N, p), stepsize = a, order = [1, 2])
+        initialize_solver!(dmp, agds)
+        t = a(dmp, agds, 1)
+        @test consulted[] > 0
+        # the bound is given in length, the block gradient has norm π/2
+        @test t ≈ 1.0e-8 / (π / 2)
+    end
 end

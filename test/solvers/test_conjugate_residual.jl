@@ -19,6 +19,11 @@ using Manifolds, Manopt, Test, LRUCache
     pT4 = conjugate_residual(TpM, A, b, X0; warm_start = false)
     @test norm(ps - pT) < 3.0e-15
     @test norm(ps - pT4) < 3.0e-15
+    # integer α and β are promoted to a floating point type
+    @test conjugate_residual(TpM, A, b, X0; α = 1) == pT2
+    @test conjugate_residual(TpM, A, b, X0; α = 1, β = 2) == pT2
+    @test ConjugateResidualState(TpM, slso; α = 1, β = 2).α === 1.0
+    @test ConjugateResidualState(TpM, slso; α = 1.0f0, β = 2.0f0).β === 2.0f0
     Y0 = copy(X0)
     rT = conjugate_residual!(TpM, slso, Y0)
     @test rT === Y0            # in-place: result lands in the passed vector

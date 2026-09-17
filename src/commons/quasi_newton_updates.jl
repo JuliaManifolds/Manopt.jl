@@ -24,7 +24,7 @@ initialize_update!(s::AbstractQuasiNewtonDirectionUpdate) = s
 Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s.
 
 For a [`QuasiNewtonMatrixDirectionUpdate`](@ref) there are several different updates to the matrix,
-while for the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) the default and most prominent one is [`InverseBFGS`](@ref).
+while the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) implements [`InverseBFGS`](@ref) only.
 """
 abstract type AbstractQuasiNewtonUpdateRule end
 
@@ -510,7 +510,7 @@ function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     return r
 end
 function initialize_update!(d::QuasiNewtonMatrixDirectionUpdate)
-    copyto!(d.matrix, isnothing(d.initial_scale) ? I : d.initial_scale * I)
+    copyto!(d.matrix, I)
     return d
 end
 """

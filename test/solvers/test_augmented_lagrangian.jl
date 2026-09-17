@@ -47,6 +47,9 @@ using LinearAlgebra: I, tr
         sp = DefaultManoptProblem(M, ManifoldCostObjective(f))
         ss = NelderMeadState(M)
         alms = AugmentedLagrangianMethodState(M, co, sp, ss; p = p0)
+        # scalar keywords of different types are promoted
+        alms_i = AugmentedLagrangianMethodState(M, co, sp, ss; p = p0, ρ = 1, λ_max = 20, τ = 4 // 5)
+        @test (alms_i.ρ, alms_i.λ_max, alms_i.λ_min, alms_i.τ) === (1.0, 20.0, -20.0, 0.8)
         set_iterate!(alms, M, 2 .* p0)
         @test Manopt.get_message(alms) == ""
         @test get_iterate(alms) == 2 .* p0

@@ -72,8 +72,8 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion, C <: Abs
             warm_start::Bool = true,
             kwargs...,
         ) where {T, SC <: StoppingCriterion, C <: AbstractDict{Symbol}}
-        R = promote_type(typeof(α), typeof(β))
-        return ConjugateResidualState(; callbacks = callbacks, X = X, r = r, d = d, Ar = Ar, Ad = Ad, α = α, β = β, rAr = zero(R), stopping_criterion = stopping_criterion, warm_start = warm_start)
+        R = float(promote_type(typeof(α), typeof(β)))
+        return ConjugateResidualState(; callbacks = callbacks, X = X, r = r, d = d, Ar = Ar, Ad = Ad, α = convert(R, α), β = convert(R, β), rAr = zero(R), stopping_criterion = stopping_criterion, warm_start = warm_start)
     end
 end
 get_callbacks(crs::ConjugateResidualState) = crs.callbacks

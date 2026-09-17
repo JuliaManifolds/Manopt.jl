@@ -49,6 +49,16 @@ _debug_gradient_sampling = false
         @test sf.sampling_radius isa Float64 # promoted against the other defaults
     end
 
+    @testset "the step size is initialized" begin
+        awn = AdaptiveWNGradient()(M)
+        gss = GradientSamplingState(M; p = copy(M, p0), stepsize = awn)
+        awn.weight = 5.0
+        awn.count = 3
+        initialize_solver!(DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f)), gss)
+        @test awn.weight == awn.initial_bound
+        @test awn.count == 0
+    end
+
     s2 = get_state(m2, true)
     @test startswith(repr(s2), "GradientSamplingState(; ")
     @test startswith(Manopt.status_summary(s2), "# Solver state for `Manopt.jl`s Gradient Sampling Algorithm")

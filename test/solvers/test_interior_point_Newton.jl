@@ -57,6 +57,18 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             @test ips.sub_problem === closed!
             @test Manopt.step_solver!(dmp, ips, 1) === ips
             @test is_point(M, get_iterate(ips))
+            # the step size of the state only backtracks, as the one of the solver
+            @test ips.stepsize.stop_increasing_at_step == 0
+        end
+        @testset "sub_stopping_criterion reaches the sub solver" begin
+            s = interior_point_Newton(
+                M, f, grad_f, Hess_f, (1.0 / sqrt(3.0)) .* [1.0, 1.0, 1.0];
+                g = g, grad_g = grad_g, Hess_g = Hess_g, stopping_criterion = StopAfterIteration(1),
+                sub_stopping_criterion = StopAfterIteration(1), return_state = true,
+            )
+            sub_stop = get_state(s.sub_state).stop
+            @test sub_stop isa StopAfterIteration
+            @test sub_stop.max_iterations == 1
         end
         p_0 = (1.0 / (sqrt(3.0))) .* [1.0, 1.0, 1.0]
         p_opt = [0.0, 0.0, 1.0]

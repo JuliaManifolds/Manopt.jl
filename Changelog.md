@@ -16,6 +16,7 @@ This is yet another round of review – maybe also introducing a few test tools
 
 ### Changed
 
+* `VectorBundleNewtonState` is an `AbstractManoptSolverState` storing a Newton direction.
 * `NelderMeadSimplex` records the type of the points it was built from and stores number points wrapped, so `NelderMead` also works for number points when called in place or with an objective.
 
 ### Deprecated
@@ -29,7 +30,7 @@ This is yet another round of review – maybe also introducing a few test tools
 * `WolfePowellLinesearch` ends its bisection as soon as the interval has collapsed to two adjacent floats.
 * `HybridCoefficient`, also inside a `ConjugateGradientBealeRestart`, works on manifolds whose points are not of the type `rand(M)` returns.
 * constraint gradients and Hessians of an objective defined in the embedding are converted also when the index is left out.
-* `set_parameter!` on a cached objective empties its caches, so a cached sub objective of `augmented_Lagrangian_method` and `exact_penalty_method` uses the current penalty parameter.
+* `set_parameter!` on a cached objective, `:LRU` or `:Simple`, empties its cache, so a cached sub objective of `augmented_Lagrangian_method` and `exact_penalty_method` uses the current penalty parameter.
 * `cache=` also works on manifolds whose points are numbers, for example `Circle()`, both for the `:LRU` and the `:Simple` cache.
 * `count=[:ProximalMap]` also works for objectives that store a single proximal map, such as `ManifoldProximalGradientObjective`.
 * the exact penalty cost and gradient with `LogarithmicSumOfExponentials` smoothing stay finite for small `u`.
@@ -79,6 +80,24 @@ This is yet another round of review – maybe also introducing a few test tools
 * `ConjugateGradientBealeRestart` updates the storages of the rule it wraps.
 * `get_cost_and_gradient` of an objective in the embedding returns the Riemannian gradient.
 * the default `ManifoldConstrainedSetObjective` indicator tolerates round-off and numbers.
+* a `ScaledManifoldObjective` scales the subgradient.
+* the Jacobian cache is used for componentwise robustifiers.
+* `alternating_gradient_descent` uses all settings of its `ArmijoLinesearch`.
+* a hand-built `ProjectedGradientMethodState` keeps its backtracking step at most one.
+* the full-matrix quasi-Newton updates apply `initial_scale` once to the initial Hessian.
+* `nonpositive_curvature_behavior = :byrd` works on complex manifolds.
+* the locking condition in `quasi_Newton` uses the vector transport of the direction update.
+* `subgradient_method` uses the tangent vector passed as `X=`.
+* `gradient_sampling` initializes its step size, so a reused state starts afresh.
+* `truncated_conjugate_gradient_descent` moves a random start vector into the trust region.
+* `trust_regions` enlarges the trust-region radius with any sub solver.
+* `sub_kwargs = (; cache = …)` works for `trust_regions`.
+* `ConjugateResidualState` promotes integer `α=` and `β=`.
+* `set_gradient!` for `AdaptiveRegularizationState` takes `(state, M, p, X)`.
+* the numeric keywords of `adaptive_regularization_with_cubics` and its state are promoted.
+* `sub_stopping_criterion` reaches the sub solver of `interior_point_Newton`.
+* `AugmentedLagrangianMethodState` accepts integer keywords such as `ρ` and `λ_max`.
+* the `InteriorPointNewtonState` constructor caps its step size at one.
 
 ## [0.6.7] September 9, 2026
 

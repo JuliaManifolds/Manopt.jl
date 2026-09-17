@@ -79,4 +79,11 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     @test Manopt.get_differential(M, sfo, p, X) == -df(M, p, X)
     @test Manopt.get_differential_function(sfo)(M, p, X) == -df(M, p, X)
     @test Manopt.get_differential_function(sfo, true) === df
+    # the subgradient is scaled as well
+    sgo = ManifoldSubgradientObjective((M, p) -> norm(p, 1), (M, p) -> sign.(p))
+    q = [1.0, -2.0, 3.0, 0.5]
+    @test get_subgradient(M, -2 * sgo, q) == -2 .* sign.(q)
+    Y = zero_vector(M, q)
+    get_subgradient!(M, Y, -2 * sgo, q)
+    @test Y == -2 .* sign.(q)
 end

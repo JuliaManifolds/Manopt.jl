@@ -309,9 +309,9 @@ end
         # on a curved manifold the first call must not compute with the roundoff of a
         # transport and an inverse retraction of a point to itself
         Ms = Sphere(2)
-        fs(N, q) = q[1]^2 + 2 * q[2]^2 + 5 * q[3]^2
-        grad_fs(N, q) = project(N, q, [2 * q[1], 4 * q[2], 10 * q[3]])
-        dmps = DefaultManoptProblem(Ms, ManifoldGradientObjective(fs, grad_fs))
+        fbb(N, q) = q[1]^2 + 2 * q[2]^2 + 5 * q[3]^2
+        grad_fbb(N, q) = project(N, q, [2 * q[1], 4 * q[2], 10 * q[3]])
+        dmps = DefaultManoptProblem(Ms, ManifoldGradientObjective(fbb, grad_fbb))
         for q in [
                 [-0.4351081605832091, 0.7182816676513397, 0.5429109821231346],
                 [0.36059885545348436, 0.6162424109231599, 0.7001526665129887],
@@ -384,9 +384,9 @@ end
         @test clbs.last_stepsize == clbs.initial_stepsize
         # the maximal step size bounds the distance travelled, not the factor
         Ms = Sphere(2)
-        fs(N, q) = q[1]^2
-        grad_fs(N, q) = project(N, q, [2 * q[1], 0.0, 0.0])
-        dmps = DefaultManoptProblem(Ms, ManifoldGradientObjective(fs, grad_fs))
+        fcb(N, q) = q[1]^2
+        grad_fcb(N, q) = project(N, q, [2 * q[1], 0.0, 0.0])
+        dmps = DefaultManoptProblem(Ms, ManifoldGradientObjective(fcb, grad_fcb))
         ps = [1.0, 0.0, 0.0]
         η = 10.0 .* [0.0, 1.0, 0.0]
         gss = GradientDescentState(Ms; p = ps, X = -η)

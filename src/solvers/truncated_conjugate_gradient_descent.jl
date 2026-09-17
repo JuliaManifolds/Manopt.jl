@@ -603,7 +603,13 @@ function initialize_solver!(
     M = base_manifold(TpM)
     p = TpM.point
     trmo = get_objective(mp)
-    (tcgs.randomize) || zero_vector!(M, tcgs.Y, p)
+    if tcgs.randomize # a start vector outside the trust region is moved inside
+        nY = norm(M, p, tcgs.Y)
+        (nY > tcgs.trust_region_radius) &&
+            copyto!(M, tcgs.Y, p, (tcgs.trust_region_radius / (2 * nY)) * tcgs.Y)
+    else
+        zero_vector!(M, tcgs.Y, p)
+    end
     tcgs.HY = tcgs.randomize ? get_objective_hessian(M, trmo, p, tcgs.Y) : zero_vector(M, p)
     tcgs.X = get_objective_gradient(M, trmo, p) # Initialize gradient
     tcgs.residual = tcgs.randomize ? tcgs.X + tcgs.HY : tcgs.X

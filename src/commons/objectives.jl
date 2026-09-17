@@ -3435,6 +3435,12 @@ function _add_gradient!(
     # get gradients for every component
     len = length(vgf)
     r = cr.robustifier
+    if !isnothing(jacobian_cache)
+        # the robustifier derivative of every component times its residual
+        bF = [get_robustifier_values(r, abs(value_cache[j])^2)[2] * value_cache[j] for j in 1:len]
+        add_vector!(M, X, p, jacobian_cache' * bF, get_basis(vgf.jacobian_type))
+        return X
+    end
     Y = copy(M, p, X)
     for j in 1:len
         get_gradient!(M, Y, vgf, p, j) # gradient of f_{i,j}
@@ -4123,6 +4129,7 @@ For now the functions rescaled are
 * the cost
 * the gradient
 * the Hessian
+* the subgradient
 
 # Fields
 
@@ -4251,6 +4258,20 @@ function get_hessian_function(scaled_objective::ScaledManifoldObjective, recursi
     else
         return (M, Y, p, X) -> get_hessian!(M, Y, scaled_objective, p, X)
     end
+end
+@doc """
+    get_subgradient(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
+    get_subgradient!(M::AbstractManifold, X, scaled_objective::ScaledManifoldObjective, p)
+
+Evaluate the scaled subgradient ``s*$(_tex(:subgrad))f(p)``.
+"""
+function get_subgradient(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
+    return scaled_objective.scale * get_subgradient(M, scaled_objective.objective, p)
+end
+function get_subgradient!(M::AbstractManifold, X, scaled_objective::ScaledManifoldObjective, p)
+    get_subgradient!(M, X, scaled_objective.objective, p)
+    X .= scaled_objective.scale .* X
+    return X
 end
 function Base.show(io::IO, scaled_objective::ScaledManifoldObjective)
     return print(
@@ -4430,6 +4451,13 @@ function get_gradient_function(sco::SimpleManifoldCachedObjective, recursive = f
     else
         return (M, X, p) -> get_gradient!(M, X, sco, p)
     end
+end
+function set_parameter!(sco::SimpleManifoldCachedObjective, e::Val, args...)
+    # the cached values refer to the objective before the change
+    sco.X_valid = false
+    sco.c_valid = false
+    set_parameter!(sco.objective, e, args...)
+    return sco
 end
 function Base.show(io::IO, smco::SimpleManifoldCachedObjective)
     print(io, "SimpleManifoldCachedObjective(")

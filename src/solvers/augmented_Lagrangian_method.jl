@@ -99,25 +99,27 @@ mutable struct AugmentedLagrangianMethodState{
             sub_problem::Pr, sub_state::St;
             callbacks::C = Dict{Symbol, Function}(),
             p::P = rand(M),
-            ϵ::R = 1.0e-3,
-            ϵ_min::R = 1.0e-6,
+            ϵ::Real = 1.0e-3,
+            ϵ_min::Real = 1.0e-6,
             λ::V = ones(length(get_equality_constraint(M, co, p, :))),
-            λ_max::R = 20.0,
-            λ_min::R = (-λ_max),
+            λ_max::Real = 20.0,
+            λ_min::Real = (-λ_max),
             μ::V = ones(length(get_inequality_constraint(M, co, p, :))),
-            μ_max::R = 20.0,
-            ρ::R = 1.0,
-            τ::R = 0.8,
-            θ_ρ::R = 0.3,
+            μ_max::Real = 20.0,
+            ρ::Real = 1.0,
+            τ::Real = 0.8,
+            θ_ρ::Real = 0.3,
             ϵ_exponent = 1 / 100,
-            θ_ϵ = (ϵ_min / ϵ)^(ϵ_exponent),
+            θ_ϵ::Real = (ϵ_min / ϵ)^(ϵ_exponent),
             stopping_criterion::SC = StopAfterIteration(300) |
                 (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(M, 1.0e-10)) | StopWhenStepsizeLess(1.0e-10),
             kwargs...,
         ) where {
             P, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
-            R <: Real, C <: AbstractDict{Symbol}, V, SC <: StoppingCriterion,
+            C <: AbstractDict{Symbol}, V, SC <: StoppingCriterion,
         }
+        # unify the real type of the scalars that are stored in the state
+        R = float(promote_type(typeof.((ϵ, ϵ_min, λ_max, λ_min, μ_max, ρ, τ, θ_ρ, θ_ϵ))...))
         alms = new{P, Pr, St, R, C, V, SC}()
         alms.callbacks = callbacks
         alms.p = p

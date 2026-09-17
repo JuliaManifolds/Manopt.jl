@@ -302,7 +302,8 @@ mutable struct InteriorPointNewtonState{
             stepsize::S = ArmijoLinesearchStepsize(
                 get_manifold(step_problem);
                 retraction_method = default_retraction_method(get_manifold(step_problem)),
-                initial_stepsize = 1.0, additional_decrease_condition = centrality_condition,
+                initial_stepsize = 1.0, stop_increasing_at_step = 0,
+                additional_decrease_condition = centrality_condition,
             ),
             stopping_criterion = StopAfterIteration(200) | StopWhenChangeLess(M, 1.0e-8),
             kwargs...,
@@ -723,7 +724,7 @@ function interior_point_Newton!(
         sub_state::St = decorate_state!(
             ConjugateResidualState(
                 TangentSpace(_sub_M, _sub_p), sub_objective;
-                X = _sub_X, stop = sub_stopping_criterion, sub_kwargs...,
+                X = _sub_X, stopping_criterion = sub_stopping_criterion, sub_kwargs...,
             );
             sub_kwargs...,
         ),

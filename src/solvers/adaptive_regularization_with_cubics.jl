@@ -207,16 +207,17 @@ end
 has_sub_problem(::Type{<:AdaptiveRegularizationState}) = true
 function AdaptiveRegularizationState(
         M::AbstractManifold, sub_problem::Pr, sub_state::St;
-        p::P = rand(M), X::T = zero_vector(M, p), σ::R = 100.0 / sqrt(manifold_dimension(M)),
+        p::P = rand(M), X::T = zero_vector(M, p), σ::Real = 100.0 / sqrt(manifold_dimension(M)),
         callbacks::C = Dict{Symbol, Function}(),
-        ρ_regularization::R = 1.0e3, stopping_criterion::SC = StopAfterIteration(100),
+        ρ_regularization::Real = 1.0e3, stopping_criterion::SC = StopAfterIteration(100),
         retraction_method::RTM = default_retraction_method(M, typeof(p)),
-        σmin::R = 1.0e-10, η1::R = 0.1, η2::R = 0.9, γ1::R = 0.1, γ2::R = 2.0,
+        σmin::Real = 1.0e-10, η1::Real = 0.1, η2::Real = 0.9, γ1::Real = 0.1, γ2::Real = 2.0,
     ) where {
-        P, T, R, Pr <: Union{<:AbstractManoptProblem, F} where {F},
+        P, T, Pr <: Union{<:AbstractManoptProblem, F} where {F},
         St <: AbstractManoptSolverState, SC <: StoppingCriterion, RTM <: AbstractRetractionMethod,
         C <: AbstractDict{Symbol},
     }
+    σ, ρ_regularization, σmin, η1, η2, γ1, γ2 = promote(float(σ), ρ_regularization, σmin, η1, η2, γ1, γ2)
     return AdaptiveRegularizationState(
         sub_problem, sub_state;
         callbacks = callbacks, p = p, X = X, q = copy(M, p), H = copy(M, p, X), s = copy(M, p, X), σ, ρ = one(σ),
@@ -243,8 +244,8 @@ function set_iterate!(s::AdaptiveRegularizationState, ::AbstractManifold, p)
 end
 get_callbacks(state::AdaptiveRegularizationState) = state.callbacks
 get_gradient(s::AdaptiveRegularizationState) = s.X
-function set_gradient!(s::AdaptiveRegularizationState, X)
-    s.X = X
+function set_gradient!(s::AdaptiveRegularizationState, M, p, X)
+    copyto!(M, s.X, p, X)
     return s
 end
 function Base.show(io::IO, arcs::AdaptiveRegularizationState)
@@ -454,15 +455,15 @@ function adaptive_regularization_with_cubics!(
         initial_tangent_vector::T = zero_vector(M, p),
         maxIterLanczos = min(300, manifold_dimension(M)),
         objective_type = :Riemannian,
-        ρ_regularization::R = 1.0e3,
+        ρ_regularization::Real = 1.0e3,
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-        σmin::R = 1.0e-10,
-        σ::R = 100.0 / sqrt(manifold_dimension(M)),
-        η1::R = 0.1,
-        η2::R = 0.9,
-        γ1::R = 0.1,
-        γ2::R = 2.0,
-        θ::R = 0.5,
+        σmin::Real = 1.0e-10,
+        σ::Real = 100.0 / sqrt(manifold_dimension(M)),
+        η1::Real = 0.1,
+        η2::Real = 0.9,
+        γ1::Real = 0.1,
+        γ2::Real = 2.0,
+        θ::Real = 0.5,
         sub_kwargs = (;),
         sub_stopping_criterion::StoppingCriterion = StopAfterIteration(maxIterLanczos) |
             StopWhenFirstOrderProgress(θ),
@@ -487,7 +488,7 @@ function adaptive_regularization_with_cubics!(
             StopAfterIteration(40) | StopWhenGradientNormLess(1.0e-9)
         end,
         kwargs...,
-    ) where {T, R, O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective}}
+    ) where {T, O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(adaptive_regularization_with_cubics!; kwargs...)
     dmho = decorate_objective!(M, mho; objective_type = objective_type, kwargs...)
     callbacks = process_callbacks_arg(callbacks, AdaptiveRegularizationState)

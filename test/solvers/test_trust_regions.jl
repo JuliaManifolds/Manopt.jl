@@ -1,4 +1,4 @@
-using LinearAlgebra, Manifolds, Manopt, Random, Test
+using LinearAlgebra, LRUCache, Manifolds, Manopt, Random, Test
 
 include("trust_region_model.jl")
 
@@ -69,6 +69,19 @@ include("trust_region_model.jl")
             end
             # both evaluation types take the same steps
             @test isapprox(M, get_solver_result(sa), get_solver_result(si))
+            # a good step that reaches the boundary doubles the radius also without the tCG
+            sr = TrustRegionsState(
+                M, closed_a; p = copy(M, p), trust_region_radius = 0.01, stopping_criterion = StopAfterIteration(1),
+            )
+            solve!(dmp, sr)
+            @test sr.trust_region_radius ≈ 0.02
+        end
+        @testset "a cache on the sub objective" begin
+            q = trust_regions(M, f, rgrad, rhess, copy(M, p))
+            for c in ((:Simple, [:Hessian]), (:LRU, [:Cost, :Gradient], 10))
+                qc = trust_regions(M, f, rgrad, rhess, copy(M, p); sub_kwargs = (; cache = c))
+                @test isapprox(M, q, qc)
+            end
         end
     end
     @testset "Objective accessors" begin

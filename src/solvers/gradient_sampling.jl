@@ -395,6 +395,7 @@ calls_with_kwargs(::typeof(gradient_sampling!)) = (decorate_objective!, decorate
 # Solver implementation
 function initialize_solver!(mp::AbstractManoptProblem, gss::GradientSamplingState)
     get_gradient!(mp, gss.X, gss.p)
+    initialize_stepsize!(gss.stepsize)
     return gss
 end
 

@@ -30,6 +30,12 @@ using Manifolds, Manopt, ManifoldsBase, Test
     X3 = Δ / 2 * [0.0, 1.0, 1.0, 1.0] / sqrt(3)
     Y3 = truncated_conjugate_gradient_descent(M3, f3, grad_f3, Hess_f3, p3, X3; randomize = true, trust_region_radius = Δ)
     @test norm(M3, p3, Y3) ≈ Δ
+    # a random start vector outside the trust region is moved to half the radius
+    X4 = 4 * Δ * [0.0, 1.0, 1.0, 1.0] / sqrt(3)
+    tcgs = TruncatedConjugateGradientState(TangentSpace(M3, p3); X = copy(X4), randomize = true, trust_region_radius = Δ)
+    trmo3 = TrustRegionModelObjective(ManifoldHessianObjective(f3, grad_f3, Hess_f3))
+    initialize_solver!(DefaultManoptProblem(TangentSpace(M3, p3), trmo3), tcgs)
+    @test tcgs.Y ≈ X4 / 8
     srr = StopWhenResidualIsReducedByFactorOrPower()
     ssr1 = Manopt.status_summary(srr)
     @test startswith(ssr1, "A stopping criterion used within tCG to check whether the residual is reduced by factor")

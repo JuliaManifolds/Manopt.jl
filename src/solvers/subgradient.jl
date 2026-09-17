@@ -198,7 +198,7 @@ calls_with_kwargs(::typeof(subgradient_method!)) = (decorate_objective!, decorat
 function initialize_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState)
     M = get_manifold(mp)
     copyto!(M, sgs.p_star, sgs.p)
-    sgs.X = zero_vector(M, sgs.p)
+    zero_vector!(M, sgs.X, sgs.p)
     initialize_stepsize!(sgs.stepsize)
     return sgs
 end
