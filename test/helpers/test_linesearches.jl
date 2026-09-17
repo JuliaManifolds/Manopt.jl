@@ -43,6 +43,7 @@ using Test
     )
     mp = DefaultManoptProblem(M, mgo)
     @test get_last_stepsize(mp, x_opt, 1) > 0.0
+    @test get_last_stepsize(mp, x_opt, 1) == ls_hz.last_stepsize
 
     # this tests catching LineSearchException
     @test_throws LineSearchException ls_hz(mp, x_opt, 1, NaN * zero_vector(M, x0))

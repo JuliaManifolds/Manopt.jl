@@ -116,6 +116,15 @@ This is yet another round of review – maybe also introducing a few test tools
 * the residual criterion of the truncated conjugate gradient promotes `κ` and `θ`.
 * `debug=[:Messages]` reports the step size and sub solver messages of every state.
 * `set_iterate!` works for every solver state that stores an iterate.
+* `trust_regions` sets the start vector of a user supplied `sub_state`.
+* `cache=:Simple` works for objectives without a gradient; the simple cache starts empty.
+* `gradient_descent` reuses its gradient inside the line search.
+* the convex bundle method evaluates the last serious iterate's cost once per iteration.
+* `convex_bundle_method!` and `proximal_bundle_method!` compute in place of their point.
+* a `LineSearchesStepsize` reports its last step size.
+* `difference_of_convex_proximal_point` and the two Newton solvers initialize their step size.
+* `return_objective = true` returns a minimizer on a manifold of numbers as a number.
+* `debug` and `record` of the proximal parameter work for `difference_of_convex_proximal_point`.
 
 ## [0.6.7] September 9, 2026
 

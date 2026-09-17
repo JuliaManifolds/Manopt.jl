@@ -183,11 +183,12 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
             )
             return X
         end
-        proximal_bundle_method!(
+        r3 = proximal_bundle_method!(
             M, f, ∂f!, q3;
             evaluation = InplaceEvaluation(), sub_problem = (proximal_bundle_method_subsolver!),
         )
         @test distance(M, q3, m) < 2 * 1.0e-3
+        @test r3 === q3 # the passed point holds the result
         @testset "Callback test" begin
             sk_record = Tuple{Symbol, Int}[]
             cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))

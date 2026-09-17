@@ -116,7 +116,7 @@ mutable struct ProximalBundleMethodState{
             approx_errors = [zero(R)], bundle = [(copy(M, p), copy(M, p, X))], bundle_size = bundle_size,
             c = zero(R), callbacks = callbacks, d = copy(M, p, X),
             inverse_retraction_method = inverse_retraction_method, lin_errors = [zero(R)],
-            m = m, p = p, p_last_serious = copy(M, p), retraction_method = retraction_method,
+            m = m, p = copy(M, p), p_last_serious = p, retraction_method = retraction_method,
             stopping_criterion = stopping_criterion, transported_subgradients = [copy(M, p, X)],
             vector_transport_method = vector_transport_method, X = X, α = zero(R), α₀ = α₀, δ = δ, ε = ε,
             η = zero(R), λ = [zero(R)], μ = μ, ν = zero(R)

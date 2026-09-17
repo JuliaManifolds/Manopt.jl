@@ -59,6 +59,8 @@ function LineSearchesStepsize(
     )
 end
 
+get_last_stepsize(ls::LineSearchesStepsize, ::Any...) = ls.last_stepsize
+
 """
     linesearches_get_max_alpha(ls)
 

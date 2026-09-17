@@ -4309,10 +4309,11 @@ common function for cost & grad. It only caches the function that is actually ca
 ## Keyword arguments
 
 * `p=`$(Manopt._link(:rand)): a point on the manifold to initialize the cache with
-* `X=get_gradient(M, obj, p)` or `zero_vector(M,p)`: a tangent vector to store the gradient in,
+* `X=zero_vector(M,p)` or `get_gradient(M, obj, p)`: a tangent vector to store the gradient in,
   see also `initialized=`
-* `c=`[`get_cost`](@ref)`(M, obj, p)` or `0.0`: a value to store the cost in, see also `initialized=`
-* `initialized=true`: whether to initialize the cached `X` and `c` or not.
+* `c=0.0` or [`get_cost`](@ref)`(M, obj, p)`: a value to store the cost in, see also `initialized=`
+* `initialized=false`: whether to evaluate cost and gradient at `p` for the cached `c` and `X`.
+  By default the cache starts empty and is filled on first use, which also works for an objective without a gradient.
 
 where both for `p` and `X` copies are generated before they are stored.
 
@@ -4334,7 +4335,7 @@ end
 
 function SimpleManifoldCachedObjective(
         M::AbstractManifold, obj::O;
-        initialized = true, p = maybe_wrap_variable(rand(M)),
+        initialized = false, p = maybe_wrap_variable(rand(M)),
         X = initialized ? get_gradient(M, obj, p) : zero_vector(M, p),
         c = initialized ? get_cost(M, obj, p) : 0.0,
     ) where {O <: AbstractManifoldObjective}

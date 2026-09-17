@@ -761,6 +761,7 @@ function initialize_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewton
     M = get_manifold(amp)
     cmo = get_objective(amp)
     is_feasible(M, cmo, ips.p; error = ips.is_feasible_error)
+    initialize_stepsize!(ips.stepsize)
     return ips
 end
 

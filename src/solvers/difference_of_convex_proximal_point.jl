@@ -220,6 +220,13 @@ function DifferenceOfConvexProximalState(
     return DifferenceOfConvexProximalState(M, sub_problem, evaluation; kwargs...)
 end
 get_iterate(dcps::DifferenceOfConvexProximalState) = dcps.p
+function (d::DebugProximalParameter)(::AbstractManoptProblem, dcps::DifferenceOfConvexProximalState, k::Int)
+    (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), dcps.λ(k))
+    return nothing
+end
+function (r::RecordProximalParameter)(::AbstractManoptProblem, dcps::DifferenceOfConvexProximalState, k::Int)
+    return record_or_reset!(r, dcps.λ(k), k)
+end
 function set_iterate!(dcps::DifferenceOfConvexProximalState, M, p)
     copyto!(M, dcps.p, p)
     return dcps
@@ -518,6 +525,7 @@ end
 calls_with_kwargs(::typeof(difference_of_convex_proximal_point!)) = (decorate_objective!, decorate_state!)
 
 function initialize_solver!(::AbstractManoptProblem, dcps::DifferenceOfConvexProximalState)
+    initialize_stepsize!(dcps.stepsize)
     return dcps
 end
 #=

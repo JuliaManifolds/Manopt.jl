@@ -72,7 +72,12 @@ end
         # allocating
         mgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
         # Init to copy of p - init cache
-        sco1 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p = copy(M, p))
+        # by default the cache starts empty and evaluates nothing
+        sco0 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p = copy(M, p))
+        @test (sco0.c_valid, sco0.X_valid) == (false, false)
+        @test mgoa.functions[:cost].i == 0
+        @test mgoa.functions[:gradient].f.i == 0
+        sco1 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p = copy(M, p), initialized = true)
         sco1r = repr(sco1)
         @test startswith(sco1r, "SimpleManifoldCachedObjective")
         @test contains(sco1r, "initialized = ")
@@ -194,7 +199,7 @@ end
         mcgoi = ManifoldCostGradientObjective(
             TestCostGradCount(0); evaluation = InplaceEvaluation()
         )
-        sco4 = Manopt.SimpleManifoldCachedObjective(M, mcgoi; p = p)
+        sco4 = Manopt.SimpleManifoldCachedObjective(M, mcgoi; p = p, initialized = true)
         # evaluated on init -> evaluates twice
         @test sco4.objective.functions[:costgradient].i == 2
         @test get_gradient(M, sco4, p) == p
@@ -370,6 +375,15 @@ end
         @test get_cost(M, lco3, p) == 1.0
         Manopt.set_parameter!(lco3, :Cost, :s, 2.0)
         @test get_cost(M, lco3, p) == 2.0
+    end
+    @testset "The simple cache for an objective without a gradient" begin
+        M = Euclidean(2)
+        fs(M, p) = sum(abs, p)
+        ∂fs(M, p) = sign.(p)
+        kw = (; stopping_criterion = StopAfterIteration(20))
+        q = subgradient_method(M, fs, ∂fs, [1.0, -2.0]; kw...)
+        qc = subgradient_method(M, fs, ∂fs, [1.0, -2.0]; cache = :Simple, kw...)
+        @test qc == q
     end
     @testset "Caches on a manifold with number points" begin
         M = Circle()

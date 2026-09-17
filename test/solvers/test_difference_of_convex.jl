@@ -80,6 +80,12 @@ import Manifolds: inner
         @test dcps.p == p1
         set_gradient!(dcps, M, p1, X1)
         @test dcps.X == X1
+        # the step size is initialized with the solver
+        awn = AdaptiveWNGradient()(M)
+        awn.count = 7
+        dcps_s = DifferenceOfConvexProximalState(M, dcppa_sub_problem, dcppa_sub_state; stepsize = awn)
+        Manopt.initialize_solver!(dcppa_sub_problem, dcps_s)
+        @test awn.count == 0
         # Dummy closed form sub
         dcpsc = DifferenceOfConvexProximalState(M, f; evaluation = AllocatingEvaluation())
         @test dcpsc.sub_state isa Manopt.ClosedFormSubSolverState
@@ -146,6 +152,14 @@ import Manifolds: inner
             M, grad_h!, p0; g = g, grad_g = (grad_g!), evaluation = InplaceEvaluation()
         )
         p5 = difference_of_convex_proximal_point(M, grad_h, p0; g = g, grad_g = grad_g)
+        # the proximal parameter can be recorded and printed
+        io_λ = IOBuffer()
+        s_λ = difference_of_convex_proximal_point(
+            M, grad_h, p0; g = g, grad_g = grad_g, λ = k -> 0.5, stopping_criterion = StopAfterIteration(3),
+            record = [:ProximalParameter], debug = [DebugProximalParameter(; io = io_λ)], return_state = true,
+        )
+        @test get_record(s_λ) == [0.5, 0.5, 0.5]
+        @test String(take!(io_λ)) == "λ:0.5"^4 # once at the start and once per iteration
         # the solver hands the direction it steps along to the step size
         rs = RecordingStepsize(Any[])
         difference_of_convex_proximal_point(

@@ -383,6 +383,7 @@ end
 calls_with_kwargs(::typeof(vectorbundle_newton!)) = (decorate_state!,)
 
 function initialize_solver!(::VectorBundleManoptProblem, s::VectorBundleNewtonState)
+    initialize_stepsize!(s.stepsize)
     return s
 end
 

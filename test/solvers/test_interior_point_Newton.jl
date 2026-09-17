@@ -57,6 +57,12 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             @test ips.sub_problem === closed!
             @test Manopt.step_solver!(dmp, ips, 1) === ips
             @test is_point(M, get_iterate(ips))
+            # the step size is initialized with the solver
+            awn = AdaptiveWNGradient()(M)
+            awn.count = 7
+            ips_s = InteriorPointNewtonState(M, cmo, closed!; p = copy(M, q0), evaluation = InplaceEvaluation(), stepsize = awn)
+            Manopt.initialize_solver!(dmp, ips_s)
+            @test awn.count == 0
             # the step size of the state only backtracks, as the one of the solver
             @test ips.stepsize.stop_increasing_at_step == 0
         end

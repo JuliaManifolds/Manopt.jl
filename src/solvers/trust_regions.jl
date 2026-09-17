@@ -556,7 +556,7 @@ end
 =#
 function _trs_solve_sub!(M, trs::TrustRegionsState, ::AbstractManoptSolverState)
     set_parameter!(trs.sub_problem, Val(:Manifold), Val(:Basepoint), copy(M, trs.p))
-    set_parameter!(trs.sub_state, Val(:Iterate), copy(M, trs.p, trs.Y))
+    set_iterate!(trs.sub_state, get_manifold(trs.sub_problem), copy(M, trs.p, trs.Y))
     set_parameter!(trs.sub_state, Val(:TrustRegionRadius), trs.trust_region_radius)
     solve!(trs.sub_problem, trs.sub_state)
     return copyto!(M, trs.Y, trs.p, get_solver_result(trs.sub_state))

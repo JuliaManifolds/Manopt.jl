@@ -10,6 +10,13 @@ using Manifolds, Manopt, ManifoldsBase, Test
         "# Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent\n"
     )
     @test get_iterate(s) == η
+    # the iterate is written into the stored vector
+    η2 = [0.0 0.0; 0.0 0.0; 1.0 2.0]
+    stored = get_iterate(s)
+    @test set_iterate!(s, TangentSpace(M, p), η2) === s
+    @test get_iterate(s) == η2
+    @test get_iterate(s) === stored
+    set_iterate!(s, TangentSpace(M, p), η)
     # the default radius comes from the base manifold (finite here), not the flat tangent space
     @test s.trust_region_radius ≈ injectivity_radius(M) / 4
     # standalone solve with a negative-curvature model stays finite with the default radius

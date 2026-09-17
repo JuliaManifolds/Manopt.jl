@@ -262,7 +262,7 @@ mutable struct ConvexBundleMethodState{
             inverse_retraction_method = inverse_retraction_method,
             k_max = k_max, k_min = k_min, last_stepsize = last_stepsize,
             linearization_errors = linearization_errors, m = m, null_stepsize = null_stepsize,
-            p = p, p_last_serious = copy(M, p),
+            p = copy(M, p), p_last_serious = p,
             retraction_method = retraction_method, stepsize = stepsize, stopping_criterion = stopping_criterion,
             transported_subgradients = transported_subgradients, vector_transport_method = vector_transport_method,
             X = X, ε = ε, λ = λ, ξ = ξ, ϱ = ϱ
@@ -841,9 +841,10 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
     push!(bms.linearization_errors, 0.0)
     push!(bms.λ, 0.0)
     push!(bms.transported_subgradients, zero_vector(M, bms.p))
+    f_last_serious = get_cost(mp, bms.p_last_serious)
     for (j, (qj, Xj)) in enumerate(bms.bundle)
         bms.linearization_errors[j] =
-            get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - (
+            f_last_serious - get_cost(mp, qj) - (
             inner(
                 M, qj, Xj, inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
             )

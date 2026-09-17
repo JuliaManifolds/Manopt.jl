@@ -246,7 +246,6 @@ function NelderMead(M::AbstractManifold, f; kwargs...)
 end
 function NelderMead(M::AbstractManifold, f, population::NelderMeadSimplex{P}; kwargs...) where {P}
     rs = NelderMead(M, ManifoldCostObjective(f, P), population; kwargs...)
-    rs isa Tuple && return (rs[1], maybe_unwrap_variable(P, rs[2]))
     return maybe_unwrap_variable(P, rs)
 end
 function NelderMead(
@@ -262,7 +261,6 @@ calls_with_kwargs(::typeof(NelderMead)) = (NelderMead!,)
 NelderMead!(M::AbstractManifold, args...; kwargs...)
 function NelderMead!(M::AbstractManifold, f, population::NelderMeadSimplex{P}; kwargs...) where {P}
     rs = NelderMead!(M, ManifoldCostObjective(f, P), population; kwargs...)
-    rs isa Tuple && return (rs[1], maybe_unwrap_variable(P, rs[2]))
     return maybe_unwrap_variable(P, rs)
 end
 function NelderMead!(

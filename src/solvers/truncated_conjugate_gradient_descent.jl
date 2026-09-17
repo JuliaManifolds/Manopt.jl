@@ -145,6 +145,10 @@ function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Iterate}, 
     return tcgs.Y = Y
 end
 get_iterate(tcgs::TruncatedConjugateGradientState) = tcgs.Y
+function set_iterate!(tcgs::TruncatedConjugateGradientState, M, Y)
+    copyto!(M, tcgs.Y, Y)
+    return tcgs
+end
 function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:TrustRegionRadius}, r)
     return tcgs.trust_region_radius = r
 end

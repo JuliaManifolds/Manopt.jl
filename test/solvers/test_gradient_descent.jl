@@ -34,6 +34,11 @@ using ManifoldDiff: grad_distance
             stepsize = WolfePowellLinesearch(), stopping_criterion = StopAfterIteration(26),
         )
         @test isapprox(M, q, apprpstar; atol = 1.0e-8)
+        # with `return_objective = true` the minimizer is still returned as a number
+        sc5 = (; stopping_criterion = StopAfterIteration(5))
+        o_r, p_r = gradient_descent(M, f, grad_f, data[1]; return_objective = true, sc5...)
+        @test p_r isa Float64
+        @test p_r == gradient_descent(M, f, grad_f, data[1]; stopping_criterion = StopAfterIteration(5))
         res_debug = String(take!(my_io))
         @test res_debug === " f(x): 1.357071\n"
         p2 = gradient_descent(
@@ -189,6 +194,12 @@ using ManifoldDiff: grad_distance
             count = [:Gradient], return_objective = true, return_state = true,
         )
         @test Manopt.status_summary(n6; context = :default) == "$(Manopt.status_summary(n6[2]; context = :default))\n\n$(Manopt.status_summary(n6[1]; context = :default))"
+        # the line search reuses the gradient: one evaluation at the start and one per iteration
+        n7 = gradient_descent(
+            M, f, grad_f, pts[1];
+            count = [:Gradient], return_objective = true, stopping_criterion = StopAfterIteration(5),
+        )
+        @test get_count(n7[1], :Gradient) == 6
 
         @testset "Callbacks" begin
             sk_record = Tuple{Symbol, Int}[]

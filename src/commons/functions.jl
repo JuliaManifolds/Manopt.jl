@@ -25,6 +25,10 @@ maybe_unwrap_variable(p::P, q::Vector{P}) where {P} = maybe_unwrap_variable(type
 maybe_unwrap_variable(::Type{P}, q::Vector{P}) where {P} = length(q) == 1 ? q[] : q
 maybe_unwrap_variable(::P, q::Array{P, 0}) where {P} = q[]
 maybe_unwrap_variable(::Type{P}, q::Array{P, 0}) where {P} = q[]
+# a solver called with `return_objective = true` returns `(objective, result)`
+function maybe_unwrap_variable(p, t::Tuple{<:AbstractManifoldObjective, Any})
+    return (t[1], maybe_unwrap_variable(p, t[2]))
+end
 
 """
     MutableManifoldFunction{result, P, F} <: AbstractDecoratedManifoldFunction{F}

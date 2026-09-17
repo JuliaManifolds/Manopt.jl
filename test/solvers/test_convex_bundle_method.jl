@@ -41,7 +41,7 @@ using Manopt: estimate_sectional_curvature
     end
 
     cbms = ConvexBundleMethodState(
-        M; p = p0, atol_λ = 1.0e0, diameter = diameter,
+        M; p = copy(M, p0), atol_λ = 1.0e0, diameter = diameter,
         domain = (M, q) -> distance(M, q, p0) < diameter / 2 ? true : false,
         k_max = Ω, k_min = ω,
         stepsize = Manopt.DomainBackTrackingStepsize(M; contraction_factor = 0.975),
@@ -208,6 +208,17 @@ using Manopt: estimate_sectional_curvature
         q = get_solver_result(cbm_s)
         m = median(M, data)
         @test distance(M, q, m) < 2.0e-2 #with default parameters this is not very precise
+        # the in-place call returns the passed point
+        kw_ip = (; k_max = 1.0, k_min = 1.0, diameter = π / 3, debug = [], stopping_criterion = StopAfterIteration(10))
+        p_ip = copy(M, p0)
+        Random.seed!(42)
+        @test convex_bundle_method!(M, f, ∂f, p_ip; kw_ip...) === p_ip
+        Random.seed!(42)
+        @test convex_bundle_method(M, f, ∂f, p0; kw_ip...) == p_ip
+        # the cost of the last serious iterate is evaluated once per iteration, 69 instead of 96 calls here
+        Random.seed!(42)
+        r_c = convex_bundle_method(M, f, ∂f, p0; count = [:Cost], return_objective = true, kw_ip...)
+        @test get_count(r_c[1], :Cost) == 69
         # a step size that provides no candidate point: the solver computes it
         Random.seed!(42)
         s_cl = convex_bundle_method(
