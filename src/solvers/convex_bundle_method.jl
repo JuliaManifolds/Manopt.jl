@@ -93,6 +93,7 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 * `atol_errors::R`:            tolerance parameter for the linearization errors
 * `bundle<:AbstractVector{Tuple{<:P,<:T}}`: bundle that collects each iterate with the computed subgradient at the iterate
 * `bundle_cap::Int`: the maximal number of elements the bundle is allowed to remember
+* `contraction_factor::R`: internal field for the contraction factor of the null step; a contraction factor of the `stepsize` replaces it
 * `diameter::R`: estimate for the diameter of the level set of the objective function at the starting point
 * `domain`: the domain of ``f`` as a function `(M, p) -> b` that evaluates to true when the current candidate is in the domain of `f`, and false otherwise,
 * `g::T`:                      descent direction
@@ -136,6 +137,7 @@ Most of the following keyword arguments set default values for the fields mentio
 * `atol_λ=eps()`
 * `bundle_cap=25`
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
+* `contraction_factor=0.975`: the contraction factor of the null step; a contraction factor of the `stepsize` replaces it
 * `diameter=50.0`
 * `domain=(M, p) -> true`: a function that evaluates to true when the current candidate is in the domain of the objective
 $(_kwargs(:inverse_retraction_method))
@@ -167,6 +169,7 @@ mutable struct ConvexBundleMethodState{
     bundle::B
     bundle_cap::I
     callbacks::TC
+    contraction_factor::R
     diameter::R
     domain::D
     g::T
@@ -195,7 +198,7 @@ mutable struct ConvexBundleMethodState{
             M::TM, sub_problem::Pr, sub_state::St;
             atol_errors::Real = eps(), atol_λ::Real = eps(),
             bundle_cap::I = 25, callbacks::TC = Dict{Symbol, Function}(),
-            diameter::Real = 50.0, domain::D = (M, p) -> true,
+            contraction_factor::Real = 0.975, diameter::Real = 50.0, domain::D = (M, p) -> true,
             k_max = nothing, k_min = nothing, k_size = 100,
             last_stepsize = one(number_eltype(atol_λ)), m::Real = 1.0e-2,
             p::P = rand(M), p_estimate = p,
@@ -221,7 +224,7 @@ mutable struct ConvexBundleMethodState{
         !isnothing(k_max) && (R = promote_type(R, typeof(k_max)))
         !isnothing(k_min) && (R = promote_type(R, typeof(k_min)))
         !isnothing(ϱ) && (R = promote_type(R, typeof(ϱ)))
-        atol_λ, atol_errors, m, diameter, last_stepsize = convert.(Ref(R), [atol_λ, atol_errors, m, diameter, last_stepsize])
+        atol_λ, atol_errors, contraction_factor, m, diameter, last_stepsize = convert.(Ref(R), [atol_λ, atol_errors, contraction_factor, m, diameter, last_stepsize])
         null_stepsize = one(R)
         linearization_errors = Vector{R}()
         ε = zero(R)
@@ -255,7 +258,7 @@ mutable struct ConvexBundleMethodState{
         return ConvexBundleMethodState(
             sub_problem, sub_state;
             atol_errors = atol_errors, atol_λ = atol_λ, bundle = bundle, bundle_cap = bundle_cap,
-            callbacks = callbacks, diameter = diameter, domain = domain, g = g,
+            callbacks = callbacks, contraction_factor = contraction_factor, diameter = diameter, domain = domain, g = g,
             inverse_retraction_method = inverse_retraction_method,
             k_max = k_max, k_min = k_min, last_stepsize = last_stepsize,
             linearization_errors = linearization_errors, m = m, null_stepsize = null_stepsize,
@@ -271,7 +274,7 @@ mutable struct ConvexBundleMethodState{
             sub_problem::Pr, sub_state::St;
             atol_errors::R, atol_λ::R, bundle::B, bundle_cap::I,
             callbacks::TC = Dict{Symbol, Function}(),
-            diameter::R, domain::D,
+            contraction_factor::R, diameter::R, domain::D,
             g::T, inverse_retraction_method::IR, k_max::R, k_min::R, last_stepsize::R,
             linearization_errors::A, m::R, null_stepsize::R, p::P, p_last_serious::P,
             retraction_method::TR, stepsize::TS, stopping_criterion::TSC,
@@ -286,7 +289,7 @@ mutable struct ConvexBundleMethodState{
             TS <: Stepsize, TSC <: StoppingCriterion, VT <: AbstractVectorTransportMethod,
         }
         return new{P, T, Pr, St, TC, R, A, B, C, D, I, IR, TR, TS, TSC, VT}(
-            atol_errors, atol_λ, bundle, bundle_cap, callbacks, diameter, domain, g,
+            atol_errors, atol_λ, bundle, bundle_cap, callbacks, contraction_factor, diameter, domain, g,
             inverse_retraction_method, k_max, k_min, last_stepsize,
             linearization_errors, m, null_stepsize, p, p_last_serious, retraction_method,
             stepsize, stopping_criterion, sub_problem, sub_state, transported_subgradients,
@@ -331,7 +334,7 @@ function show(io::IO, cbms::ConvexBundleMethodState)
     print(io, cbms.sub_problem, ", ", cbms.sub_state, "; ")
     print(io, "atol_errors = ", cbms.atol_errors, ", atol_λ = ", cbms.atol_λ, ", ")
     print(io, "bundle = ", cbms.bundle, ", bundle_cap = ", cbms.bundle_cap, ", ")
-    print(io, "callbacks = ", cbms.callbacks, ", ")
+    print(io, "callbacks = ", cbms.callbacks, ", contraction_factor = ", cbms.contraction_factor, ", ")
     print(io, "diameter = ", cbms.diameter, ", domain = ", cbms.domain, ", ")
     print(io, "g = ", cbms.g, ", inverse_retraction_method = ", cbms.inverse_retraction_method, ", ")
     print(io, "k_max = ", cbms.k_max, ", k_min = ", cbms.k_min, ", ")
@@ -470,6 +473,7 @@ get_message(dbt::DomainBackTrackingStepsize) = dbt.message
 function get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:Iterate})
     return dbt.candidate_point
 end
+get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:ContractionFactor}) = dbt.contraction_factor
 
 """
     DomainBackTracking(; kwargs...)
@@ -554,6 +558,7 @@ get_initial_stepsize(nsbt::NullStepBackTrackingStepsize) = nsbt.initial_stepsize
 function get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:Iterate})
     return nsbt.candidate_point
 end
+get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:ContractionFactor}) = nsbt.contraction_factor
 function get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:Subgradient})
     return nsbt.X
 end
@@ -658,7 +663,7 @@ $(_args([:M, :f, :subgrad_f, :p]))
 * `atol_λ=sqrt(eps())`: tolerance parameter for the convex coefficients in ``λ``.
 * `bundle_cap=25`
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-* `contraction_factor=0.975`: the contraction factor passed to the default [`DomainBackTracking`](@ref) step size.
+* `contraction_factor=0.975`: the contraction factor of the default [`DomainBackTracking`](@ref) step size, and of the null step if the `stepsize=` has none.
 * `debug=[`[`DebugWarnIfLagrangeMultiplierIncreases`](@ref)`()]`: by default warn when the stopping parameter increases; pass `debug=[]` to deactivate.
 * `diameter=π/3`: estimate for the diameter of the level set of the objective function at the starting point.
 * `domain=(M, p) -> isfinite(f(M, p))`: a function that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise.
@@ -738,7 +743,7 @@ function convex_bundle_method!(
         atol_λ = atol_λ, atol_errors = atol_errors,
         bundle_cap = bundle_cap,
         callbacks = process_callbacks_arg(callbacks, ConvexBundleMethodState),
-        diameter = diameter, domain = domain,
+        contraction_factor = contraction_factor, diameter = diameter, domain = domain,
         m = m, k_max = k_max, k_min = k_min,
         p_estimate = p_estimate,
         stepsize = _produce_type(stepsize, M, p),
@@ -770,6 +775,8 @@ function initialize_solver!(
     push!(bms.linearization_errors, zero(R))
     empty!(bms.transported_subgradients)
     push!(bms.transported_subgradients, zero_vector(M, bms.p))
+    cf = get_parameter(bms.stepsize, :ContractionFactor)
+    isnothing(cf) || (bms.contraction_factor = cf) # keep state and step size consistent
     return bms
 end
 function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k)
@@ -788,18 +795,25 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
     bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)
     bms.last_stepsize = get_stepsize(mp, bms, k)
     callback(:Stepsize, mp, bms, k)
-    copyto!(M, bms.p, get_parameter(bms.stepsize, :Iterate))
+    q = get_parameter(bms.stepsize, :Iterate)
+    if isnothing(q) # the step size provides no candidate point
+        retract!(M, bms.p, bms.p_last_serious, -bms.last_stepsize * bms.g, bms.retraction_method)
+    else
+        copyto!(M, bms.p, q)
+    end
     if get_cost(mp, bms.p) ≤
             (get_cost(mp, bms.p_last_serious) + bms.last_stepsize * bms.m * bms.ξ)
         copyto!(M, bms.p_last_serious, bms.p)
         get_subgradient!(mp, bms.X, bms.p)
     else
         # Condition for null-steps
+        cf = get_parameter(bms.stepsize, :ContractionFactor)
+        isnothing(cf) || (bms.contraction_factor = cf) # keep state and step size consistent
         nsbt = NullStepBackTrackingStepsize(
             M;
-            contraction_factor = bms.stepsize.contraction_factor,
+            contraction_factor = bms.contraction_factor,
             initial_stepsize = bms.last_stepsize,
-            retraction_method = bms.stepsize.retraction_method,
+            retraction_method = bms.retraction_method,
         )
         bms.null_stepsize = nsbt(mp, bms, k)
         copyto!(M, bms.p, get_parameter(nsbt, :Iterate))

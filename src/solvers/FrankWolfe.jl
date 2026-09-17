@@ -178,8 +178,8 @@ function get_message(fws::FrankWolfeState)
 end
 additional_callbacks(::Type{<:FrankWolfeState}) = [:BeforeSubsolver, :Subsolver, :Stepsize]
 
-function set_iterate!(fws::FrankWolfeState, ::AbstractManifold, p)
-    fws.p = p
+function set_iterate!(fws::FrankWolfeState, M::AbstractManifold, p)
+    copyto!(M, fws.p, p)
     return fws
 end
 function Base.show(io::IO, fws::FrankWolfeState)
@@ -257,7 +257,7 @@ $(_note(:GradientObjective))
 # Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-$(_kwargs([:differential, :evaluation, :retraction_method]))
+$(_kwargs([:differential, :evaluation, :inverse_retraction_method, :retraction_method]))
 $(_kwargs(:stepsize; default = "`[`DecreasingLength`](@ref)`(; length=2.0, shift=2)"))
   which in practice yields the step size ``s_k = $(_tex(:frac, "2", "k+2"))`` mentioned above
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-8)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-8)"))
@@ -328,6 +328,7 @@ function Frank_Wolfe_method!(
         callbacks = Dict{Symbol, Function}(),
         X = zero_vector(M, p),
         evaluation = AllocatingEvaluation(),
+        inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
         objective_type = :Riemannian,
         retraction_method = default_retraction_method(M, typeof(p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(M, FrankWolfeState),
@@ -375,6 +376,7 @@ function Frank_Wolfe_method!(
         M, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, FrankWolfeState),
         p = p, X = X,
+        inverse_retraction_method = inverse_retraction_method,
         retraction_method = retraction_method,
         stepsize = _produce_type(stepsize, M, p),
         stopping_criterion = stopping_criterion,

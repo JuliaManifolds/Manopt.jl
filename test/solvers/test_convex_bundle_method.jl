@@ -208,6 +208,33 @@ using Manopt: estimate_sectional_curvature
         q = get_solver_result(cbm_s)
         m = median(M, data)
         @test distance(M, q, m) < 2.0e-2 #with default parameters this is not very precise
+        # a step size that provides no candidate point: the solver computes it
+        Random.seed!(42)
+        s_cl = convex_bundle_method(
+            M, f, ∂f, p0; k_max = 1.0, k_min = 1.0, diameter = π / 3, debug = [], stepsize = ConstantLength(1.0),
+            contraction_factor = 0.9, stopping_criterion = StopAfterIteration(30), return_state = true,
+        )
+        @test f(M, get_solver_result(s_cl)) - f(M, m) < 1.0e-5
+        # the contraction factor for the null step reaches the state
+        @test get_state(s_cl).contraction_factor == 0.9
+        @test ConvexBundleMethodState(M; p = p0, k_max = 1.0, k_min = 1.0).contraction_factor == 0.975
+        # a contraction factor of the step size is stored in the state
+        Random.seed!(42)
+        s_dbt = convex_bundle_method(
+            M, f, ∂f, p0; k_max = 1.0, k_min = 1.0, diameter = π / 3, debug = [],
+            stepsize = DomainBackTracking(; contraction_factor = 0.8),
+            stopping_criterion = StopAfterIteration(30), return_state = true,
+        )
+        @test get_state(s_dbt).contraction_factor == 0.8
+        # already when the solver is initialized
+        s_init = ConvexBundleMethodState(
+            M; p = copy(M, p0), k_max = 1.0, k_min = 1.0, stepsize = DomainBackTracking(; contraction_factor = 0.7)(M),
+        )
+        initialize_solver!(DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f)), s_init)
+        @test s_init.contraction_factor == 0.7
+        @test Manopt.get_parameter(DomainBackTracking(; contraction_factor = 0.9)(M), :ContractionFactor) == 0.9
+        @test Manopt.get_parameter(Manopt.NullStepBackTrackingStepsize(M; contraction_factor = 0.8), :ContractionFactor) == 0.8
+        @test isnothing(Manopt.get_parameter(ConstantLength(1.0)(M), :ContractionFactor))
         # test the other stopping criterion mode
         q2 = convex_bundle_method(
             M, f, ∂f, p0; k_max = 1.0,

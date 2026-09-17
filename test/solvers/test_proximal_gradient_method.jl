@@ -1,4 +1,4 @@
-using Manopt, Manifolds, Test, ManifoldDiff
+using Manopt, Manifolds, Test, ManifoldDiff, Random
 
 @testset "The Proximal Gradient Method" begin
     M = Hyperbolic(2)
@@ -82,6 +82,18 @@ using Manopt, Manifolds, Test, ManifoldDiff
             stopping_criterion = StopAfterIteration(3), record = [:Iterate], return_state = true,
         )
         @test !isapprox(M, Manopt.get_state(pgm_acc).q, get_record(pgm_acc)[2])
+        # the first iterate does not depend on the (random) default point of the acceleration
+        firsts = map([1, 2]) do seed
+            Random.seed!(seed)
+            r = proximal_gradient_method(
+                M, f, g, grad_g, [1.0, 0.0, √2]; prox_nonsmooth = prox_h,
+                acceleration = Manopt.ProximalGradientMethodAcceleration(M; β = k -> 0.5),
+                stepsize = Manopt.ConstantStepsize(M, 0.1),
+                stopping_criterion = StopAfterIteration(1), record = [:Iterate], return_state = true,
+            )
+            get_record(r)[1]
+        end
+        @test firsts[1] == firsts[2]
         @test f(M, p_star2) <= f(M, p0)
         set_iterate!(pgm, M, p)
         @test get_iterate(pgm) == p

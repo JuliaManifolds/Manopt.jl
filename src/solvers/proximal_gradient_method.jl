@@ -556,6 +556,8 @@ function (pga::ProximalGradientMethodAcceleration)(
     )
     # compute the step
     M = get_manifold(amp)
+    # in the first iteration there is no previous iterate to accelerate from
+    (k == 1) && copyto!(M, pga.p, pgms.p)
     # inverse retract and store in X
     inverse_retract!(M, pga.X, pgms.p, pga.p, pga.inverse_retraction_method)
     # retract with step and store in a

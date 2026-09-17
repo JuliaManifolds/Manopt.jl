@@ -101,6 +101,10 @@ This is yet another round of review – maybe also introducing a few test tools
 * all primal dual debug and record actions work for `primal_dual_semismooth_Newton`.
 * `proximal_bundle_method` accepts the `X=` keyword to set the tangent vector type.
 * the bundle methods work on manifolds whose points are numbers.
+* `convex_bundle_method` works with step sizes that provide no candidate point, for example `ConstantLength`.
+* `ProximalGradientMethodAcceleration` starts accelerating in the second iteration.
+* `Frank_Wolfe_method` accepts `inverse_retraction_method=`, which its step uses.
+* `set_iterate!` on a `FrankWolfeState` writes into the stored point.
 
 ## [0.6.7] September 9, 2026
 
