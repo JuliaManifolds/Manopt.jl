@@ -161,6 +161,10 @@ end
 has_sub_problem(::Type{<:LevenbergMarquardtState}) = true
 additional_callbacks(::Type{<:LevenbergMarquardtState}) = [:Stepsize, :DampingIncreaseStepTooLong, :DampingIncreaseModelInadequate, :DampingDecreaseImprovementTooGood, :DampingIncreaseImprovementTooPoor, :CandidateAccept, :CandidateReject]
 get_callbacks(lms::LevenbergMarquardtState) = lms.callbacks
+function set_iterate!(lms::LevenbergMarquardtState, M, p)
+    copyto!(M, lms.p, p)
+    return lms
+end
 #
 function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default)
     (context === :short) && return repr(lms)

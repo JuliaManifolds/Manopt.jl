@@ -36,7 +36,16 @@ using Manifolds, Manopt, ManifoldsBase, Test
     trmo3 = TrustRegionModelObjective(ManifoldHessianObjective(f3, grad_f3, Hess_f3))
     initialize_solver!(DefaultManoptProblem(TangentSpace(M3, p3), trmo3), tcgs)
     @test tcgs.Y ≈ X4 / 8
+    # any real radius, θ and κ are accepted, an integer radius is stored as a float
+    Y5 = truncated_conjugate_gradient_descent(M3, f3, grad_f3, Hess_f3, p3, X3; trust_region_radius = 1, θ = 1, κ = 1 // 10)
+    @test Y5 == truncated_conjugate_gradient_descent(M3, f3, grad_f3, Hess_f3, p3, X3; trust_region_radius = 1.0, θ = 1.0, κ = 0.1)
+    @test TruncatedConjugateGradientState(TangentSpace(M3, p3); X = copy(X3), trust_region_radius = 1, θ = 1).trust_region_radius === 1.0
     srr = StopWhenResidualIsReducedByFactorOrPower()
+    # a mixed pair is promoted
+    srm = StopWhenResidualIsReducedByFactorOrPower(; κ = 1 // 10, θ = 1)
+    @test (srm.κ, srm.θ) === (0.1, 1.0)
+    srf = StopWhenResidualIsReducedByFactorOrPower(; κ = 0.1f0, θ = 1.0f0)
+    @test (srf.κ, srf.θ) === (0.1f0, 1.0f0)
     ssr1 = Manopt.status_summary(srr)
     @test startswith(ssr1, "A stopping criterion used within tCG to check whether the residual is reduced by factor")
     @test repr(srr) == "StopWhenResidualIsReducedByFactorOrPower(0.1, 1.0)"

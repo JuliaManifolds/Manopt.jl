@@ -75,6 +75,10 @@ function ProjectedGradientMethodState(
 end
 additional_callbacks(::Type{<:ProjectedGradientMethodState}) = [:Backtrack]
 get_callbacks(pgms::ProjectedGradientMethodState) = pgms.callbacks
+function set_iterate!(pgms::ProjectedGradientMethodState, M, p)
+    copyto!(M, pgms.p, p)
+    return pgms
+end
 get_iterate(pgms::ProjectedGradientMethodState) = pgms.p
 get_gradient(pgms::ProjectedGradientMethodState) = pgms.X
 
@@ -258,13 +262,15 @@ function projected_gradient_method!(
 end
 function projected_gradient_method!(
         M, obj::ManifoldConstrainedSetObjective, p;
-        backtrack::Stepsize = ArmijoLinesearchStepsize(M; stop_increasing_at_step = 0),
+        backtrack::Union{Stepsize, ManifoldDefaultsFactory} = ArmijoLinesearchStepsize(
+            M; stop_increasing_at_step = 0
+        ),
         callbacks = Dict{Symbol, Function}(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
             M, typeof(p)
         ),
-        stepsize::Stepsize = ConstantStepsize(M),
+        stepsize::Union{Stepsize, ManifoldDefaultsFactory} = ConstantStepsize(M),
         stopping_criterion::StoppingCriterion = StopAfterIteration(300) |
             StopWhenProjectedGradientStationary(M, 1.0e-7),
         X = zero_vector(M, p),
@@ -275,10 +281,10 @@ function projected_gradient_method!(
     dmp = DefaultManoptProblem(M, dobj)
     pgms = ProjectedGradientMethodState(
         M, p;
-        backtrack = backtrack,
+        backtrack = _produce_type(backtrack, M, p),
         callbacks = process_callbacks_arg(callbacks, ProjectedGradientMethodState),
         retraction_method = retraction_method, inverse_retraction_method = inverse_retraction_method,
-        stepsize = stepsize, stopping_criterion = stopping_criterion,
+        stepsize = _produce_type(stepsize, M, p), stopping_criterion = stopping_criterion,
         X = X,
     )
     dpgms = decorate_state!(pgms; kwargs...)

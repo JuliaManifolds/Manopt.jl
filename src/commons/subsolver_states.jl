@@ -8,6 +8,20 @@ function LevenbergMarquardtBoxSubsolver(::AbstractManifold, sub_state_::Abstract
         sub_state_, :not_searched, NaN,
     )
 end
+function Base.show(io::IO, lmbs::LevenbergMarquardtBoxSubsolver)
+    print(io, "LevenbergMarquardtBoxSubsolver(", lmbs.internal_state, "; ")
+    print(io, "last_gcd_result = :", lmbs.last_gcd_result)
+    return print(io, ", last_gcd_stepsize = ", lmbs.last_gcd_stepsize, ")")
+end
+function status_summary(lmbs::LevenbergMarquardtBoxSubsolver; context::Symbol = :default)
+    _is_inline(context) && return repr(lmbs)
+    return """
+    # Solver state for a box constrained Levenberg-Marquardt subproblem
+    * last generalized Cauchy direction: :$(lmbs.last_gcd_result) (step size: $(lmbs.last_gcd_stepsize))
+
+    ## Inner solver state
+    $(_in_str(status_summary(lmbs.internal_state; context = context); indent = 1, headers = 1, indent_end = "| "))"""
+end
 """
     hessian_value(ha::LevenbergMarquardtBoxSubsolver, M, p, X::UnitVector, Y)
 

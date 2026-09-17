@@ -202,6 +202,10 @@ function CMAESState(
 end
 
 get_callbacks(state::CMAESState) = state.callbacks
+function set_iterate!(state::CMAESState, M, p)
+    copyto!(M, state.p, p)
+    return state
+end
 function Base.show(io::IO, s::CMAESState)
     print(io, "CMAESState(M, ", s.p_m, ", ", s.μ, ", ", s.λ, ", ", s.μ_eff, ", ", s.c_1, ", ", s.c_c, ", ", s.c_μ, ", ", s.c_σ, ", ", s.c_m, ", ", s.d_σ, ", ")
     print(io, status_summary(s.stop; context = :short), ", ", s.covariance_matrix, ", ", s.σ, ", ", s.recombination_weights, "; ")
@@ -252,12 +256,11 @@ end
 #
 get_iterate(pss::CMAESState) = pss.p
 
-function initialize_solver!(mp::AbstractManoptProblem, s::CMAESState)
-    M = get_manifold(mp)
-    n_coords = number_of_coordinates(M, s.basis)
-    s.covariance_matrix = Matrix{number_eltype(s.p)}(I, n_coords, n_coords)
-    s.covariance_matrix_cond = 1
+function initialize_solver!(::AbstractManoptProblem, s::CMAESState)
     s.covariance_matrix_eigen = eigen(Symmetric(s.covariance_matrix))
+    s.deviations .= sqrt.(s.covariance_matrix_eigen.values)
+    s.covariance_matrix_cond =
+        maximum(s.covariance_matrix_eigen.values) / minimum(s.covariance_matrix_eigen.values)
     return s
 end
 function step_solver!(mp::AbstractManoptProblem, s::CMAESState, k::Int)
@@ -489,7 +492,10 @@ function cma_es!(
     c_σ = (μ_eff + 2) / (n_coords + μ_eff + 5) # Eq. (55)
     d_σ = 1 + 2 * max(0, sqrt((μ_eff - 1) / (n_coords + 1)) - 1) + c_σ # Eq. (55)
     c_c = (4 + μ_eff / n_coords) / (n_coords + 4 + 2 * μ_eff / n_coords) # Eq. (56)
-    covariance_matrix = Matrix{number_eltype(p)}(I, n_coords, n_coords)
+    # unify the number type of all parameters of the state
+    R = promote_type(typeof.((μ_eff, c_1, c_c, c_μ, c_σ, c_m, d_σ, σ))...)
+    μ_eff, c_1, c_c, c_μ, c_σ, c_m, d_σ, σ = convert.(R, (μ_eff, c_1, c_c, c_μ, c_σ, c_m, d_σ, σ))
+    covariance_matrix = Matrix{R}(I, n_coords, n_coords)
     state = CMAESState(
         M,
         p,
@@ -505,7 +511,7 @@ function cma_es!(
         stopping_criterion,
         covariance_matrix,
         σ,
-        recombination_weights;
+        convert(Vector{R}, recombination_weights);
         callbacks = process_callbacks_arg(callbacks, CMAESState),
         retraction_method = retraction_method,
         vector_transport_method = vector_transport_method,
@@ -908,6 +914,7 @@ function (c::StopWhenPopulationCostConcentrated)(
         ::AbstractManoptProblem, s::CMAESState, k::Int
     )
     if k == 0 # reset on init
+        empty!(c.best_value_history)
         c.at_iteration = -1
         return false
     end

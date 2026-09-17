@@ -384,7 +384,10 @@ mutable struct StopWhenSwarmVelocityLess{F <: Real} <: StoppingCriterion
     threshold::F
     at_iteration::Int
     velocity_norms::Vector{F}
-    StopWhenSwarmVelocityLess(tolerance::F) where {F} = new{F}(tolerance, -1, F[])
+    function StopWhenSwarmVelocityLess(tolerance::Real)
+        t = float(tolerance)
+        return new{typeof(t)}(t, -1, typeof(t)[])
+    end
 end
 # It just indicates loss of velocity, not convergence to a minimizer
 indicates_convergence(c::StopWhenSwarmVelocityLess) = false

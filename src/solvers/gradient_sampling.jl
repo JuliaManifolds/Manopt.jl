@@ -218,6 +218,10 @@ get_gradient(gss::GradientSamplingState) = gss.X
 get_subgradient(gss::GradientSamplingState) = gss.Y
 additional_callbacks(::Type{<:GradientSamplingState}) = [:BeforeSubsolver, :Stepsize, :Subsolver]
 get_callbacks(gss::GradientSamplingState) = gss.callbacks
+function set_iterate!(gss::GradientSamplingState, M, p)
+    copyto!(M, gss.p, p)
+    return gss
+end
 
 function Base.show(io::IO, gss::GradientSamplingState)
     print(io, "GradientSamplingState(; ")

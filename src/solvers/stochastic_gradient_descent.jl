@@ -84,6 +84,10 @@ function StochasticGradientDescentState(
     )
 end
 get_callbacks(sgds::StochasticGradientDescentState) = sgds.callbacks
+function set_iterate!(sgds::StochasticGradientDescentState, M, p)
+    copyto!(M, sgds.p, p)
+    return sgds
+end
 additional_callbacks(::Type{<:StochasticGradientDescentState}) = [:Direction]
 function Base.show(io::IO, sgds::StochasticGradientDescentState)
     print(io, "StochasticGradientDescentState(; ")

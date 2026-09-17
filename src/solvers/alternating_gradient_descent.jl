@@ -169,6 +169,10 @@ function get_message(agds::AlternatingGradientDescentState)
     return get_message(agds.stepsize)
 end
 get_callbacks(agds::AlternatingGradientDescentState) = agds.callbacks
+function set_iterate!(agds::AlternatingGradientDescentState, M, p)
+    copyto!(M, agds.p, p)
+    return agds
+end
 additional_callbacks(::Type{<:AlternatingGradientDescentState}) = [:Stepsize]
 
 function (ag::AlternatingGradientRule)(

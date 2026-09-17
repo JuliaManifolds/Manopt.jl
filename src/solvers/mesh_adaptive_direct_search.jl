@@ -451,6 +451,10 @@ function MeshAdaptiveDirectSearchState(
 end
 get_iterate(mads::MeshAdaptiveDirectSearchState) = mads.p
 get_callbacks(mads::MeshAdaptiveDirectSearchState) = mads.callbacks
+function set_iterate!(mads::MeshAdaptiveDirectSearchState, M, p)
+    copyto!(M, mads.p, p)
+    return mads
+end
 additional_callbacks(::Type{<:MeshAdaptiveDirectSearchState}) = [:Search, :Poll]
 function Base.show(io::IO, mads::MeshAdaptiveDirectSearchState)
     print(io, "MeshAdaptiveDirectSearchState(; callbacks = ", mads.callbacks, ", max_stepsize = ", mads.max_stepsize)
@@ -583,8 +587,10 @@ $(_note(:OutputSection))
 mesh_adaptive_direct_search(M::AbstractManifold, args...; kwargs...)
 
 function mesh_adaptive_direct_search(M::AbstractManifold, f, p = rand(M); kwargs...)
-    mco = ManifoldCostObjective(f)
-    return mesh_adaptive_direct_search(M, mco, p; kwargs...)
+    p_ = maybe_wrap_variable(p)
+    mco = ManifoldCostObjective(f; p = p)
+    rs = mesh_adaptive_direct_search(M, mco, p_; kwargs...)
+    return maybe_unwrap_variable(p, rs)
 end
 function mesh_adaptive_direct_search(
         M::AbstractManifold, mco::AbstractManifoldCostObjective, p = rand(M); kwargs...

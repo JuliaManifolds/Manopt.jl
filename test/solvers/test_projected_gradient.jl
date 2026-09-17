@@ -63,6 +63,18 @@ using Manifolds, Manopt, Random, Test
         stopping_criterion = StopAfterIteration(150) | StopWhenProjectedGradientStationary(M, 1.0e-7),
     )
     @test isapprox(M, mean_pg_1, mean_pg_2)
+    # the exported step size constructors are accepted for both step sizes
+    sc_f = StopAfterIteration(20)
+    mean_pg_f = projected_gradient_method(
+        M, f, grad_f, project_C, c; stopping_criterion = sc_f,
+        stepsize = ConstantLength(1.0), backtrack = ArmijoLinesearch(; stop_increasing_at_step = 0),
+    )
+    mean_pg_s = projected_gradient_method(
+        M, f, grad_f, project_C, c; stopping_criterion = StopAfterIteration(20),
+        stepsize = Manopt.ConstantStepsize(M, 1.0),
+        backtrack = Manopt.ArmijoLinesearchStepsize(M; stop_increasing_at_step = 0),
+    )
+    @test mean_pg_f == mean_pg_s
     # a decorated objective reaches the projection as well
     mean_pg_c = projected_gradient_method(
         M, f, grad_f, project_C, c;

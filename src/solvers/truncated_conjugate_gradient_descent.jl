@@ -80,8 +80,8 @@ mutable struct TruncatedConjugateGradientState{T, R <: Real, C <: AbstractDict{S
                 injectivity_radius(base_manifold(TpM)) / 4.0,
             randomize::Bool = false,
             project!::F = (copyto!),
-            θ::Float64 = 1.0,
-            κ::Float64 = 0.1,
+            θ::Real = 1.0,
+            κ::Real = 0.1,
             stopping_criterion::StoppingCriterion = StopAfterIteration(
                 manifold_dimension(base_manifold(TpM))
             ) |
@@ -94,7 +94,7 @@ mutable struct TruncatedConjugateGradientState{T, R <: Real, C <: AbstractDict{S
             kwargs...,
         ) where {T, R <: Real, F, C <: AbstractDict{Symbol}}
         return TruncatedConjugateGradientState(;
-            callbacks = callbacks, X = X, trust_region_radius = trust_region_radius,
+            callbacks = callbacks, X = X, trust_region_radius = float(trust_region_radius),
             randomize = randomize, (project!) = project!, stopping_criterion = stopping_criterion,
         )
     end
@@ -187,8 +187,9 @@ mutable struct StopWhenResidualIsReducedByFactorOrPower{F} <: StoppingCriterion
     κ::F
     θ::F
     at_iteration::Int
-    function StopWhenResidualIsReducedByFactorOrPower(; κ::F = 0.1, θ::F = 1.0) where {F <: Real}
-        return new{F}(κ, θ, -1)
+    function StopWhenResidualIsReducedByFactorOrPower(; κ::Real = 0.1, θ::Real = 1.0)
+        κf, θf = promote(float(κ), float(θ))
+        return new{typeof(κf)}(κf, θf, -1)
     end
 end
 function (c::StopWhenResidualIsReducedByFactorOrPower)(
@@ -566,9 +567,9 @@ end
 function truncated_conjugate_gradient_descent!(
         TpM::TangentSpace, trm::TrustRegionModelObjective, p, X;
         callbacks = Dict{Symbol, Function}(),
-        trust_region_radius::Float64 = isinf(injectivity_radius(base_manifold(TpM))) ? 1.0 : injectivity_radius(base_manifold(TpM)) / 4,
-        θ::Float64 = 1.0,
-        κ::Float64 = 0.1,
+        trust_region_radius::Real = isinf(injectivity_radius(base_manifold(TpM))) ? 1.0 : injectivity_radius(base_manifold(TpM)) / 4,
+        θ::Real = 1.0,
+        κ::Real = 0.1,
         randomize::Bool = false,
         stopping_criterion::StoppingCriterion = StopAfterIteration(manifold_dimension(TpM)) |
             StopWhenResidualIsReducedByFactorOrPower(;

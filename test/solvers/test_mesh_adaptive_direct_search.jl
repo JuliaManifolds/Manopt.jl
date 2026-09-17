@@ -55,6 +55,13 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         @test ltap.random_vector ≠ b_fine
         @test all(abs.(ltap.random_vector) .<= 1)
     end
+    @testset "A manifold with numbers as points" begin
+        Mc = Circle()
+        h(M, p) = (p - 0.3)^2
+        qc = mesh_adaptive_direct_search(Mc, h, 0.0; stopping_criterion = StopAfterIteration(30))
+        @test qc isa Float64
+        @test h(Mc, qc) < h(Mc, 0.0)
+    end
     @testset "Callback Test" begin
         sk_record = Tuple{Symbol, Int}[]
         cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))

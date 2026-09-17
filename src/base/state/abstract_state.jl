@@ -126,8 +126,14 @@ function get_message(s::AbstractManoptSolverState)
     return _get_message(s, dispatch_state_decorator(s))
 end
 _get_message(s::AbstractManoptSolverState, ::Val{true}) = get_message(s.state)
-# Introduce a default that there is no message
-_get_message(s::AbstractManoptSolverState, ::Val{false}) = ""
+# Introduce a default that collects the messages of the parts that can issue one
+function _get_message(s::AbstractManoptSolverState, ::Val{false})
+    msgs = String[]
+    for fn in (:stepsize, :backtrack, :sub_state)
+        hasfield(typeof(s), fn) && push!(msgs, get_message(getfield(s, fn)))
+    end
+    return join(filter(!isempty, msgs), "\n")
+end
 
 """
     get_solver_return(s::AbstractManoptSolverState)

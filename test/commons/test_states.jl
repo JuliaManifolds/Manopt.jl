@@ -3,6 +3,12 @@ using Dates
 
 struct NoIterateState <: AbstractManoptSolverState end
 
+# a step size and a (sub) state that issue a message
+struct MessageTestStepsize <: Manopt.Stepsize end
+Manopt.get_message(::MessageTestStepsize) = "step message"
+struct MessageTestState <: AbstractManoptSolverState end
+Manopt.get_message(::MessageTestState) = "sub message"
+
 @testset "Manopt Solver States" begin
     @testset "Generic State" begin
         M = Euclidean(3)
@@ -181,5 +187,50 @@ struct NoIterateState <: AbstractManoptSolverState end
         r4 = Manopt.ReturnSolverState(DebugSolverState(s4, DebugDivider("")))
         Manopt.set_parameter!(r4, Val(:StoppingCriterion), :MaxIteration, 9)
         @test s4.stop.max_iterations == 9
+    end
+    @testset "Messages of step sizes and sub states are passed on" begin
+        M = Euclidean(3)
+        p = [1.0, 2.0, 3.0]
+        @test Manopt.get_message(SubGradientMethodState(M; p = p, stepsize = MessageTestStepsize())) == "step message"
+        pgms = ProjectedGradientMethodState(M, p; stepsize = MessageTestStepsize(), backtrack = MessageTestStepsize())
+        @test Manopt.get_message(pgms) == "step message\nstep message"
+        sub_problem = DefaultManoptProblem(TangentSpace(M, p), ManifoldCostObjective((TpM, X) -> 0.0))
+        @test Manopt.get_message(AdaptiveRegularizationState(M, sub_problem, MessageTestState(); p = p)) == "sub message"
+        @test Manopt.get_message(NoIterateState()) == ""
+    end
+    @testset "Display of the box constrained Levenberg-Marquardt sub solver state" begin
+        M = Euclidean(3)
+        p = [1.0, 2.0, 3.0]
+        lmbs = Manopt.LevenbergMarquardtBoxSubsolver(M, GradientDescentState(M; p = copy(p)), p)
+        @test startswith(repr(lmbs), "LevenbergMarquardtBoxSubsolver(GradientDescentState(")
+        @test endswith(repr(lmbs), "last_gcd_result = :not_searched, last_gcd_stepsize = NaN)")
+        ss = Manopt.status_summary(lmbs)
+        @test startswith(ss, "# Solver state for a box constrained Levenberg-Marquardt subproblem\n")
+        @test occursin("| ## Solver state for `Manopt.jl`s Gradient Descent", ss)
+        @test Manopt.status_summary(lmbs; context = :inline) == repr(lmbs)
+    end
+    @testset "set_iterate! for states that store an iterate" begin
+        M = Euclidean(3)
+        p = [1.0, 2.0, 3.0]
+        q = [4.0, 5.0, 6.0]
+        sub_problem = DefaultManoptProblem(TangentSpace(M, p), ManifoldCostObjective((TpM, X) -> 0.0))
+        states = [
+            StochasticGradientDescentState(M; p = copy(p)),
+            AlternatingGradientDescentState(M; p = copy(p)),
+            GradientSamplingState(M; p = copy(p)),
+            ProjectedGradientMethodState(M, copy(p)),
+            MeshAdaptiveDirectSearchState(M, copy(p)),
+            LevenbergMarquardtState(M, sub_problem, MessageTestState(), zeros(2); p = copy(p)),
+            CMAESState(
+                M, copy(p), 2, 5, 1.5, 0.1, 0.2, 0.3, 0.4, 1.0, 1.2, StopAfterIteration(1),
+                [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0], 1.0, [0.6, 0.4, 0.0, -0.3, -0.7],
+            ),
+        ]
+        for st in states
+            stored = get_iterate(st)
+            @test set_iterate!(st, M, q) === st
+            @test get_iterate(st) == q
+            @test get_iterate(st) === stored
+        end
     end
 end

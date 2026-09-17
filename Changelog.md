@@ -106,6 +106,16 @@ This is yet another round of review – maybe also introducing a few test tools
 * `Frank_Wolfe_method` accepts `inverse_retraction_method=`, which its step uses.
 * `set_iterate!` on a `FrankWolfeState` writes into the stored point.
 * `LevenbergMarquardt` passes residuals and Jacobians to its surrogate explicitly, so a surrogate given as `sub_objective=` works.
+* `cma_es` accepts points and a `σ` of any number type, for example `Float32`.
+* `cma_es` keeps the covariance matrix given to `CMAESState` when the solver starts.
+* `StopWhenPopulationCostConcentrated` clears its cost history when a solver starts.
+* `mesh_adaptive_direct_search` works with a number as start point, as on `Circle()`.
+* `StopWhenSwarmVelocityLess` accepts an integer tolerance and promotes it to a float.
+* `projected_gradient_method` accepts step size factories like `ConstantLength(1.0)`.
+* `truncated_conjugate_gradient_descent` accepts any real `trust_region_radius`, `θ` and `κ`.
+* the residual criterion of the truncated conjugate gradient promotes `κ` and `θ`.
+* `debug=[:Messages]` reports the step size and sub solver messages of every state.
+* `set_iterate!` works for every solver state that stores an iterate.
 
 ## [0.6.7] September 9, 2026
 
