@@ -98,6 +98,9 @@ This is yet another round of review – maybe also introducing a few test tools
 * `sub_stopping_criterion` reaches the sub solver of `interior_point_Newton`.
 * `AugmentedLagrangianMethodState` accepts integer keywords such as `ρ` and `λ_max`.
 * the `InteriorPointNewtonState` constructor caps its step size at one.
+* all primal dual debug and record actions work for `primal_dual_semismooth_Newton`.
+* `proximal_bundle_method` accepts the `X=` keyword to set the tangent vector type.
+* the bundle methods work on manifolds whose points are numbers.
 
 ## [0.6.7] September 9, 2026
 

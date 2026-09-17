@@ -116,6 +116,14 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
         @test isapprox(M, q_ip, p_star2; atol = 1.0e-8)
         @test f(M, p_star2) <= f(M, p0)
     end
+    @testset "A manifold with numbers as points" begin
+        Mc = Circle()
+        gc(M, q) = distance(M, q, 0.5)
+        ∂gc(M, q) = distance(M, q, 0.5) == 0 ? 0.0 : -log(M, q, 0.5) / distance(M, q, 0.5)
+        qc = proximal_bundle_method(Mc, gc, ∂gc, 1.0; stopping_criterion = StopAfterIteration(20))
+        @test qc isa Float64
+        @test gc(Mc, qc) < gc(Mc, 1.0)
+    end
     @testset "A simple median run" begin
         M = Sphere(2)
         p1 = [1.0, 0.0, 0.0]
@@ -143,6 +151,23 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
         # test access functions
         @test get_iterate(pbm_s) == q
         @test norm(M, q, get_subgradient(pbm_s)) < 1.0e-4
+        # integer parameters are stored as floating point numbers and the run agrees
+        sc3 = StopAfterIteration(3)
+        s_int = proximal_bundle_method(
+            M, f, ∂f, p0; m = 1, α₀ = 1, δ = -1, ε = 1, μ = 1, stopping_criterion = sc3, return_state = true,
+        )
+        @test (s_int.m, s_int.μ, s_int.δ) === (1.0, 1.0, -1.0)
+        q_float = proximal_bundle_method(
+            M, f, ∂f, p0; m = 1.0, α₀ = 1.0, δ = -1.0, ε = 1.0, μ = 1.0, stopping_criterion = StopAfterIteration(3),
+        )
+        @test get_solver_result(s_int) == q_float
+        # the tangent vector passed as `X=` is accepted and reaches the state
+        @test :X in Manopt.accepted_keywords(proximal_bundle_method).accepted
+        X0 = zero_vector(M, p0)
+        s_X = @test_nowarn proximal_bundle_method(
+            M, f, ∂f, p0; X = X0, stopping_criterion = StopAfterIteration(0), return_state = true,
+        )
+        @test get_state(s_X).X === X0
         # test the other stopping criterion mode
         q2 = proximal_bundle_method(
             M, f, ∂f, p0;

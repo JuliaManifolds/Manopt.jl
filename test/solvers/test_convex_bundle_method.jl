@@ -26,6 +26,12 @@ using Manopt: estimate_sectional_curvature
         @test ω ≤ curvature_cbms.k_min
         @test Ω ≥ curvature_cbms.k_max
         @test startswith(repr(curvature_cbms), "ConvexBundleMethodState(")
+        # estimated bounds take the real type of the other parameters
+        cbms32 = ConvexBundleMethodState(
+            M; p = p0, m = 1.0f-3, atol_λ = 1.0f-8, atol_errors = 1.0f-8, diameter = 1.0f0, last_stepsize = 1.0f0,
+        )
+        @test typeof.((cbms32.k_min, cbms32.k_max, cbms32.ϱ)) == (Float32, Float32, Float32)
+        @test ω ≤ cbms32.k_min ≤ cbms32.k_max ≤ Ω
     end
 
     @testset "Close Point Function" begin
@@ -272,6 +278,14 @@ using Manopt: estimate_sectional_curvature
         @test Manopt.get_message(dbt) == ""
     end
 
+    @testset "A manifold with numbers as points" begin
+        Mc = Circle()
+        gc(M, q) = distance(M, q, 0.5)
+        ∂gc(M, q) = distance(M, q, 0.5) == 0 ? 0.0 : -log(M, q, 0.5) / distance(M, q, 0.5)
+        qc = convex_bundle_method(Mc, gc, ∂gc, 1.0; k_max = 0.0, k_min = 0.0, stopping_criterion = StopAfterIteration(20))
+        @test qc isa Float64
+        @test qc ≈ 0.5
+    end
     @testset "Bundle Cap Condition" begin
         M = Sphere(2)
         p = [1.0, 0.0, 0.0]

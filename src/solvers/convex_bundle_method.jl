@@ -222,9 +222,6 @@ mutable struct ConvexBundleMethodState{
         !isnothing(k_min) && (R = promote_type(R, typeof(k_min)))
         !isnothing(ϱ) && (R = promote_type(R, typeof(ϱ)))
         atol_λ, atol_errors, m, diameter, last_stepsize = convert.(Ref(R), [atol_λ, atol_errors, m, diameter, last_stepsize])
-        !isnothing(k_max) && (k_max = convert(R, k_max))
-        !isnothing(k_min) && (k_min = convert(R, k_min))
-        !isnothing(ϱ) && (ϱ = convert(R, (ϱ)))
         null_stepsize = one(R)
         linearization_errors = Vector{R}()
         ε = zero(R)
@@ -252,6 +249,9 @@ mutable struct ConvexBundleMethodState{
             end
             isnothing(ϱ) && (ϱ = max(ζ_1(k_min, diameter) - one(k_min), one(k_max) - ζ_2(k_max, diameter)))
         end
+        k_max = convert(R, k_max)
+        k_min = convert(R, k_min)
+        ϱ = convert(R, ϱ)
         return ConvexBundleMethodState(
             sub_problem, sub_state;
             atol_errors = atol_errors, atol_λ = atol_λ, bundle = bundle, bundle_cap = bundle_cap,
@@ -684,11 +684,15 @@ $(_note(:OutputSection))
 
 @doc "$(_doc_convex_bundle_method)"
 function convex_bundle_method(
-        M::AbstractManifold, f::TF, ∂f::TdF, p = rand(M); kwargs...
+        M::AbstractManifold, f::TF, ∂f::TdF, p = rand(M);
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     ) where {TF, TdF}
     keywords_accepted(convex_bundle_method; kwargs...)
-    p_star = copy(M, p)
-    return convex_bundle_method!(M, f, ∂f, p_star; kwargs...)
+    f_ = maybe_wrap_function(f, p; result = :Number)
+    ∂f_ = maybe_wrap_function(∂f, p, evaluation; result = :TangentVector)
+    p_star = copy(M, maybe_wrap_variable(p))
+    rs = convex_bundle_method!(M, f_, ∂f_, p_star; evaluation = evaluation, kwargs...)
+    return maybe_unwrap_variable(p, rs)
 end
 calls_with_kwargs(::typeof(convex_bundle_method)) = (convex_bundle_method!,)
 

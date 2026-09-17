@@ -363,9 +363,10 @@ abstract type AbstractPrimalDualSolverState <: AbstractManoptSolverState end
 
 function dual_residual(
         M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective,
-        apds::AbstractPrimalDualSolverState, p_old, X_old, n_old,
+        apds::AbstractPrimalDualSolverState, p_old, X_old, n_old;
+        variant::Symbol = hasproperty(apds, :variant) ? apds.variant : :linearized,
     )
-    if apds.variant === :linearized
+    if variant === :linearized
         return norm(
             N,
             apds.n,
@@ -381,7 +382,7 @@ function dual_residual(
                 apds.n,
             ),
         )
-    elseif apds.variant === :exact
+    elseif variant === :exact
         return norm(
             N,
             apds.n,
@@ -407,7 +408,7 @@ function dual_residual(
     else
         throw(
             DomainError(
-                apds.variant, "Unknown Chambolle-Pock variant, allowed are `:exact` or `:linearized`.",
+                variant, "Unknown variant for a $(nameof(typeof(apds))), allowed are `:exact` or `:linearized`.",
             ),
         )
     end

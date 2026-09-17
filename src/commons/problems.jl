@@ -276,11 +276,11 @@ function adjoint_linearized_operator!(tmp::TwoManifoldProblem, X, m, n, Y)
 end
 
 @doc """
-    dual_residual(tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old)
+    dual_residual(tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old; variant)
 
 Compute the dual residual at iteration ``k`` given the necessary values ``p_{k-1},
 X_{k-1}``, and ``n_{k-1}`` from the previous iteration. The formula is slightly different depending
-on the `apds.variant` used:
+on the `variant`, which defaults to the one of the state `apds` if it has one and to `:linearized` otherwise:
 
 For the `:linearized` it reads
 ```math
@@ -303,13 +303,13 @@ $(
 )
 ```
 
-where in both cases ``V_{⋅←⋅}`` is the vector transport used in the [`ChambollePockState`](@ref).
+where in both cases ``V_{⋅←⋅}`` is the vector transport stored in the state `apds`.
 """
 function dual_residual(
-        tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old
+        tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old; kwargs...
     )
     return dual_residual(
-        get_manifold(tmp, 1), get_manifold(tmp, 2), get_objective(tmp), apds, p_old, X_old, n_old,
+        get_manifold(tmp, 1), get_manifold(tmp, 2), get_objective(tmp), apds, p_old, X_old, n_old; kwargs...
     )
 end
 

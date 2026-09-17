@@ -109,7 +109,7 @@ mutable struct ProximalBundleMethodState{
             IR <: AbstractInverseRetractionMethod, TR <: AbstractRetractionMethod,
             SC <: StoppingCriterion, VT <: AbstractVectorTransportMethod,
         }
-        R = promote_type(typeof(m), typeof(α₀), typeof(ε), typeof(δ), typeof(μ))
+        R = float(promote_type(typeof(m), typeof(α₀), typeof(ε), typeof(δ), typeof(μ)))
         m = convert(R, m); α₀ = convert(R, α₀); ε = convert(R, ε); δ = convert(R, δ); μ = convert(R, μ)
         return ProximalBundleMethodState(
             sub_problem, sub_state;
@@ -292,6 +292,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@r
 $(_kwargs(:sub_problem; default = "`[`proximal_bundle_method_subsolver`](@ref)`"))
 $(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)` "))
 $(_kwargs(:vector_transport_method))
+$(_kwargs(:X)) to specify the type of tangent vector to use.
 * `α₀=1.2`:          initialization value for `α`, used to update `η`
 * `δ=-1.0`:          parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(k + 1)``, else ``μ += δ μ``
 * `ε=1e-2`:          stepsize-like parameter related to the injectivity radius of the manifold
@@ -304,11 +305,15 @@ $(_note(:OutputSection))
 
 @doc "$(_doc_PBM)"
 function proximal_bundle_method(
-        M::AbstractManifold, f::TF, ∂f::TdF, p = rand(M); kwargs...
+        M::AbstractManifold, f::TF, ∂f::TdF, p = rand(M);
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     ) where {TF, TdF}
     keywords_accepted(proximal_bundle_method; kwargs...)
-    p_star = copy(M, p)
-    return proximal_bundle_method!(M, f, ∂f, p_star; kwargs...)
+    f_ = maybe_wrap_function(f, p; result = :Number)
+    ∂f_ = maybe_wrap_function(∂f, p, evaluation; result = :TangentVector)
+    p_star = copy(M, maybe_wrap_variable(p))
+    rs = proximal_bundle_method!(M, f_, ∂f_, p_star; evaluation = evaluation, kwargs...)
+    return maybe_unwrap_variable(p, rs)
 end
 calls_with_kwargs(::typeof(proximal_bundle_method)) = (proximal_bundle_method!,)
 
@@ -328,6 +333,7 @@ function proximal_bundle_method!(
             1.0e-8; names = ["-ν"]
         ) | StopAfterIteration(5000),
         vector_transport_method::VTransp = default_vector_transport_method(M, typeof(p)),
+        X = zero_vector(M, p),
         α₀ = 1.2,
         ε = 1.0e-2,
         δ = -1.0,
@@ -349,6 +355,7 @@ function proximal_bundle_method!(
         retraction_method = retraction_method,
         stopping_criterion = stopping_criterion,
         vector_transport_method = vector_transport_method,
+        X = X,
         α₀ = α₀, ε = ε, δ = δ, μ = μ,
     )
     pbms = decorate_state!(pbms; kwargs...)
