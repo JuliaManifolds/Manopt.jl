@@ -263,12 +263,12 @@ where an additional parameter ``u`` is used as well as a smoothing technique,
 for example [`LogarithmicSumOfExponentials`](@ref) or [`LinearQuadraticHuber`](@ref)
 to obtain a smooth cost function. This struct is also a functor `(M,p) -> v` of the cost ``v``.
 
-## Fields
+# Fields
 
 * `ρ::T`, `u::T`: as described in the mathematical formula.
 * `co::CO`:     the original cost
 
-## Constructor
+# Constructor
 
     ExactPenaltyCost(co::ConstrainedManifoldObjective, ρ, u; smoothing=LinearQuadraticHuber())
 """
@@ -317,12 +317,12 @@ This struct is also a functor in both formats
 * `(M, p) -> X` to compute the gradient in allocating fashion.
 * `(M, X, p)` to compute the gradient in an in-place fashion.
 
-## Fields
+# Fields
 
 * `ρ::T`, `u::T` see [`ExactPenaltyCost`](@ref).
 * `co::CO` the [`ConstrainedManifoldObjective`](@ref)
 
-## Constructor
+# Constructor
 
     ExactPenaltyGrad(co::ConstrainedManifoldObjective, ρ, u; smoothing=LinearQuadraticHuber())
 """

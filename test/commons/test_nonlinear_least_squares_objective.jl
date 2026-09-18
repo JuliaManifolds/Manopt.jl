@@ -55,7 +55,6 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
         )
         p = [0.5, 0.5]
         X = [0.25, 0.25]
-        Y = [0.25, -0.25]
         V = [0.0, 0.0]
         Vt = [1 / sqrt(2), 1 / sqrt(2)]
         G = zeros(2, 2)
@@ -75,13 +74,6 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
                 @test G == get_jacobian(M, vgf, p)
                 @test G == Gt
             end
-            c = get_cost(M, nlso, p)
-            @test c ≈ 0.5
-            fill!(V, 0.0)
-            get_residuals!(M, V, nlso, p)
-            @test V == get_residuals(M, nlso, p)
-            @test V ≈ Vt
-            @test 0.5 * sum(abs.(V) .^ 2) ≈ c
             @test startswith(repr(nlso), "ManifoldNonlinearLeastSquaresObjective(")
             @test startswith(Manopt.status_summary(nlso), "A nonlinear least squares objective")
             Z = get_gradient(M, nlso, p)

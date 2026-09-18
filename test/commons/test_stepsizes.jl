@@ -140,6 +140,10 @@ end
     gds3.X = grad_f3(M, gds3.p)
     t3 = s3(dmp3, gds3, 1, -gds3.X)
     @test f3(M, gds3.p .- t3 .* gds3.X) <= f3(M, gds3.p) - 1.0e-4 * t3 * norm(gds3.X)^2
+    # the initial guess is the first trial step: the minimizer along the line is accepted directly
+    s3g = WolfePowellBinaryLinesearch(; initial_guess = Manopt.ConstantInitialGuess(0.005))(M)
+    @test s3g(dmp3, gds3, 1, -gds3.X) == 0.005
+    @test t3 != 0.005 # the default guess of 1.0 bisects to a different step
     # the maximal step size of the manifold and the passed bound limit the step
     Ms = Sphere(2)
     fs(N, q) = 1 - q[1]
@@ -158,6 +162,9 @@ end
     @test Manopt.get_message(s4) == ""
     # the returned step fulfills both Wolfe conditions and is stored
     α4 = s4(dmp3, gds3, 1, -gds3.X)
+    s4g = WolfePowellLinesearch(; initial_guess = Manopt.ConstantInitialGuess(0.005))(M)
+    @test s4g(dmp3, gds3, 1, -gds3.X) == 0.005
+    @test α4 != 0.005
     q4 = gds3.p .- α4 .* gds3.X
     d0 = -norm(gds3.X)^2
     @test f3(M, q4) <= f3(M, gds3.p) + 1.0e-4 * α4 * d0
@@ -387,6 +394,11 @@ end
         @test startswith(repr(clbs), "CubicBracketingLinesearch(;")
         @test startswith(Manopt.status_summary(clbs), "Cubic bracketing stepsize")
         @test clbs(dmp, gs, 1) ≈ 0.5 atol = 4 * 1.0e-8
+        # without iterations the search returns its first trial step, which the initial guess provides
+        clbs0 = CubicBracketingLinesearch(; max_iterations = 0)(M)
+        @test clbs0(dmp, gs, 1) == 1.0
+        clbsg = CubicBracketingLinesearch(; initial_guess = (pr, st, k, l, η) -> 0.25, max_iterations = 0)(M)
+        @test clbsg(dmp, gs, 1) == 0.25
         @test get_last_stepsize(clbs) === clbs.last_stepsize
         @test get_initial_stepsize(clbs) == clbs.initial_stepsize
         # a new solver run starts from the initial step size again

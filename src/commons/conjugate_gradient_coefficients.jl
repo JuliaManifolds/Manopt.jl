@@ -104,6 +104,7 @@ and `δ` is initialized to a copy of this vector.
 
 The following fields from above are keyword arguments
 
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:X; name = "initial_gradient"))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `coefficient=`[`ConjugateDescentCoefficient`](@ref)`()`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).

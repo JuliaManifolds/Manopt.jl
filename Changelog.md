@@ -15,6 +15,7 @@ This is yet another round of review – maybe also introducing a few test tools
 * `ManifoldFirstOrderObjective` accepts a combined gradient and differential function, with or without the cost.
 * `AugmentedLagrangianMethodState` offers a `:BeforeSubsolver` callback.
 * the trait `has_sub_problem` declares that a solver state stores a sub problem, so `get_sub_problem`, `get_sub_state` and `record=[:Subsolver]` work for every such state.
+* `CubicBracketingLinesearch`, `WolfePowellLinesearch` and `WolfePowellBinaryLinesearch` accept an `initial_guess=` keyword for their first trial step.
 
 ### Changed
 

@@ -61,7 +61,8 @@ Available update rules are [`SteepestDescentCoefficient`](@ref), which yields a 
 [`ConjugateDescentCoefficient`](@ref) (the default), [`DaiYuanCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
 [`HagerZhangCoefficient`](@ref), [`HestenesStiefelCoefficient`](@ref),
 [`LiuStoreyCoefficient`](@ref), and [`PolakRibiereCoefficient`](@ref).
-These can all be combined with a [`ConjugateGradientBealeRestartRule`](@ref) rule.
+A [`HybridCoefficient`](@ref) combines several of these into one coefficient,
+and all of them can be wrapped in a [`ConjugateGradientBealeRestart`](@ref).
 
 They all compute ``β_k`` such that this algorithm updates the search direction as
 

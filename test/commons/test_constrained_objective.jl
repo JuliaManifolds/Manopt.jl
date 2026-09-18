@@ -481,7 +481,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             Yc = zero_vector(Nc, qc)
             Yc[Nc, 1] = [1.0, 3.0, 5.0]
             Yc[Nc, 2] = [7.0]
-            # Compute by hand – somehow the formula is still missing a Y
+            # Compute the docstring formula by hand
             Wc = zero_vector(Nc, qc)
             # (1) Hess L + The g sum + the grad g sum
             Wc[Nc, 1] = hf + sum(hess_g(M, p, Yc[Nc, 1]) .* μ) + sum(hh .* λ)

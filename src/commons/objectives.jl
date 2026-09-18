@@ -338,10 +338,10 @@ function get_inequality_constraint(
 end
 
 _doc_get_grad_equality_constraint = """
-    get_grad_equality_constraint(amp::AbstractManoptProblem, p, j)
-    get_grad_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j, range=NestedPowerRepresentation())
-    get_grad_equality_constraint!(amp::AbstractManoptProblem, X, p, j)
-    get_grad_equality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j, range=NestedPowerRepresentation())
+    get_grad_equality_constraint(amp::AbstractManoptProblem, p, j=:)
+    get_grad_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:, range=get_range(co.equality_constraints))
+    get_grad_equality_constraint!(amp::AbstractManoptProblem, X, p, j=:)
+    get_grad_equality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j=:, range=get_range(co.equality_constraints))
 
 Evaluate the gradient or gradients  of the equality constraint ``($(_tex(:grad)) h(p))_j`` or ``$(_tex(:grad)) h_j(p)``,
 
@@ -393,9 +393,9 @@ end
 
 _doc_get_grad_inequality_constraint = """
     get_grad_inequality_constraint(amp::AbstractManoptProblem, p, j=:)
-    get_grad_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
+    get_grad_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:, range=get_range(co.inequality_constraints))
     get_grad_inequality_constraint!(amp::AbstractManoptProblem, X, p, j=:)
-    get_grad_inequality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
+    get_grad_inequality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j=:, range=get_range(co.inequality_constraints))
 
 Evaluate the gradient or gradients of the inequality constraint ``($(_tex(:grad)) g(p))_j`` or ``$(_tex(:grad)) g_j(p)``,
 
@@ -689,18 +689,18 @@ function get_gradient(
     return X
 end
 function get_gradient!(
-        M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{C}, p, k
+        M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{C}, p, i
     ) where {C}
     # this takes a lot more allocations than other methods, but the gradient can only be evaluated in full
     Xf = zero_vector(M, p)
     get_gradient!(M, Xf, mago, p)
-    copyto!(M[k], X, p[M, k], Xf[M, k])
+    copyto!(M[i], X, p[M, i], Xf[M, i])
     return X
 end
 function get_gradient!(
-        M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{C, <:AbstractVector}, p, k,
+        M::AbstractManifold, X, mago::ManifoldAlternatingGradientObjective{C, <:AbstractVector}, p, i,
     ) where {C}
-    mago.gradient![k](M, X, p)
+    mago.gradient![i](M, X, p)
     return X
 end
 
@@ -4196,8 +4196,12 @@ For now the functions rescaled are
 
 * the cost
 * the gradient
+* the differential
 * the Hessian
 * the subgradient
+
+All other accessors, for example the proximal map, the preconditioner and the gradients of the single
+summands of a stochastic objective, are passed through to the wrapped objective unscaled.
 
 # Fields
 

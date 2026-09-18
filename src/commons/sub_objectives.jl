@@ -402,7 +402,7 @@ function get_normal_vector_field_coord!(
     return c
 end
 
-# for a single block – the actual formula cf. nls_general 1348
+# for a single block – the actual formula
 function add_normal_vector_field_coord!(
         M::AbstractManifold, c::AbstractVector, o::AbstractVectorGradientFunction, r::AbstractRobustifierFunction, p;
         value_cache, jacobian_cache, threshold::Real, mode::Symbol,
@@ -1464,7 +1464,7 @@ This wrapper provides the same three functions as the wrapped surrogate
 * [`get_objective`](@ref) to provide access to the underlying surrogate
 
 so that we obtain a symmetric linear system of equations, that can be
-* solved with an iterative method like [`conjugate_gradient_descent`](@ref) or [`conjugate_residual`](@ref)
+* solved with an iterative method like [`conjugate_residual`](@ref)
 * solved as a linear system in a basis of the corresponding tangent space.
 """
 struct NormalEquationsObjective{O <: AbstractLinearSurrogateObjective} <: AbstractSymmetricLinearSystemObjective

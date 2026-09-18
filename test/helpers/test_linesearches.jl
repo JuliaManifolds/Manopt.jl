@@ -48,10 +48,10 @@ using Test
     @test get_last_stepsize(mp, x_opt, 1) > 0.0
     @test get_last_stepsize(mp, x_opt, 1) == ls_hz.last_stepsize
 
-    # this tests catching LineSearchException
+    # a search direction that is not finite makes the line search throw
     @test_throws LineSearchException ls_hz(mp, x_opt, 1, NaN * zero_vector(M, x0))
 
-    # test rethrowing errors
+    # an error from the cost function is passed on unchanged
     function rosenbrock_throw(::AbstractManifold, x)
         return error("test exception")
     end
