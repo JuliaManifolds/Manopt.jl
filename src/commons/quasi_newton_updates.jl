@@ -328,8 +328,11 @@ $(_tex(:hat, "η_k")) = - B_k $(_tex(:widehat, "$(_tex(:grad))f(p_k)")),
 """
     QuasiNewtonPreconditioner{F}
 
-A preconditioner for the quasi-Newton direction updates: it is applied to the gradient before the
-quasi-Newton operator is applied (or the linear system is solved), see [`quasi_Newton`](@ref).
+A preconditioner for the quasi-Newton direction updates: for a
+[`QuasiNewtonMatrixDirectionUpdate`](@ref) it is applied to the gradient before the matrix is
+applied (or the linear system is solved), for a
+[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) it takes the place of the initial operator
+inside the two-loop recursion, see [`quasi_Newton`](@ref).
 
 # Fields
 
@@ -601,16 +604,14 @@ function is always included and the old, probably no longer relevant, informatio
 $(_fields(:vector_transport_method))
 * `message`:                 a string containing a potential warning that might have appeared
 * `project!`:                a function to stabilize the update by projecting on the tangent space
-* `nonpositive_curvature_behavior`: how non-positive-definite pairs (s, y) are detected and handled in vector transport.
-                             Allowed values are:
-                                - `:ignore` (default): pairs whose inner product is zero are
-                                  omitted from the current Hessian approximation but are
-                                  retained in memory for further iterations. This may lead
-                                  to non-positive-definite Hessians and non-descent directions
-                                  being selected and thus needs to be handled elsewhere.
-                                - `:byrd`: pairs such that `inner(M, p, X_s, Y_s) <= sy_tol * norm(M, p, Y_s)^2`
-                                  are removed from memory (see [ByrdLuNocedalZhu:1995](@cite),
-                                  Eq. (3.9) and its discussion).
+* `nonpositive_curvature_behavior`: how non-positive-definite pairs (s, y) are detected and
+  handled in vector transport. Allowed values are:
+  * `:ignore` (default): pairs whose inner product is zero are omitted from the current Hessian
+    approximation but are retained in memory for further iterations. This may lead to
+    non-positive-definite Hessians and non-descent directions being selected and thus needs to be
+    handled elsewhere.
+  * `:byrd`: pairs such that `inner(M, p, X_s, Y_s) <= sy_tol * norm(M, p, Y_s)^2` are removed
+    from memory (see [ByrdLuNocedalZhu:1995](@cite), Eq. (3.9) and its discussion).
 * `sy_tol`:                  tolerance for detecting non-positive-definite pairs (X_s, Y_s).
                              The pairs may lose positive-definiteness after vector transport.
 
@@ -622,7 +623,7 @@ $(_fields(:vector_transport_method))
         update::AbstractQuasiNewtonUpdateRule,
         memory_size::Int;
         initial_vector=zero_vector(M, p),
-        initial_scale::Real=1.0,
+        initial_scale=1.0,
         project!=copyto!,
         vector_transport_method=default_vector_transport_method(M, typeof(p)),
         nonpositive_curvature_behavior::Symbol=:ignore,
@@ -1597,8 +1598,8 @@ the result of the search, and `max_stepsize` is the maximum stepsize that can be
 the direction `d_out`.
 
 The `status` can be one of the following:
-* `:found_limited` if the point was found and we can perform a step of length at most 1
-  in direction `d_out` afterwards,
+* `:found_limited` if the point was found and a step of length at most the returned
+  `max_stepsize`, which is at least 1, can be performed in direction `d_out` afterwards,
 * `:found_unlimited` if the point was found and we can perform a step of length at most
   `max_stepsize(M, p)` in direction `d_out` afterwards,
 * `:not_found` if the search cannot be performed in direction `d`.

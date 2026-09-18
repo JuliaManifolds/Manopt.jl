@@ -388,6 +388,10 @@ end
         @test ∂fc(M, q) == sign.(q)
         @test calls[] == 1
         @test Manopt.get_subgradient_function(sgc, true) === ∂fs
+        ∂fc! = Manopt.get_subgradient_function(sgc; evaluation = InplaceEvaluation())
+        Xc = zero_vector(M, q)
+        @test ∂fc!(M, Xc, q) == sign.(q)
+        @test calls[] == 1 # the cache answers the in-place call as well
     end
     @testset "The simple cache for an objective without a gradient" begin
         M = Euclidean(2)

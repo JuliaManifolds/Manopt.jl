@@ -278,13 +278,13 @@ $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`AlternatingGr
 * `order=collect(1:n)`: the initial permutation, where `n` is the number of gradients in `grad_f`.
 $(_kwargs(:retraction_method))
 
-# Output
+$(_note(:OtherKeywords))
 
-usually the obtained (approximate) minimizer, see [`get_solver_return`](@ref) for details
+$(_note(:OutputSection))
 
 !!! note
 
-    The input of each of the (component) gradients is still the whole vector `X`,
+    The input of each of the (component) gradients is still the whole point `p`,
     just that all other than the `i`th input component are assumed to be fixed and just
     the `i`th component's gradient is computed / returned.
 """

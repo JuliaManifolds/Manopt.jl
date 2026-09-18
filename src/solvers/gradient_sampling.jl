@@ -52,7 +52,7 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:stopping_criterion; name = "stop"))
 $(_fields([:stepsize, :sub_problem, :sub_state, :retraction_method, :vector_transport_method]))
 $(_fields(:X; add_properties = [:as_Gradient]))
-$(_fields(:X; name = "Y")) a tangent vector to assemble the solution in.
+$(_fields(:X; name = "Y")), used to assemble the solution in
 
 # Constructor
     GradientSamplingState(
@@ -293,11 +293,17 @@ $(_kwargs(:retraction_method))
 * `sampling_radius_threshold = 1.0e-2` a threshold ``ϵ_{$(_tex(:rm, "opt"))}`` to be used in the stopping criterion
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`GradientSamplingState`](@ref)`; retraction_method=retraction_method)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)`$(_sc(:Any))([`StopWhenSubgradientNormLess`](@ref)`(subgradient_norm_threshold)`$(_sc(:All))[`StopWhenSmallerOrEqual`](@ref)`(:sampling_radius, sampling_radius_threshold))"))
+$(_kwargs(:sub_problem; default = "`[`gradient_sampling_subsolver!`](@ref)` "))
+$(_kwargs(:sub_state; default = "`[`InplaceEvaluation`](@ref)`()"))
 * `subgradient_norm_reduction = 0.5`
 * `subgradient_norm_tolerance = 0.1`
 * `subgradient_norm_threshold = 1.0e-3` a threshold ``δ_{$(_tex(:rm, "opt"))}`` to be used in the stopping criterion
 $(_kwargs(:vector_transport_method))
 $(_kwargs(:X; add_properties = [:as_Gradient]))
+
+$(_note(:OtherKeywords))
+
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_gradient_sampling)"

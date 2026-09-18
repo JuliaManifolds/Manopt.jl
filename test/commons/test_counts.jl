@@ -116,6 +116,9 @@ using LinearAlgebra: Symmetric
         @test Manopt.get_subgradient_function(sgc)(M, p) == grad_f(M, p)
         @test get_count(sgc, :SubGradient) == 1
         @test Manopt.get_subgradient_function(sgc, true) === grad_f
+        Xs = zero_vector(M, p)
+        @test Manopt.get_subgradient_function(sgc; evaluation = InplaceEvaluation())(M, Xs, p) == grad_f(M, p)
+        @test get_count(sgc, :SubGradient) == 2
         c_obj = ManifoldCountObjective(M, obj, [:Cost, :Gradient, :Hessian])
         # undecorated / recursive cost -> exactly f
         @test Manopt.get_cost_function(obj) === Manopt.get_cost_function(c_obj, true)

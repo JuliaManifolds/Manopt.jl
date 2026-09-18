@@ -420,7 +420,7 @@ for more mathematical background.
     PreconditionedDirectionRule(
         M::AbstractManifold,
         preconditioner;
-        direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=IdentityUpdateRule(),
+        direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=Gradient(),
         evaluation::AbstractEvaluationType=AllocatingEvaluation()
     )
 
