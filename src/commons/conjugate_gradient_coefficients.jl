@@ -490,7 +490,7 @@ update_rule_storage_vectors(::HagerZhangCoefficientRule) = Tuple{:Gradient, :δ}
 # Since the rules are “memoryless” their functor accepts old necessary terms as (mandatory)
 # keywords, i.e. the state has the current values, the keywords are the old ones
 function (hz::HagerZhangCoefficientRule)(
-        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ, kwargs...
     )
     M = get_manifold(amp)
     Xtr = vector_transport_to(
@@ -611,7 +611,7 @@ update_rule_storage_vectors(::HestenesStiefelCoefficientRule) = Tuple{:Gradient,
 # Since the rules are “memoryless” their functor accepts old necessary terms as (mandatory)
 # keywords, i.e. the state has the current values, the keywords are the old ones
 function (hs::HestenesStiefelCoefficientRule)(
-        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ, kwargs...
     )
     M = get_manifold(amp)
     Xtr = vector_transport_to(M, p, X, cgs.p, hs.vector_transport_method)
@@ -737,7 +737,7 @@ update_rule_storage_vectors(::LiuStoreyCoefficientRule) = Tuple{:Gradient, :δ}
 # Since the rules are “memoryless” their functor accepts old necessary terms as (mandatory)
 # keywords, i.e. the state has the current values, the keywords are the old ones
 function (ls::LiuStoreyCoefficientRule)(
-        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ, kwargs...
     )
     M = get_manifold(amp)
     Xtr = vector_transport_to(M, p, X, cgs.p, ls.vector_transport_method)

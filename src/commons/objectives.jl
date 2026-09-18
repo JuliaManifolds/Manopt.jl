@@ -3854,6 +3854,9 @@ function get_cost(
     ) where {C <: AbstractVector}
     return sum(f(M, p) for f in sgo.cost)
 end
+function get_cost(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{Missing}, p)
+    return error("$sgo does not provide a cost, provide one with the `cost=` keyword.")
+end
 
 @doc """
     get_cost(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p, i)
@@ -3871,6 +3874,11 @@ end
 function get_cost(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p, i)
     (i == 1) && return sgo.cost(M, p)
     return error("The cost is implemented as a single function and can not be accessed element wise at $i since the index is larger than 1.")
+end
+function get_cost(
+        M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{Missing}, p, i
+    )
+    return error("$sgo does not provide a cost, provide one with the `cost=` keyword.")
 end
 
 function get_gradients end

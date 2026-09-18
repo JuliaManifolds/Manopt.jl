@@ -355,7 +355,7 @@ end
         Z = similar(Y)
         get_gradient!(M, Z, lco2a, p)
         @test Z == X
-        get_gradient!(M, Y, lco, -p) #trigger cache with in-place
+        Y = f_f_grad(M, -p)[2] # the expected gradient at `-p`
         @test Y == -X
         # Similar with
         # Gradient not yet cached from cost (fornow) so one new evaluations

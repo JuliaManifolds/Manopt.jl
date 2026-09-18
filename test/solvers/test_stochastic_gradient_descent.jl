@@ -43,6 +43,9 @@ using Manopt, Manifolds, Test
             sgrad_f2!; evaluation = InplaceEvaluation()
         )
         dmp2i = DefaultManoptProblem(M, msgo2i)
+        # without a cost both cost accessors raise a clear error
+        @test_throws ErrorException get_cost(M, msgo1, p)
+        @test_throws ErrorException get_cost(M, msgo1, p, 1)
         @test get_gradient(dmp1, p, 1) == zeros(3)
         @test get_gradient(dmp1, p) == zeros(3)
         @test get_gradient(dmp2, p, 1) == zeros(3)

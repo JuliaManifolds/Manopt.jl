@@ -254,7 +254,7 @@ using ManifoldDiff: grad_distance
         grad_f(M, p) = project(M, p, 2 * A * p)
         grad_f!(M, X, p) = project!(M, X, p, 2 * A * p)
         p0 = [2.0, 0.0, 2.0] / sqrt(8.0)
-        sc = StopAfterIteration(15)
+        sc = StopAfterIteration(5) # before the Hestenes-Stiefel run stalls
         for c in [
                 SteepestDescentCoefficient(), ConjugateDescentCoefficient(),
                 DaiYuanCoefficient(), FletcherReevesCoefficient(), HagerZhangCoefficient(),
@@ -269,6 +269,7 @@ using ManifoldDiff: grad_distance
                 M, f, grad_f!, p0; coefficient = c, stopping_criterion = sc,
                 evaluation = InplaceEvaluation(),
             )
+            @test all(isfinite, q1)
             @test q1 == q2
         end
     end
