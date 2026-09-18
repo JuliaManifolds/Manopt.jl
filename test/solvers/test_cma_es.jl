@@ -181,6 +181,16 @@ flat_example(::AbstractManifold, p) = 0.0
         @test [sc8(mp_flat, st, k) for k in 1:3] == [false, false, true]
         sc8(mp_flat, st, 0)
         @test length(sc8.best_value_history) == 0
+        # a criterion is active only once it stopped, not when its condition holds
+        sc9 = StopWhenBestCostInGenerationConstant{Float64}(3)
+        sc9(mp_flat, st, 0)
+        for k in 1:4 # the first call records the cost, the next three count
+            sc9(mp_flat, st, k)
+        end
+        @test sc9.iterations_since_change == 3
+        @test !Manopt.is_active_stopping_criterion(sc9) # the counter reached 3, the next call fires
+        @test sc9(mp_flat, st, 5)
+        @test Manopt.is_active_stopping_criterion(sc9)
         @test [sc8(mp_flat, st, k) for k in 1:3] == [false, false, true]
     end
     @testset "The covariance matrix of the state is kept" begin

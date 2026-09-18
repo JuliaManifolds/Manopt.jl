@@ -1,4 +1,4 @@
-using ManifoldsBase, Manopt, Manifolds, Test
+using ManifoldsBase, Manopt, Manifolds, Random, Test
 
 @testset "Initial stepsize" begin
     @testset "Hager-Zhang" begin
@@ -1143,6 +1143,7 @@ end
                 return project(M, p, -2 * A * p)
             end
 
+            Random.seed!(42)
             p0 = rand(M)
 
             x = gradient_descent(
@@ -1165,6 +1166,7 @@ end
                 return project(M, p, grad_E)
             end
 
+            Random.seed!(42)
             p0 = rand(M)
 
             x = gradient_descent(

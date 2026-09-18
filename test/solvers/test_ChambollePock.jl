@@ -118,6 +118,13 @@ using ManifoldDiff: prox_distance, prox_distance!
             update_dual_base = (p, o, k) -> o.n,
         )
         @test o2a ≈ o3
+        q = deepcopy(data)
+        o1b = ChambollePock!(
+            M, N, f, q, ξ0, m, n, prox_f, prox_g_dual, adjoint_DΛ;
+            linearized_forward_operator = DΛ, relax = :dual, variant = :linearized,
+        )
+        @test o1b === q
+        @test isapprox(M, o1b, o1)
     end
     @testset "Callbacks" begin
         sk_record = Tuple{Symbol, Int}[]

@@ -1,3 +1,22 @@
+"""
+    LevenbergMarquardtBoxSubsolver <: AbstractManoptSolverState
+
+Wrap the sub solver state of a [`LevenbergMarquardt`](@ref) run on a manifold with box
+constraints, where the sub solver result is trimmed to the box by a generalized Cauchy
+direction search.
+
+# Fields
+
+* `internal_state`: the state of the sub solver that is wrapped
+* `last_gcd_result`, `last_gcd_stepsize`: the status and the maximal step size returned by
+  the last generalized Cauchy direction search, see [`find_generalized_cauchy_direction!`](@ref)
+
+# Constructor
+
+    LevenbergMarquardtBoxSubsolver(M::AbstractManifold, sub_state, p)
+
+Wrap `sub_state`, where `p` determines the number type of the stored step size.
+"""
 mutable struct LevenbergMarquardtBoxSubsolver{TSt <: AbstractManoptSolverState, F <: Real} <: AbstractManoptSolverState
     internal_state::TSt
     last_gcd_result::Symbol

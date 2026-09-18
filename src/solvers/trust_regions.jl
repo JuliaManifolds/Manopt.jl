@@ -247,15 +247,12 @@ function Base.show(io::IO, trs::TrustRegionsState)
 end
 function status_summary(trs::TrustRegionsState; context::Symbol = :default)
     (context === :short) && return repr(trs)
-    i = get_count(trs, :Iterations)
     (context === :inline) && return "A solver state for the trust region solver$(_iteration_suffix(trs))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(trs.stop) ? "Yes" : "No"
     sub = _in_str(status_summary(trs.sub_state; context = context); indent = 1, headers = 1, indent_end = "| ")
     as = _callbacks_summary(trs)
     s = """
     # Solver state for `Manopt.jl`s Trust Region Method
-    $Iter
+    $(_iterations_str(trs))
     ## Parameters
     * acceptance_rate (ρ'):   $(trs.acceptance_rate)$(as)
     * augmentation threshold: $(trs.augmentation_threshold) (factor: $(trs.augmentation_factor))
@@ -269,7 +266,7 @@ function status_summary(trs::TrustRegionsState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(trs.stop; context = context); indent = 1, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(trs))"""
     return s
 end
 

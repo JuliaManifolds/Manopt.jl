@@ -108,6 +108,7 @@ This is yet another round of review – maybe also introducing a few test tools
 * `set_gradient!` for a `ConjugateResidualState` takes `(state, M, p, X)`.
 * `get_subgradient_function` of a counting or caching objective returns that variant.
 * `debug=` accepts `:ProximalParameter`, the symbol `record=` uses.
+* `get_active_stopping_criteria` lists a CMA-ES stagnation criterion only when it stopped.
 * the numeric keywords of `adaptive_regularization_with_cubics` and its state are promoted.
 * `sub_stopping_criterion` reaches the sub solver of `interior_point_Newton`.
 * `AugmentedLagrangianMethodState` accepts integer keywords such as `ρ` and `λ_max`.
@@ -141,6 +142,7 @@ This is yet another round of review – maybe also introducing a few test tools
 * `return_objective = true` returns a minimizer on a manifold of numbers as a number.
 * `debug` and `record` of the proximal parameter work for `difference_of_convex_proximal_point`.
 * `get_gradient` of a `VectorDifferentialFunction` accepts ranges, index vectors and `:`.
+* A stochastic gradient given as a single in-place function raises a clear error.
 
 ## [0.6.7] September 9, 2026
 

@@ -16,7 +16,7 @@ $(_kwargs(:inverse_retraction_method; p = ""))
 
     RecordChange(M=DefaultManifold();
         inverse_retraction_method = default_inverse_retraction_method(M),
-        storage                   = StoreStateAction(M; store_points=Tuple{:Iterate})
+        storage                   = StoreStateAction(M; store_fields=[:Iterate])
     )
     RecordChange(p, storage=StoreStateAction([:Iterate]);
         manifold                  = DefaultManifold(1),
@@ -24,8 +24,9 @@ $(_kwargs(:inverse_retraction_method; p = ""))
     )
 
 with the previous fields as keywords. The second form stores `p` as the initial iterate to compare
-the first recorded change against. For the `DefaultManifold` only the field storage is used.
-Providing the actual manifold moves the default storage to the efficient point storage.
+the first recorded change against. The first form uses the field storage shown above for the
+`DefaultManifold` and the more efficient `StoreStateAction(M; store_points=Tuple{:Iterate})`
+for any other manifold.
 """
 mutable struct RecordChange{
         TInvRetr <: AbstractInverseRetractionMethod, TStorage <: StoreStateAction,
@@ -498,9 +499,9 @@ function Base.show(io::IO, ri::RecordTime)
     return print(io, "RecordTime(; mode=:$(ri.mode))")
 end
 function status_summary(ri::RecordTime; context::Symbol = :default)
-    (context == :short) && return (ri.mode === :Iterative ? ":IterativeTime" : ":Time")
+    (context === :short) && return (ri.mode === :Iterative ? ":IterativeTime" : ":Time")
     # Inline and Default:
-    return "A RecordAction for recording times" * (ri.mode == :Iterative ? " iteratively" : ".")
+    return "A RecordAction for recording times" * (ri.mode === :Iterative ? " iteratively." : ".")
 end
 
 #
@@ -567,11 +568,11 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any, 1})
     ae = length(e) > 0 ? last(e) : 0
     # Run through all (updated) pairs
     for d in b
-        dbg = RecordGroupFactory(s, d.second)
-        (:WhenActive in a) && (dbg = RecordWhenActive(dbg))
+        record = RecordGroupFactory(s, d.second)
+        (:WhenActive in a) && (record = RecordWhenActive(record))
         # Add RecordEvery to all but Start and Stop
-        (!(d.first in [:Start, :Stop]) && (ae > 0)) && (dbg = RecordEvery(dbg, ae))
-        dictionary[d.first] = dbg
+        (!(d.first in [:Start, :Stop]) && (ae > 0)) && (record = RecordEvery(record, ae))
+        dictionary[d.first] = record
     end
     return dictionary
 end

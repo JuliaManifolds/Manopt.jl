@@ -1,4 +1,4 @@
-using Manopt, Test
+using Manifolds, Manopt, Test
 
 @testset "Keywords and their errors" begin
     @testset "Constructor" begin
@@ -27,6 +27,20 @@ using Manopt, Test
         # `p` is the start point, `decorate_objective!` must not make it an accepted keyword
         @test :p ∉ Manopt.accepted_keywords(gradient_descent).accepted
         @test :p ∉ Manopt.accepted_keywords(trust_regions).accepted
+    end
+    @testset "a solver reports an unknown keyword" begin
+        Mk = Sphere(2)
+        fk(M, p) = p[1]
+        grad_fk(M, p) = zero_vector(M, p)
+        # the default `:KeywordsErrorMode` is "warn", so both entries report the keyword
+        @test_logs (:warn,) (:warn,) gradient_descent(
+            Mk, fk, grad_fk, [1.0, 0.0, 0.0];
+            stopping_criterion = StopAfterIteration(1), no_such_keyword = 1,
+        )
+        # in `:error` mode the documented error is raised instead
+        @test_throws Manopt.ManoptKeywordError Manopt.keywords_accepted(
+            gradient_descent, :error; no_such_keyword = 1
+        )
     end
     @testset "check errors" begin
         @test Manopt.keywords_accepted(show, :error, Manopt.Keywords(Set([:a])))

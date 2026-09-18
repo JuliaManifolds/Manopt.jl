@@ -7,7 +7,7 @@ Subsolver state indicating that a closed-form solution is available.
 
     ClosedFormSubSolverState()
 """
-struct ClosedFormSubSolverState{} <: AbstractManoptSolverState end
+struct ClosedFormSubSolverState <: AbstractManoptSolverState end
 Base.show(io::IO, ::ClosedFormSubSolverState) = print(io, "ClosedFormSubSolverState()")
 # a closed form sub solver has no iterate to set
 set_iterate!(cfss::ClosedFormSubSolverState, ::AbstractManifold, p) = cfss
@@ -43,7 +43,7 @@ function get_parameter(rst::ReturnSolverState, v::Val{T}, args...) where {T}
     return get_parameter(rst.state, v, args...)
 end
 
-doc_get_solver_return = """
+_doc_get_solver_return = """
     get_solver_return(s::ReturnSolverState)
     get_solver_return(o::AbstractManifoldObjective, s::ReturnSolverState)
 
@@ -54,7 +54,7 @@ Return the internally stored state of the [`ReturnSolverState`](@ref) instead of
 Since a solver might return both a state and an objective in a tuple, this then re-iterates on the second argument.
 """
 
-@doc "$(doc_get_solver_return)"
+@doc "$(_doc_get_solver_return)"
 get_solver_return(s::ReturnSolverState) = s.state
 
 function decorate_state! end

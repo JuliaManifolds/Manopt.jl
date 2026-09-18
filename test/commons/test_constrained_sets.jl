@@ -29,22 +29,7 @@ using Manifolds, Manopt, Random, Test
         X .*= -1 / length(pts)
         return X
     end
-    function project_C(M, p)
-        X = log(M, c, p)
-        n = norm(M, c, X)
-        q = (n > r) ? exp(M, c, (r / n) * X) : copy(M, p)
-        return q
-    end
-    function project_C!(M, q, p; X = zero_vector(M, c))
-        log!(M, X, c, p)
-        n = norm(M, c, X)
-        if (n > r)
-            exp!(M, q, c, (r / n) * X)
-        else
-            copyto!(M, q, p)
-        end
-        return q
-    end
+    project_C, project_C! = Manopt.Test.ball_projection(M, c, r)
     g(M, p) = distance(M, c, p)^2 - r^2
     indicator_C(M, p) = (g(M, p) ≤ 0) ? 0 : Inf
 

@@ -3966,6 +3966,9 @@ function get_gradients(
     ) where {C}
     return sgo.gradient!.f(M, p)
 end
+function get_gradients(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p)
+    return error("A single in-place gradient function can not determine the number of gradients; use `get_gradients!` and provide that instead.")
+end
 function get_gradients(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
     return get_gradients(M, get_objective(admo, false), p)
 end

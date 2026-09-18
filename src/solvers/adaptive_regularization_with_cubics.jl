@@ -260,15 +260,12 @@ function Base.show(io::IO, arcs::AdaptiveRegularizationState)
 end
 function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :default)
     (context === :short) && (return repr(arcs))
-    i = get_count(arcs, :Iterations)
     (context === :inline) && return "A solver state for the adaptive regularization with cubics solver$(_iteration_suffix(arcs))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(arcs.stop) ? "Yes" : "No"
     as = _callbacks_summary(arcs)
     sub = _in_str(status_summary(arcs.sub_state; context = context); indent = 1, indent_end = "| ")
     s = """
     # Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)
-    $Iter
+    $(_iterations_str(arcs))
     ## Parameters$(as)
     * η1 | η2              : $(arcs.η1) | $(arcs.η2)
     * γ1 | γ2              : $(arcs.γ1) | $(arcs.γ2)
@@ -280,7 +277,7 @@ function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :de
 
     ## Stopping criterion
     $(_in_str(status_summary(arcs.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(arcs))"""
     return s
 end
 

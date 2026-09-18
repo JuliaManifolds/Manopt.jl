@@ -465,14 +465,11 @@ function Base.show(io::IO, mads::MeshAdaptiveDirectSearchState)
 end
 function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :default)
     (context === :short) && return repr(mads)
-    i = get_count(mads, :Iterations)
     (context === :inline) && return "A solver state for the mesh adaptive direct search solver$(_iteration_suffix(mads))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(mads.stop) ? "Yes" : "No"
     as = _callbacks_summary(mads)
     s = """
     # Solver state for `Manopt.jl`s mesh adaptive direct search
-    $Iter
+    $(_iterations_str(mads))
     ## Parameters$(as)
     * mesh_size: $(mads.mesh_size)
     * scale_mesh: $(mads.scale_mesh)
@@ -483,7 +480,7 @@ function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :
 
     ## Stopping criterion
     $(_in_str(status_summary(mads.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv
+    The algorithm converged: $(_converged_str(mads))
     """
     return s
 end
@@ -532,7 +529,7 @@ function get_reason(c::StopWhenPollSizeLess)
     return ""
 end
 function status_summary(c::StopWhenPollSizeLess; context::Symbol = :default)
-    has_stopped = (c.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "Poll step size s < $(c.threshold):$(_MANOPT_INDENT)" : "Stop when the poll step size is less than the threshold $(c.threshold)\n$(_MANOPT_INDENT)") * s
 end

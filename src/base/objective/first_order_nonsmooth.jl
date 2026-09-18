@@ -1,5 +1,16 @@
 function get_proximal_map end
 
+@doc """
+    get_proximal_map(amp::AbstractManoptProblem, λ, p)
+    get_proximal_map(amp::AbstractManoptProblem, λ, p, i)
+    get_proximal_map!(amp::AbstractManoptProblem, q, λ, p)
+    get_proximal_map!(amp::AbstractManoptProblem, q, λ, p, i)
+
+Evaluate the (`i`th) proximal map of an [`AbstractManoptProblem`](@ref) `amp`
+at the point `p` with parameter ``λ>0``.
+
+The evaluation is done in place of `q` for the `!`-variant.
+"""
 function get_proximal_map(amp::AbstractManoptProblem, λ, p, i)
     return get_proximal_map(get_manifold(amp), get_objective(amp), λ, p, i)
 end

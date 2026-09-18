@@ -159,14 +159,11 @@ function Base.show(io::IO, nms::NelderMeadState)
 end
 function status_summary(nms::NelderMeadState; context::Symbol = :default)
     (context === :short) && return repr(nms)
-    i = get_count(nms, :Iterations)
     (context === :inline) && return "A solver state for the Nelder-Mead solver$(_iteration_suffix(nms))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(nms.stop) ? "Yes" : "No"
     as = _callbacks_summary(nms)
     s = """
     # Solver state for `Manopt.jl`s Nelder Mead Algorithm
-    $Iter
+    $(_iterations_str(nms))
     ## Parameters$(as)
     * α: $(nms.α)
     * γ: $(nms.γ)
@@ -177,7 +174,7 @@ function status_summary(nms::NelderMeadState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(nms.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(nms))"""
     return s
 end
 get_iterate(nms::NelderMeadState) = nms.p
@@ -408,7 +405,7 @@ function get_reason(c::StopWhenPopulationConcentrated)
 end
 function status_summary(c::StopWhenPopulationConcentrated; context::Symbol = :default)
     (context === :short) && (return repr(c))
-    has_stopped = (c.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     head = (!_is_inline(context) ? "Stop when the population is concentrated in both function values (tolerance: $(c.tol_f)) and points (tolerance: $(c.tol_p))\n$(_MANOPT_INDENT)" : "")
     return head * "Population concentration: in f < $(c.tol_f) and in p < $(c.tol_p):$(_MANOPT_INDENT)$s"

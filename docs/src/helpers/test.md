@@ -14,4 +14,6 @@ and a few dummy types.
 ```@docs
 Manopt.Test.mean_task
 Manopt.Test.Circle_mean_task
+Manopt.Test.ball_projection
+Manopt.Test.distance_task
 ```

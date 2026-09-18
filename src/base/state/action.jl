@@ -176,7 +176,9 @@ end
     return StoreStateAction(store_fields, point_values, vector_values, once; M = M)
 end
 
-_store_to_tuple(store::Type{<:Tuple}) = Tuple(store.parameters)
+@generated function _store_to_tuple(::Type{T}) where {T <: Tuple}
+    return Expr(:tuple, QuoteNode.(T.parameters)...)
+end
 _store_to_tuple(store::Vector{Symbol}) = tuple(store...)
 
 @generated function extract_type_from_namedtuple(::Type{nt}, ::Val{key}) where {nt, key}

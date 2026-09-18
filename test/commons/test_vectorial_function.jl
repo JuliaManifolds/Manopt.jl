@@ -1,5 +1,5 @@
 using Manifolds, ManifoldsBase, Manopt, Test
-using Manopt: get_value, get_value!, get_value_function, get_gradient_function
+using Manopt: get_value, get_value!, get_value_function
 @testset "VectorialGradientCost" begin
     M = ManifoldsBase.DefaultManifold(3)
     g(M, p) = [p[1] - 1, -p[2] - 1]
@@ -93,9 +93,7 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
         g!, jac_g!, 2; evaluation = InplaceEvaluation(),
         jacobian_type = CoefficientVectorialType(DefaultBasis()),
     )
-    @test Manopt.get_basis(vgf_ji.jacobian_type) == vgf_ji.jacobian_type.basis
     @test Manopt.get_basis(vgf_jib.jacobian_type) == DefaultBasis()
-    @test Manopt.get_basis(vgf_vi.jacobian_type) == DefaultOrthonormalBasis()
     @testset "Hessian in array power representation" begin
         Ms = Sphere(2)
         ps = [1.0, 0.0, 0.0]

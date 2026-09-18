@@ -61,13 +61,7 @@ using Manopt: estimate_sectional_curvature
     end
 
     @testset "Allocating Subgradient" begin
-        f(M, q) = distance(M, q, p)
-        function ∂f(M, q)
-            if distance(M, p, q) == 0
-                return zero_vector(M, q)
-            end
-            return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
-        end
+        f, ∂f, _ = Manopt.Test.distance_task(M, p)
         mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
 
         # Reset the serious iterate to the minimizer itself (degenerate start)
@@ -143,17 +137,7 @@ using Manopt: estimate_sectional_curvature
     end
 
     @testset "Mutating Subgradient" begin
-        f(M, q) = distance(M, q, p)
-        function ∂f!(M, X, q)
-            d = distance(M, p, q)
-            if d == 0
-                zero_vector!(M, X, q)
-                return X
-            end
-            log!(M, X, q, p)
-            X .*= -1 / max(10 * eps(Float64), d)
-            return X
-        end
+        f, _, ∂f! = Manopt.Test.distance_task(M, p)
         bmom = ManifoldSubgradientObjective(f, ∂f!; evaluation = InplaceEvaluation())
         mp = DefaultManoptProblem(M, bmom)
         X = zero_vector(M, p)
@@ -184,6 +168,14 @@ using Manopt: estimate_sectional_curvature
             evaluation = InplaceEvaluation(),
         )
         @test f(M, q_ip) < f(M, p0)
+        q_bang = copy(M, p0)
+        r_bang = convex_bundle_method!(
+            M, f, ∂f!, q_bang; diameter = diameter,
+            domain = (M, q) -> distance(M, q, p0) < diameter / 2 ? true : false,
+            k_max = Ω, stopping_criterion = StopAfterIteration(200),
+            evaluation = InplaceEvaluation(),
+        )
+        @test isapprox(M, r_bang, q_ip)
     end
 
     @testset "A simple median run" begin
@@ -279,13 +271,7 @@ using Manopt: estimate_sectional_curvature
         M = Sphere(2)
         p = [1.0, 0.0, 0.0]
         q = [0.0, 1.0, 0.0]
-        f(M, q) = distance(M, q, p)
-        function ∂f(M, q)
-            if distance(M, p, q) == 0
-                return zero_vector(M, q)
-            end
-            return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
-        end
+        f, ∂f, _ = Manopt.Test.distance_task(M, p)
         cbms = ConvexBundleMethodState(
             M, convex_bundle_method_subsolver; p = q, k_max = 1.0, k_min = 1.0,
             stepsize = DomainBackTrackingStepsize(M; contraction_factor = 0.975),
@@ -328,11 +314,7 @@ using Manopt: estimate_sectional_curvature
         M = Sphere(2)
         p = [1.0, 0.0, 0.0]
         q = [0.0, 1.0, 0.0]
-        f(M, q) = distance(M, q, p)
-        function ∂f(M, q)
-            d = distance(M, p, q)
-            return d == 0 ? zero_vector(M, q) : -log(M, q, p) / d
-        end
+        f, ∂f, _ = Manopt.Test.distance_task(M, p)
         diam = π / 2
         domf(M, p) = distance(M, p, q) < diam / 2 ? true : false
         cbms = ConvexBundleMethodState(

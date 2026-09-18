@@ -185,14 +185,11 @@ function show(io::IO, pbms::ProximalBundleMethodState)
 end
 function status_summary(pbms::ProximalBundleMethodState; context::Symbol = :default)
     (context === :short) && return repr(pbms)
-    i = get_count(pbms, :Iterations)
     (context === :inline) && return "A solver state for the proximal bundle method$(_iteration_suffix(pbms))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(pbms.stop) ? "Yes" : "No"
     as = _callbacks_summary(pbms)
     s = """
     # Solver state for `Manopt.jl`s Proximal Bundle Method
-    $Iter
+    $(_iterations_str(pbms))
     ## Parameters$(as)
     * bundle size:                                $(pbms.bundle_size)
     * inverse retraction:                         $(pbms.inverse_retraction_method)
@@ -208,7 +205,7 @@ function status_summary(pbms::ProximalBundleMethodState; context::Symbol = :defa
 
     ## Stopping criterion
     $(_in_str(status_summary(pbms.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(pbms))"""
     return s
 end
 

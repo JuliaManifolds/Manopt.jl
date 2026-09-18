@@ -113,22 +113,19 @@ function Base.show(io::IO, drs::DouglasRachfordState)
 end
 function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
     (context === :short) && return repr(drs)
-    i = get_count(drs, :Iterations)
     (context === :inline) && return "A solver state for the Douglas Rachford solver$(_iteration_suffix(drs))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(drs.stop) ? "Yes" : "No"
     as = _callbacks_summary(drs)
     P = drs.parallel ? "Parallel " : ""
     s = """
     # Solver state for `Manopt.jl`s $(P)Douglas Rachford Algorithm
-    $Iter
+    $(_iterations_str(drs))
 
     ## Parameters$(as)
     * `R! = ` $(drs.R!)
 
     ## Stopping criterion
     $(_in_str(status_summary(drs.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(drs))"""
     return s
 end
 get_iterate(drs::DouglasRachfordState) = drs.p

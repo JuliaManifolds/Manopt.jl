@@ -339,14 +339,11 @@ function show(io::IO, cbms::ConvexBundleMethodState)
 end
 function status_summary(cbms::ConvexBundleMethodState; context::Symbol = :default)
     (context === :short) && return repr(cbms)
-    i = get_count(cbms, :Iterations)
     (context === :inline) && return "A solver state for the Convex Bundle Method$(_iteration_suffix(cbms))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(cbms.stop) ? "Yes" : "No"
     as = _callbacks_summary(cbms)
     s = """
     # Solver state for `Manopt.jl`s Convex Bundle Method
-    $Iter
+    $(_iterations_str(cbms))
     ## Parameters$(as)
     * tolerance parameter for the convex coefficients:  $(cbms.atol_λ)
     * tolerance parameter for the linearization errors: $(cbms.atol_errors)
@@ -366,7 +363,7 @@ function status_summary(cbms::ConvexBundleMethodState; context::Symbol = :defaul
 
     ## Stopping criterion
     $(_in_str(status_summary(cbms.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(cbms))"""
     return s
 end
 

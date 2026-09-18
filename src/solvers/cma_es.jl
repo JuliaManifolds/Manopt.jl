@@ -215,14 +215,11 @@ end
 
 function status_summary(s::CMAESState; context::Symbol = :default)
     (context === :short) && return repr(s)
-    i = get_count(s, :Iterations)
     (context === :inline) && return "A solver state for the covariance matrix adaptation evolutionary strategy solver$(_iteration_suffix(s))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(s.stop) ? "Yes" : "No"
     as = _callbacks_summary(s)
     s = """
     # Solver state for `Manopt.jl`s Covariance Matrix Adaptation Evolutionary Strategy
-    $Iter
+    $(_iterations_str(s))
     ## Parameters$(as)
     * μ:                         $(s.μ)
     * λ:                         $(s.λ)
@@ -248,7 +245,7 @@ function status_summary(s::CMAESState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(s.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(s))"""
     return s
 end
 #
@@ -628,9 +625,6 @@ end
 
 # Stagnation of the evolution is treated as convergence
 indicates_convergence(c::StopWhenBestCostInGenerationConstant) = true
-function is_active_stopping_criterion(c::StopWhenBestCostInGenerationConstant)
-    return c.iterations_since_change >= c.iteration_range
-end
 function (c::StopWhenBestCostInGenerationConstant)(
         ::AbstractManoptProblem, s::CMAESState, k::Int
     )
@@ -702,20 +696,6 @@ end
 
 # Stagnation of the evolution is treated as convergence
 indicates_convergence(c::StopWhenEvolutionStagnates) = true
-function is_active_stopping_criterion(c::StopWhenEvolutionStagnates)
-    N = length(c.best_history)
-    if N < c.min_size
-        return false
-    end
-    threshold_low = Int(ceil(N * c.fraction))
-    threshold_high = N - threshold_low + 1
-    (threshold_low < 1 || threshold_high < 1) && return false
-    best_stagnant =
-        median(c.best_history[1:threshold_low]) <= median(c.best_history[threshold_high:end])
-    median_stagnant =
-        median(c.median_history[1:threshold_low]) <= median(c.median_history[threshold_high:end])
-    return best_stagnant && median_stagnant
-end
 function (c::StopWhenEvolutionStagnates)(::AbstractManoptProblem, s::CMAESState, k::Int)
     if k == 0 # reset on init
         empty!(c.best_history)
@@ -723,7 +703,16 @@ function (c::StopWhenEvolutionStagnates)(::AbstractManoptProblem, s::CMAESState,
         c.at_iteration = -1
         return false
     end
-    if is_active_stopping_criterion(c)
+    N = length(c.best_history)
+    stagnates = false
+    if N >= c.min_size
+        threshold_low = Int(ceil(N * c.fraction))
+        threshold_high = N - threshold_low + 1
+        stagnates = (threshold_low >= 1) && (threshold_high >= 1) &&
+            median(c.best_history[1:threshold_low]) <= median(c.best_history[threshold_high:end]) &&
+            median(c.median_history[1:threshold_low]) <= median(c.median_history[threshold_high:end])
+    end
+    if stagnates
         c.at_iteration = k
         return true
     else

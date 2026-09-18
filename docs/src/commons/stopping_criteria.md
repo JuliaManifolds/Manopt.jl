@@ -11,4 +11,17 @@ Single stopping criteria that are solver specific might also be found on the cor
 ```@autodocs
 Modules = [Manopt]
 Pages = ["commons/stopping_criteria.jl"]
+Order = [:type, :function]
+Public = true
+Private = false
+```
+
+## Internal functions
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["commons/stopping_criteria.jl"]
+Order = [:type, :function]
+Public = false
+Private = true
 ```

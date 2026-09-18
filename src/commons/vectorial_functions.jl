@@ -396,11 +396,10 @@ function show(io::IO, vgf::VectorDifferentialFunction)
     print(io, ", "); print(io, vgf.range_dimension)
     print(io, "; ")
     print(io, "function_type = "); print(io, vgf.cost_type)
+    print(io, ", jacobian_type = "); print(io, vgf.jacobian_type)
     if !ismissing(vgf.adjoint_jacobian_type)
         print(io, ", adjoint_jacobian_type = "); print(io, vgf.adjoint_jacobian_type)
     end
-    print(io, ", jacobian_type = ")
-    print(io, vgf.jacobian_type)
     return print(io, ")")
 end
 
@@ -582,10 +581,11 @@ function status_summary(vhf::VectorHessianFunction; context::Symbol = :default)
     return """
     A function defined on a manifold that maps into a vector space including gradients and Hessians of the component functions.
 
-    * cost:$(_MANOPT_INDENT)$(vhf.value!)$(_MANOPT_INDENT)(represented as $(vhf.cost_type)),
-    * gradient(s) or Jacobian:$(_MANOPT_INDENT)$(vhf.jacobian!)$(_MANOPT_INDENT)(represented as $(vhf.jacobian_type))
-    * Hessian(s):$(_MANOPT_INDENT)$(vhf.hessians!)$(_MANOPT_INDENT)(represented as $(vhf.hessian_type))
-    * dimension:$(_MANOPT_INDENT)$(length(vhf))"""
+    ## Components
+    * cost:                   $(_MANOPT_INDENT)$(vhf.value!)$(_MANOPT_INDENT)(as $(vhf.cost_type)),
+    * gradient(s) or Jacobian:$(_MANOPT_INDENT)$(vhf.jacobian!)$(_MANOPT_INDENT)(as $(vhf.jacobian_type))
+    * Hessian(s):             $(_MANOPT_INDENT)$(vhf.hessians!)$(_MANOPT_INDENT)(as $(vhf.hessian_type))
+    * dimension:              $(_MANOPT_INDENT)$(length(vhf))"""
 end
 function show(io::IO, vhf::VectorHessianFunction)
     print(io, "VectorHessianFunction("); print(io, vhf.value!); print(io, ", ")

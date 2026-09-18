@@ -73,7 +73,6 @@ function GradientDescentState(
 end
 additional_callbacks(::Type{<:GradientDescentState}) = [:Stepsize]
 get_callbacks(gds::GradientDescentState) = gds.callbacks
-get_iterate(gds::GradientDescentState) = gds.p
 set_iterate!(gds::GradientDescentState, M, p) = copyto!(M, gds.p, p)
 
 function (r::IdentityUpdateRule)(
@@ -107,14 +106,11 @@ end
 
 function status_summary(gds::GradientDescentState; context::Symbol = :default)
     (context === :short) && return repr(gds)
-    i = get_count(gds, :Iterations)
     (context === :inline) && return "A solver state for the gradient descent solver$(_iteration_suffix(gds))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(gds.stop) ? "Yes" : "No"
     as = _callbacks_summary(gds)
     s = """
     # Solver state for `Manopt.jl`s Gradient Descent
-    $Iter
+    $(_iterations_str(gds))
     ## Parameters$(as)
     * direction: $(status_summary(gds.direction; context = :inline))
     * retraction method: $(gds.retraction_method)
@@ -124,7 +120,7 @@ function status_summary(gds::GradientDescentState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(gds.stop; context = context); indent = 1, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(gds))"""
     return s
 end
 

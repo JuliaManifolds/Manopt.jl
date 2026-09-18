@@ -90,6 +90,45 @@ function mean_task(M::AbstractManifold, data::AbstractVector)
     return f, grad_f
 end
 
+"""
+    project_C, project_C! = ball_projection(M::AbstractManifold, c, r)
+
+Return the projection onto the geodesic ball of radius `r` around `c` on `M`,
+allocating and in place.
+"""
+function ball_projection(M::AbstractManifold, c, r)
+    function project_C(M, p)
+        X = log(M, c, p)
+        n = norm(M, c, X)
+        return (n > r) ? exp(M, c, (r / n) * X) : copy(M, p)
+    end
+    function project_C!(M, q, p; X = zero_vector(M, c))
+        n = norm(M, c, log!(M, X, c, p))
+        (n > r) ? exp!(M, q, c, (r / n) * X) : copyto!(M, q, p)
+        return q
+    end
+    return project_C, project_C!
+end
+
+"""
+    f, ∂f, ∂f! = distance_task(M::AbstractManifold, q)
+
+Return the distance to `q` on `M` and a subgradient of it, allocating and in place.
+"""
+function distance_task(M::AbstractManifold, q)
+    f(M, p) = distance(M, p, q)
+    function ∂f(M, p)
+        (distance(M, q, p) == 0) && return zero_vector(M, p)
+        return -log(M, p, q) / max(10 * eps(Float64), distance(M, q, p))
+    end
+    function ∂f!(M, X, p)
+        (distance(M, q, p) == 0) && return zero_vector!(M, X, p)
+        log!(M, X, p, q)
+        return X .*= -1 / max(10 * eps(Float64), distance(M, q, p))
+    end
+    return f, ∂f, ∂f!
+end
+
 #
 #
 # From ManoptExamples – to avoid a circular dependency

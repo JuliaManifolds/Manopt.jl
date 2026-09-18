@@ -182,14 +182,11 @@ end
 
 function status_summary(alms::AugmentedLagrangianMethodState; context::Symbol = :default)
     (context === :short) && (return repr(alms))
-    i = get_count(alms, :Iterations)
     (context === :inline) && return "A solver state for the augmented Lagrangian method$(_iteration_suffix(alms))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(alms.stop) ? "Yes" : "No"
     as = _callbacks_summary(alms)
     s = """
     # Solver state for `Manopt.jl`s Augmented Lagrangian Method
-    $Iter
+    $(_iterations_str(alms))
     ## Parameters$(as)
     * ϵ: $(alms.ϵ) (ϵ_min: $(alms.ϵ_min), θ_ϵ: $(alms.θ_ϵ))
     * λ: $(alms.λ) (λ_min: $(alms.λ_min), λ_max: $(alms.λ_max))
@@ -200,7 +197,7 @@ function status_summary(alms::AugmentedLagrangianMethodState; context::Symbol = 
 
     ## Stopping criterion
     $(_in_str(status_summary(alms.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(alms))"""
     return s
 end
 
@@ -561,7 +558,6 @@ function _alm_update!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
     alms.ϵ = max(alms.ϵ_min, alms.ϵ * alms.θ_ϵ)
     return alms
 end
-get_solver_result(alms::AugmentedLagrangianMethodState) = alms.p
 
 function get_last_stepsize(::AbstractManoptProblem, s::AugmentedLagrangianMethodState, k)
     return s.last_stepsize

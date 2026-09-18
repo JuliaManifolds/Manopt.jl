@@ -89,22 +89,19 @@ function set_gradient!(crs::ConjugateResidualState, TpM::AbstractManifold, p, r)
     return crs
 end
 function status_summary(crs::ConjugateResidualState; context::Symbol = :default)
-    i = get_count(crs, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(crs.stop) ? "Yes" : "No"
     (context === :short) && return repr(crs)
     (context === :inline) && return "A solver state for the conjugate residual solver$(_iteration_suffix(crs))"
     as = _callbacks_summary(crs)
     s = """
     # Solver state for `Manopt.jl`s Conjugate Residual Method
-    $Iter
+    $(_iterations_str(crs))
     ## Parameters$(as)
     * α: $(crs.α)
     * β: $(crs.β)
 
     ## Stopping criterion
     $(_in_str(status_summary(crs.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(crs))"""
     return s
 end
 function Base.show(io::IO, crs::ConjugateResidualState)
@@ -189,7 +186,7 @@ function get_reason(swrr::StopWhenRelativeResidualLess)
 end
 function status_summary(swrr::StopWhenRelativeResidualLess; context::Symbol = :default)
     (context === :short) && return repr(swrr)
-    has_stopped = (swrr.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(swrr)
     s = has_stopped ? "reached" : "not reached"
     return _is_inline(context) ? "‖r^(k)‖ / c < ε:$(_MANOPT_INDENT)$s" : "A stopping criterion to stop when the relative residual is less than the threshold of $(swrr.ε)\n$(_MANOPT_INDENT)$s"
 end

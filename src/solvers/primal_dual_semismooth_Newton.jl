@@ -290,14 +290,11 @@ end
 
 function status_summary(pdsns::PrimalDualSemismoothNewtonState; context::Symbol = :default)
     (context === :short) && return repr(pdsns)
-    i = get_count(pdsns, :Iterations)
     (context === :inline) && return "A solver state for the primal dual semismooth Newton solver$(_iteration_suffix(pdsns))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(pdsns.stop) ? "Yes" : "No"
     as = _callbacks_summary(pdsns)
     s = """
     # Solver state for `Manopt.jl`s primal dual semismooth Newton
-    $Iter
+    $(_iterations_str(pdsns))
     ## Parameters$(as)
     * primal_stepsize:          $(_MANOPT_INDENT)$(pdsns.primal_stepsize)
     * dual_stepsize:            $(_MANOPT_INDENT)$(pdsns.dual_stepsize)
@@ -310,7 +307,7 @@ function status_summary(pdsns::PrimalDualSemismoothNewtonState; context::Symbol 
 
     ## Stopping criterion
     $(_in_str(status_summary(pdsns.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(pdsns))"""
     return s
 end
 function Base.show(io::IO, pdmssno::PrimalDualManifoldSemismoothNewtonObjective)

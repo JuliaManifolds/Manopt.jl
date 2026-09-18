@@ -168,14 +168,11 @@ end
 #
 function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default)
     (context === :short) && return repr(lms)
-    i = get_count(lms, :Iterations)
     (context === :inline) && return "A solver state for the Levenberg–Marquardt algorithm$(_iteration_suffix(lms))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(lms.stop) ? "Yes" : "No"
     as = _callbacks_summary(lms)
     return """
     # Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm
-    $Iter
+    $(_iterations_str(lms))
     ## Parameters$(as)
     * candidate acceptance threshold:$(_MANOPT_INDENT)$(lms.candidate_acceptance_threshold)
     * damping reduction threshold:   $(_MANOPT_INDENT)$(lms.damping_reduction_threshold)
@@ -188,7 +185,7 @@ function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default
     ## Stopping criterion
 
     $(status_summary(lms.stop; context = context))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(lms))"""
 end
 function show(io::IO, lms::LevenbergMarquardtState)
     print(io, "LevenbergMarquardtState(", lms.sub_problem, ", ", lms.sub_state, "; ")

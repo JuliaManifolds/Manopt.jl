@@ -97,14 +97,11 @@ end
 
 function status_summary(pgms::ProjectedGradientMethodState; context::Symbol = :default)
     (context === :short) && return repr(pgms)
-    i = get_count(pgms, :Iterations)
     (context === :inline) && return "A solver state for the projected gradient solver$(_iteration_suffix(pgms))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(pgms.stop) ? "Yes" : "No"
     as = _callbacks_summary(pgms)
     s = """
     # Solver state for `Manopt.jl`s Projected Gradient Method
-    $Iter
+    $(_iterations_str(pgms))
     ## Parameters$(as)
     * inverse retraction method: $(pgms.inverse_retraction_method)
     * retraction method: $(pgms.retraction_method)
@@ -117,7 +114,7 @@ function status_summary(pgms::ProjectedGradientMethodState; context::Symbol = :d
 
     ## Stopping criterion
     $(_in_str(status_summary(pgms.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(pgms))"""
     return s
 end
 
@@ -181,7 +178,7 @@ function show(io::IO, c::StopWhenProjectedGradientStationary)
 end
 function status_summary(c::StopWhenProjectedGradientStationary; context::Symbol = :default)
     (context === :short) && return repr(c)
-    has_stopped = (c.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "projected gradient stationary (<$(c.threshold)):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the projected gradient step is stationary, that is, when the distance from the iterate to the candidate is less than $(c.threshold).\n$(_MANOPT_INDENT)") * s
 end

@@ -19,7 +19,7 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
     @test startswith(repr(sgs), "SubGradientMethodState(; ")
     @test get_iterate(sgs) == p0
     sgs.X = [1.0, 0.0]
-    f(M, q) = distance(M, q, p)
+    f, ∂f, ∂f! = Manopt.Test.distance_task(M, p)
     @testset "The tangent vector memory is kept" begin
         X0 = [7.0, 7.0]
         sgs_X = SubGradientMethodState(M; p = copy(p0), X = X0, stopping_criterion = StopAfterIteration(1))
@@ -29,12 +29,6 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
         @test X0 == [0.0, 0.0]
     end
     @testset "Allocating Subgradient" begin
-        function ∂f(M, q)
-            if distance(M, p, q) == 0
-                return zero_vector(M, q)
-            end
-            return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
-        end
         o = ManifoldSubgradientObjective(f, ∂f)
         @test startswith(repr(o), "ManifoldSubgradientObjective(")
         @test startswith(Manopt.status_summary(o), "A subgradient objective")
@@ -79,16 +73,6 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
     end
 
     @testset "Mutating Subgradient" begin
-        function ∂f!(M, X, q)
-            d = distance(M, p, q)
-            if d == 0
-                zero_vector!(M, X, q)
-                return X
-            end
-            log!(M, X, q, p)
-            X ./= -max(10 * eps(Float64), d)
-            return X
-        end
         sgom = ManifoldSubgradientObjective(f, ∂f!; evaluation = InplaceEvaluation())
         mp = DefaultManoptProblem(M, sgom)
         X = zero_vector(M, p)

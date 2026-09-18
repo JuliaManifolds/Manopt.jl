@@ -225,14 +225,11 @@ default_stepsize(M::AbstractManifold, ::Type{VectorBundleNewtonState}) = Constan
 
 function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :default)
     (context === :short) && return repr(vbns)
-    i = get_count(vbns, :Iterations)
     (context === :inline) && return "A solver state for the vector bundle Newton solver$(_iteration_suffix(vbns))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(vbns.stop) ? "Yes" : "No"
     as = _callbacks_summary(vbns)
     s = """
     # Solver state for `Manopt.jl`s Vector bundle Newton method
-    $Iter
+    $(_iterations_str(vbns))
     ## Parameters$(as)
     * retraction method: $(vbns.retraction_method)
 
@@ -241,7 +238,7 @@ function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :defaul
 
     ## Stopping criterion
     $(_in_str(status_summary(vbns.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(vbns))"""
     return s
 end
 

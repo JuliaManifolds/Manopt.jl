@@ -17,17 +17,21 @@ function Base.show(io::IO, ::MIME"text/plain", amp::AbstractManoptProblem)
     return multiline ? status_summary(io, amp) : show(io, amp)
 end
 
-@doc """
+_doc_get_preconditioner_amp = """
     get_preconditioner(amp::AbstractManoptProblem, p, X)
+    get_preconditioner!(amp::AbstractManoptProblem, Y, p, X)
 
 Evaluate the preconditioner of the objective of the [`AbstractManoptProblem`](@ref) `amp`
-at the point `p`, applied to the tangent vector `X`.
+at the point `p`, applied to the tangent vector `X`, which can also happen in-place of `Y`.
 
 It usually is a symmetric, positive definite approximation of the inverse of the Hessian of the cost function `f`.
 """
+
+@doc "$(_doc_get_preconditioner_amp)"
 function get_preconditioner(amp::AbstractManoptProblem, p, X)
     return get_preconditioner(get_manifold(amp), get_objective(amp), p, X)
 end
+@doc "$(_doc_get_preconditioner_amp)"
 function get_preconditioner!(amp::AbstractManoptProblem, Y, p, X)
     return get_preconditioner!(get_manifold(amp), Y, get_objective(amp), p, X)
 end

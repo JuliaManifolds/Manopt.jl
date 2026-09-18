@@ -125,6 +125,7 @@ end
         n = 3
         k = 2
         M = FixedRankMatrices(m, n, k)
+        Random.seed!(42)
         L = randn(m, k)
         R = randn(n, k)
         A = L * R'
@@ -136,7 +137,6 @@ end
         # Project converts the Gradient in the Embedding to an fixed rank matrices vector
         grad_f2(M, p) = project(M, p, P .* embed(M, p) - PA)
         grad_f2!(M, X, p) = project!(M, X, p, P .* embed(M, p) - PA)
-        Random.seed!(42)
         p0 = rand(M)
         q1 = trust_regions(M, f2, grad_f2, p0)
         q2 = trust_regions(M, f2, grad_f2!, p0; evaluation = InplaceEvaluation())

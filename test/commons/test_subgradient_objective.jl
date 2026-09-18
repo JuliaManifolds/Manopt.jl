@@ -3,23 +3,7 @@ using LRUCache, Manifolds, Manopt, Test
 @testset "Subgradient Objective" begin
     M = Euclidean(2)
     p = [1.0, 2.0]
-    f(M, q) = distance(M, q, p)
-    function ∂f(M, q)
-        if distance(M, p, q) == 0
-            return zero_vector(M, q)
-        end
-        return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
-    end
-    function ∂f!(M, X, q)
-        d = distance(M, p, q)
-        if d == 0
-            zero_vector!(M, X, q)
-            return X
-        end
-        log!(M, X, q, p)
-        X .*= -1 / max(10 * eps(Float64), d)
-        return X
-    end
+    f, ∂f, ∂f! = Manopt.Test.distance_task(M, p)
     mso = ManifoldSubgradientObjective(f, ∂f)
     msoi = ManifoldSubgradientObjective(f, ∂f!; evaluation = InplaceEvaluation())
     # a point where the subgradient is not the zero vector

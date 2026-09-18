@@ -124,21 +124,18 @@ function Base.show(io::IO, tcgs::TruncatedConjugateGradientState)
 end
 function status_summary(tcgs::TruncatedConjugateGradientState; context::Symbol = :default)
     (context === :short) && return repr(tcgs)
-    i = get_count(tcgs, :Iterations)
     (context === :inline) && return "A solver state for the truncated conjugate gradient descent$(_iteration_suffix(tcgs))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(tcgs.stop) ? "Yes" : "No"
     as = _callbacks_summary(tcgs)
     return """
     # Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent
-    $Iter
+    $(_iterations_str(tcgs))
     ## Parameters$(as)
     * randomize: $(tcgs.randomize)
     * trust region radius: $(tcgs.trust_region_radius)
 
     ## Stopping criterion
     $(_in_str(status_summary(tcgs.stop; context = context); indent = 1, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(tcgs))"""
 end
 get_callbacks(tcgs::TruncatedConjugateGradientState) = tcgs.callbacks
 function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Iterate}, Y)
@@ -220,7 +217,7 @@ function get_reason(c::StopWhenResidualIsReducedByFactorOrPower)
 end
 function status_summary(c::StopWhenResidualIsReducedByFactorOrPower; context::Symbol = :default)
     (context === :short) && (return repr(c))
-    has_stopped = (c.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     (context === :inline) && (return "Residual reduced by factor $(c.κ) or power 1+$(c.θ):$(_MANOPT_INDENT)$s")
     return "A stopping criterion used within tCG to check whether the residual is reduced by factor $(c.κ) or power 1+$(c.θ)\n$(_MANOPT_INDENT)$s"
@@ -303,7 +300,7 @@ function get_reason(c::StopWhenTrustRegionIsExceeded)
 end
 function status_summary(c::StopWhenTrustRegionIsExceeded; context::Symbol = :default)
     (context === :short) && (return repr(c))
-    has_stopped = (c.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     (context === :inline) && (return "Trust region exceeded:$(_MANOPT_INDENT)$s")
     return "A stopping criterion to stop when the trust region radius ($(c.trr)) is exceeded.\n$(_MANOPT_INDENT)$s"
@@ -360,7 +357,7 @@ function get_reason(c::StopWhenCurvatureIsNegative)
 end
 function status_summary(c::StopWhenCurvatureIsNegative; context::Symbol = :default)
     (context === :short) && (return repr(c))
-    has_stopped = (c.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     (context === :inline) && (return "Curvature is negative:$(_MANOPT_INDENT)$s")
     return "A stopping criterion to stop when the curvature is negative\n$(_MANOPT_INDENT)$s"
@@ -418,7 +415,7 @@ function get_reason(c::StopWhenModelIncreased)
 end
 function status_summary(c::StopWhenModelIncreased; context::Symbol = :default)
     (context === :short) && return repr(c)
-    has_stopped = (c.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     (context === :inline) && (return "Model Increased:$(_MANOPT_INDENT)$s")
     return "A stopping criterion to indicate when the model increased.\n$(_MANOPT_INDENT)$s"

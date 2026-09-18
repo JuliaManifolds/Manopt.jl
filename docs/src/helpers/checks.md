@@ -9,7 +9,7 @@ the following functions can be used to verify it numerically.
 
 ```@autodocs
 Modules = [Manopt]
-Pages = ["checks.jl"]
+Pages = ["helpers/checks.jl"]
 ```
 
 ## Literature

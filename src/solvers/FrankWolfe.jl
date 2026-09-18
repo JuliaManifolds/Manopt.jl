@@ -170,8 +170,6 @@ function default_stepsize(M::AbstractManifold, ::Type{FrankWolfeState})
     return DecreasingStepsize(M; length = 2.0, shift = 2.0)
 end
 get_callbacks(fws::FrankWolfeState) = fws.callbacks
-get_gradient(fws::FrankWolfeState) = fws.X
-get_iterate(fws::FrankWolfeState) = fws.p
 function get_message(fws::FrankWolfeState)
     # for now only the sub solver might have messages
     return get_message(fws.sub_state)
@@ -192,15 +190,12 @@ function Base.show(io::IO, fws::FrankWolfeState)
 end
 function status_summary(fws::FrankWolfeState; context::Symbol = :default)
     (context === :short) && return repr(fws)
-    i = get_count(fws, :Iterations)
     (context === :inline) && return "A solver state for the Frank Wolfe algorithm$(_iteration_suffix(fws))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(fws.stop) ? "Yes" : "No"
     sub = _in_str(status_summary(fws.sub_state; context = context); indent = 1, headers = 1, indent_end = "| ")
     as = _callbacks_summary(fws)
     return """
     # Solver state for `Manopt.jl`s Frank Wolfe Method
-    $Iter
+    $(_iterations_str(fws))
     ## Parameters$(as)
     * inverse retraction method: $(fws.inverse_retraction_method)
     * retraction method: $(fws.retraction_method)
@@ -212,7 +207,7 @@ function status_summary(fws::FrankWolfeState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(fws.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(fws))"""
 end
 
 #

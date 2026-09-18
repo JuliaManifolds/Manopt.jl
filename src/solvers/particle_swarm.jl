@@ -133,14 +133,11 @@ function Base.show(io::IO, pss::ParticleSwarmState)
 end
 function status_summary(pss::ParticleSwarmState; context::Symbol = :default)
     (context === :short) && return repr(pss)
-    i = get_count(pss, :Iterations)
     (context === :inline) && return "A solver state for the particle swarm solver$(_iteration_suffix(pss))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(pss.stop) ? "Yes" : "No"
     as = _callbacks_summary(pss)
     s = """
     # Solver state for `Manopt.jl`s Particle Swarm Optimization Algorithm
-    $Iter
+    $(_iterations_str(pss))
     ## Parameters$(as)
     * inertia:          $(pss.inertia)
     * social_weight:    $(pss.social_weight)
@@ -151,7 +148,7 @@ function status_summary(pss::ParticleSwarmState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(pss.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(pss))"""
     return s
 end
 #

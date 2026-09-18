@@ -279,6 +279,11 @@ function _iteration_suffix(ams::AbstractManoptSolverState)
     (k > 0) || return ""
     return (has_converged(ams) ? " (converged" : " (stopped") * " after $k iterations)"
 end
+function _iterations_str(ams::AbstractManoptSolverState)
+    k = get_count(ams, :Iterations)
+    return (k > 0) ? "After $k iterations\n" : ""
+end
+_converged_str(ams::AbstractManoptSolverState) = has_converged(ams) ? "Yes" : "No"
 
 @doc """
     set_gradient!(state::AbstractGradientSolverState, M, p, X)

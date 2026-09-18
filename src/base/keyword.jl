@@ -122,7 +122,7 @@ function Base.show(io::IO, kw::Keywords{I}) where {I}
         return print(io, "Keywords()")
     end
     as = if (length(kw.accepted) == 0)
-        "none"
+        " none"
     else
         ast = ""
         for kwn in sort!(collect(kw.accepted); by = s -> lowercase(String(s)))
@@ -142,7 +142,7 @@ function Base.show(io::IO, kw::Keywords{I}) where {I}
     ds = if (length(kw.deprecated) == 0)
         ""
     else
-        "\ndeprecated $(join(kw.deprecated, ", "))"
+        "\ndeprecated: $(join(sort!(collect(kw.deprecated)), ", "))"
     end
     dt = isnothing(I) ? "A set of Keywords:" : "Keywords for $I:"
     return print(
@@ -150,7 +150,7 @@ function Base.show(io::IO, kw::Keywords{I}) where {I}
         """
         $dt
 
-        accepted: $as$ds
+        accepted:$as$ds
         """,
     )
 end

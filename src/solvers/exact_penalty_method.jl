@@ -141,14 +141,11 @@ function Base.show(io::IO, epms::ExactPenaltyMethodState)
 end
 function status_summary(epms::ExactPenaltyMethodState; context::Symbol = :default)
     (context === :short) && return repr(epms)
-    i = get_count(epms, :Iterations)
     (context === :inline) && return "A solver state for the exact penalty method$(_iteration_suffix(epms))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(epms.stop) ? "Yes" : "No"
     as = _callbacks_summary(epms)
     s = """
     # Solver state for `Manopt.jl`s Exact Penalty Method
-    $Iter
+    $(_iterations_str(epms))
     ## Parameters$(as)
     * ϵ: $(epms.ϵ) (ϵ_min: $(epms.ϵ_min), θ_ϵ: $(epms.θ_ϵ))
     * u: $(epms.u) (u_min: $(epms.u_min), θ_u: $(epms.θ_u))
@@ -156,7 +153,7 @@ function status_summary(epms::ExactPenaltyMethodState; context::Symbol = :defaul
 
     ## Stopping criterion
     $(_in_str(status_summary(epms.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(epms))"""
     return s
 end
 
@@ -495,4 +492,3 @@ function _epm_update!(amp::AbstractManoptProblem, epms::ExactPenaltyMethodState)
     epms.ϵ = max(epms.ϵ_min, epms.ϵ * epms.θ_ϵ)
     return epms
 end
-get_solver_result(epms::ExactPenaltyMethodState) = epms.p

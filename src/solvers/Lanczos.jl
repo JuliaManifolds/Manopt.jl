@@ -104,14 +104,11 @@ end
 function status_summary(ls::LanczosState; context::Symbol = :default)
     (context === :short) && return repr(ls)
     (context === :inline) && return "A solver state for the Lanczos sub solver$(_iteration_suffix(ls))"
-    i = get_count(ls, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(ls.stop) ? "Yes" : "No"
     as = _callbacks_summary(ls)
     vectors = length(ls.Lanczos_vectors)
     return """
     # Solver state for `Manopt.jl`s Lanczos Iteration
-    $Iter
+    $(_iterations_str(ls))
     ## Parameters$(as)
     * σ                         : $(ls.σ)
     * # of Lanczos vectors used : $(vectors)
@@ -121,7 +118,7 @@ function status_summary(ls::LanczosState; context::Symbol = :default)
     $(status_summary(ls.stop; context = context))
     (b) For the Newton sub solver
     $(status_summary(ls.stop_newton; context = context))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(ls))"""
 end
 
 #
@@ -351,7 +348,7 @@ function (c::StopWhenFirstOrderProgress)(
 end
 function status_summary(c::StopWhenFirstOrderProgress; context::Symbol = :default)
     (context == :short) && return repr(c)
-    has_stopped = (c.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     _is_inline(context) && return "First order progress with θ=$(c.θ):$(_MANOPT_INDENT)$s"
     return "A stopping criterion to stop when the Lanczos model has found a certain first order progress with θ=$(c.θ):$(_MANOPT_INDENT)$s"
@@ -409,7 +406,7 @@ function get_reason(c::StopWhenAllLanczosVectorsUsed)
 end
 function status_summary(c::StopWhenAllLanczosVectorsUsed; context::Symbol = :default)
     (context === :short) && return repr(c)
-    has_stopped = (c.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return (context === :inline ? "All $(c.maxLanczosVectors) Lanczos vectors used:$(_MANOPT_INDENT)" : "Stop when all $(c.maxLanczosVectors) Lanczos vectors are used\n$(_MANOPT_INDENT)") * s
 end

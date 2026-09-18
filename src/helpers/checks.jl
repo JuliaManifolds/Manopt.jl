@@ -49,7 +49,7 @@ function check_differential(
     T = exp10.(log_range)
     # points `p_i` to evaluate the error function at
     points = map(t -> ManifoldsBase.retract_fused(M, p, Xn, t, retraction_method), T)
-    costs = [F(M, pi) for pi in points]
+    costs = [F(M, q) for q in points]
     # linearized
     linearized = map(t -> F(M, p) + t * dF(M, p, Xn), T)
     return prepare_check_result(
@@ -295,7 +295,7 @@ function check_Hessian(
     # points `p_i` to evaluate error function at
     points = map(t -> ManifoldsBase.retract_fused(M, p, X_n, t, retraction_method), T)
     # corresponding costs
-    costs = [f(M, pi) for pi in points]
+    costs = [f(M, q) for q in points]
     # linearized
     linearized = map(
         t ->

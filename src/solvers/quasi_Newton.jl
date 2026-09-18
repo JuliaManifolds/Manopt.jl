@@ -153,14 +153,11 @@ function Base.show(io::IO, qns::QuasiNewtonState)
 end
 function status_summary(qns::QuasiNewtonState; context::Symbol = :default)
     (context === :short) && return repr(qns)
-    i = get_count(qns, :Iterations)
     (context === :inline) && return "A solver state for the quasi Newton solver$(_iteration_suffix(qns))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(qns.stop) ? "Yes" : "No"
     as = _callbacks_summary(qns)
     s = """
     # Solver state for `Manopt.jl`s Quasi Newton Method
-    $Iter
+    $(_iterations_str(qns))
     ## Parameters$(as)
     * direction update:        $(status_summary(qns.direction_update; context = :inline))
     * retraction method:       $(qns.retraction_method)
@@ -171,15 +168,13 @@ function status_summary(qns::QuasiNewtonState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(qns.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(qns))"""
     return s
 end
-get_iterate(qns::QuasiNewtonState) = qns.p
 function set_iterate!(qns::QuasiNewtonState, M, p)
     copyto!(M, qns.p, p)
     return qns
 end
-get_gradient(qns::QuasiNewtonState) = qns.X
 function set_gradient!(qns::QuasiNewtonState, M, p, X)
     copyto!(M, qns.X, p, X)
     return qns

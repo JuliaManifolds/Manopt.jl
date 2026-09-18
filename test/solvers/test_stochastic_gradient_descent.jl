@@ -79,8 +79,8 @@ using Manopt, Manifolds, Test
         @test Z == Z5
         X = zero_vector(M, p)
         # summation not easy to implement
-        @test_throws MethodError get_gradient!(dmp1i, X, p)
-        @test_throws MethodError get_gradients(dmp1i, p)
+        @test_throws ErrorException get_gradient!(dmp1i, X, p)
+        @test_throws ErrorException get_gradients(dmp1i, p)
         @test_throws MethodError get_gradient!(dmp1i, Z4, p, 1)
         @test_throws DomainError StochasticGradientDescentState(M; order_type = :WrongSymbol)
         sgds = StochasticGradientDescentState(

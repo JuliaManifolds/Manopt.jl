@@ -21,8 +21,8 @@ using ManifoldDiff: prox_distance, prox_distance!
         )
         @test isapprox(N, q2, q3)
         mpo = ManifoldProximalMapObjective(f, proxes, [1, 2])
-        p = DefaultManoptProblem(N, mpo)
-        @test_throws ErrorException get_proximal_map(p, 1.0, f, 3)
+        dmp = DefaultManoptProblem(N, mpo)
+        @test_throws ErrorException get_proximal_map(dmp, 1.0, q, 3)
         @test_throws ErrorException ManifoldProximalMapObjective(f, proxes, [1, 2, 2])
     end
     @testset "Random order reshuffles" begin

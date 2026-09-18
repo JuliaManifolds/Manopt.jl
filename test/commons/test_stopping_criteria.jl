@@ -133,6 +133,10 @@ end
         @test typeof(e) === typeof((a | b) | c)
         Manopt.set_parameter!(e, :MinGradNorm, 1.0e-9)
         @test e.criteria[3].threshold == 1.0e-9
+        # the gradient mapping criterion takes the same parameter
+        gm = StopWhenGradientMappingNormLess(1.0e-6)
+        Manopt.set_parameter!(gm, :MinGradNorm, 1.0e-3)
+        @test gm.threshold == 1.0e-3
         @test length((e | e).criteria) == 6
     end
 
@@ -261,13 +265,7 @@ end
     @testset "Subgradient Norm Stopping Criterion" begin
         M = Euclidean(2)
         p = [1.0, 2.0]
-        f(M, q) = distance(M, q, p)
-        function ∂f(M, q)
-            if distance(M, p, q) == 0
-                return zero_vector(M, q)
-            end
-            return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
-        end
+        f, ∂f, _ = Manopt.Test.distance_task(M, p)
         mso = ManifoldSubgradientObjective(f, ∂f)
         mp = DefaultManoptProblem(M, mso)
         c2 = StopWhenSubgradientNormLess(1.0e-6)
@@ -424,7 +422,7 @@ end
         @test scp.stopping_criterion.max_iterations == 5
 
         # test that it does not hit at 5
-        @test !sc(mp, st, 5) # still count 0
+        @test !sc(mp, st, 5) # not checked yet, since comp = >(5)
         @test sc(mp, st, 6) # triggers
         @test length(get_reason(sc)) > 0
         sc(mp, st, 0) # reset

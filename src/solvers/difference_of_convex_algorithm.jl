@@ -220,22 +220,19 @@ function Base.show(io::IO, dcs::DifferenceOfConvexState)
 end
 function status_summary(dcs::DifferenceOfConvexState; context::Symbol = :default)
     (context === :short) && return repr(dcs)
-    i = get_count(dcs, :Iterations)
     (context === :inline) && return "A solver state for the difference of convex algorithm$(_iteration_suffix(dcs))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(dcs.stop) ? "Yes" : "No"
     as = _callbacks_summary(dcs)
     sub = _in_str(status_summary(dcs.sub_state; context = context); indent = 1, indent_end = "| ")
     s = """
     # Solver state for `Manopt.jl`s Difference of Convex Algorithm
-    $Iter
+    $(_iterations_str(dcs))
     ## Parameters$(as)
     * sub solver state:
     $(sub)
 
     ## Stopping criterion
     $(_in_str(status_summary(dcs.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(dcs))"""
     return s
 end
 
@@ -462,4 +459,3 @@ function step_solver!(
     !ismissing(get_gradient_function(get_objective(amp))) && get_gradient!(amp, dcs.X, dcs.p)
     return dcs
 end
-get_solver_result(dcs::DifferenceOfConvexState) = dcs.p

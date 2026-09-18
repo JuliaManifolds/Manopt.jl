@@ -212,9 +212,6 @@ end
 #
 #
 # Accessors
-get_iterate(gss::GradientSamplingState) = gss.p
-get_solver_result(gss::GradientSamplingState) = gss.p
-get_gradient(gss::GradientSamplingState) = gss.X
 get_subgradient(gss::GradientSamplingState) = gss.Y
 additional_callbacks(::Type{<:GradientSamplingState}) = [:BeforeSubsolver, :Stepsize, :Subsolver]
 get_callbacks(gss::GradientSamplingState) = gss.callbacks
@@ -239,14 +236,11 @@ end
 
 function status_summary(gss::GradientSamplingState; context::Symbol = :default)
     (context === :short) && return repr(gss)
-    i = get_count(gss, :Iterations)
     (context === :inline) && return "A solver state for the gradient sampling solver$(_iteration_suffix(gss))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(gss.stop) ? "Yes" : "No"
     as = _callbacks_summary(gss)
     s = """
     # Solver state for `Manopt.jl`s Gradient Sampling Algorithm
-    $Iter
+    $(_iterations_str(gss))
     ## Parameters$(as)
     * retraction method:         $(_MANOPT_INDENT)$(gss.retraction_method)
     * sampling radius:           $(_MANOPT_INDENT)$(gss.sampling_radius)
@@ -260,7 +254,7 @@ function status_summary(gss::GradientSamplingState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(gss.stop; context = context); indent = 1, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(gss))"""
     return s
 end
 

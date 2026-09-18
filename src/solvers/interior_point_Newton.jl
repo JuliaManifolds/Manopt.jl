@@ -334,13 +334,11 @@ function InteriorPointNewtonState(
     return InteriorPointNewtonState(M, cmo, sub_problem_, cfs; kwargs...)
 end
 # get & set iterate
-get_iterate(ips::InteriorPointNewtonState) = ips.p
 function set_iterate!(ips::InteriorPointNewtonState, ::AbstractManifold, p)
     ips.p = p
     return ips
 end
 # get & set gradient (not sure if needed?)
-get_gradient(ips::InteriorPointNewtonState) = ips.X
 function set_gradient!(ips::InteriorPointNewtonState, ::AbstractManifold, X)
     ips.X = X
     return ips
@@ -353,15 +351,12 @@ additional_callbacks(::Type{<:InteriorPointNewtonState}) = [:BeforeSubsolver, :S
 get_callbacks(ips::InteriorPointNewtonState) = ips.callbacks
 # pretty print state info
 function status_summary(ips::InteriorPointNewtonState; context::Symbol = :default)
-    i = get_count(ips, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(ips.stop) ? "Yes" : "No"
     (context === :short) && return repr(ips)
     (context === :inline) && return "A solver state for the interior point Newton method$(_iteration_suffix(ips))"
     as = _callbacks_summary(ips)
     s = """
     # Solver state for `Manopt.jl`s Interior Point Newton Method
-    $Iter
+    $(_iterations_str(ips))
     ## Parameters$(as)
     * ρ: $(ips.ρ)
     * σ: $(ips.σ)
@@ -372,7 +367,7 @@ function status_summary(ips::InteriorPointNewtonState; context::Symbol = :defaul
 
     ## Stopping criterion
     $(_in_str(status_summary(ips.stop; context = context); indent = 1, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(ips))"""
     return s
 end
 function Base.show(io::IO, ipns::InteriorPointNewtonState)
@@ -456,7 +451,7 @@ function get_reason(c::StopWhenKKTResidualLess)
     return ""
 end
 function status_summary(swrr::StopWhenKKTResidualLess; context::Symbol = :default)
-    has_stopped = (swrr.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(swrr)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "KKT residual < ε = $(swrr.ε):$(_MANOPT_INDENT)" : "Stop when the KKT residual is less than ε = $(swrr.ε)\n$(_MANOPT_INDENT)") * s
 end
@@ -861,5 +856,3 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     (n > 0) && (ips.λ .+= α .* ips.Z)
     return ips
 end
-
-get_solver_result(ips::InteriorPointNewtonState) = ips.p

@@ -29,8 +29,7 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
         @test length(get_reason(sc3)) > 0
     end
     @testset "Allocating Subgradient" begin
-        f(M, q) = distance(M, q, p)
-        ∂f(M, q) = (distance(M, p, q) == 0) ? zero_vector(M, q) : (-log(M, q, p) / max(10 * eps(Float64), distance(M, p, q)))
+        f, ∂f, _ = Manopt.Test.distance_task(M, p)
         mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
         X = zero_vector(M, p)
         Y = get_subgradient(mp, p)
@@ -75,17 +74,7 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
         @test_logs (:warn,) (:warn,) dw2(mp, pbms, 1)
     end
     @testset "Mutating Subgradient" begin
-        f(M, q) = distance(M, q, p)
-        function ∂f!(M, X, q)
-            d = distance(M, p, q)
-            if d == 0
-                zero_vector!(M, X, q)
-                return X
-            end
-            log!(M, X, q, p)
-            X .*= -1 / max(10 * eps(Float64), d)
-            return X
-        end
+        f, _, ∂f! = Manopt.Test.distance_task(M, p)
         bmom = ManifoldSubgradientObjective(f, ∂f!; evaluation = InplaceEvaluation())
         mp = DefaultManoptProblem(M, bmom)
         X = zero_vector(M, p)
@@ -209,8 +198,7 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
         p = [0.0, 0.0, 0.0, 0.0, 1.0]
         p0 = exp(M, p, [1.0, 0.0, 0.0, 0.0, 0.0])
         pbms = ProximalBundleMethodState(M; p = p0, stopping_criterion = StopAfterIteration(200))
-        f(M, q) = distance(M, q, p)
-        ∂f(M, q) = (distance(M, p, q) == 0) ? zero_vector(M, q) : (-log(M, q, p) / max(10 * eps(Float64), distance(M, p, q)))
+        f, ∂f, _ = Manopt.Test.distance_task(M, p)
         mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
         pbms.p_last_serious = p0
         Manopt.step_solver!(mp, pbms, 1)

@@ -259,7 +259,7 @@ $(_fields(:retraction_method))
 * `last_stepsize`:                 the last step size to start the search with
 $(_fields(:initial_guess))
 * `messages::NamedTuple`:          a named tuple to store possible [`StepsizeMessage`](@ref) about the stepsize search.
-* `stop_when_stepsize_less`:       smallest stepsize when to stop (the last one before is taken)
+* `stop_when_stepsize_less`:       smallest stepsize when to stop, the first one below this bound is taken
 * `stop_when_stepsize_exceeds`:    largest stepsize when to stop.
 * `stop_increasing_at_step`:       last step to increase the stepsize (phase 1),
 * `stop_decreasing_at_step`:       last step size to decrease the stepsize (phase 2),
@@ -1798,7 +1798,7 @@ $(_fields(:retraction_method))
 * `stop_decreasing_at_step`:    last step size to decrease the stepsize (phase 2)
 * `stop_increasing_at_step`:    last step to increase the stepsize (phase 1)
 * `stop_when_stepsize_exceeds`: largest stepsize when to stop
-* `stop_when_stepsize_less`:    smallest stepsize when to stop (the last one before is taken)
+* `stop_when_stepsize_less`:    smallest stepsize when to stop, the first one below this bound is taken
 * `sufficient_decrease`:        sufficient decrease parameter contained in the interval ``(0,1)``
 
 The bounds for the Barzilai-Borwein step size, its `strategy`, its `storage` and the vector
@@ -2059,6 +2059,7 @@ $(_kwargs(:retraction_method))
 * `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M)`: largest stepsize when to stop to avoid leaving the injectivity radius
 * `stop_increasing_at_step=100`:  last step to increase the stepsize (phase 1),
 * `stop_decreasing_at_step=1000`: last step size to decrease the stepsize (phase 2)
+$(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultsFactory, "NonmonotoneLinesearchStepsize"))
 """
@@ -2575,6 +2576,7 @@ $(_doc_WPBL_algorithm)
 * `sufficient_curvature=0.999`
 $(_kwargs(:retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
+* `last_stepsize=0.0`: initial value of the stored last stepsize
 $(_kwargs(:vector_transport_method))
 """
 function WolfePowellBinaryLinesearch(args...; kwargs...)

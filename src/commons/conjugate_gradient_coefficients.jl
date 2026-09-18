@@ -188,9 +188,6 @@ function get_message(cgs::ConjugateGradientDescentState)
     # for now only step size is equipped with messages
     return get_message(cgs.stepsize)
 end
-function get_gradient(cgs::ConjugateGradientDescentState)
-    return cgs.X
-end
 function Base.show(io::IO, cgs::ConjugateGradientDescentState)
     print(io, "ConjugateGradientDescentState(;")
     print(io, " callbacks = $(cgs.callbacks),")

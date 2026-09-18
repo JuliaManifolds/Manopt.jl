@@ -44,7 +44,7 @@ end
 debug for the amount of change of the iterate (stored in `get_iterate` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
-# Keyword parameters
+# Keyword arguments
 
 * `storage=`[`StoreStateAction`](@ref)`( [:Iterate] )`: storage of the previous iterate
 * `prefix="Last Change: "`: prefix of the debug output (ignored if you set `format`)
@@ -106,7 +106,7 @@ print the current cost function value, see [`get_cost`](@ref).
 # Constructors
     DebugCost()
 
-# Parameters
+# Keyword arguments
 
 * `format="f(x): %f"`: format to print the output (`"current cost: %f"` when `long=true`)
 * `io=stdout`: default stream to print the debug to.
@@ -245,6 +245,7 @@ should at least record `:Iterate`, `:X` and `:n`.
 * `format="\$prefix%s"`: format to print the dual residual, using the `prefix` by default
 * `prefix="Dual Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
+* `at_init=false`: whether to print also at initialization
 """
 mutable struct DebugDualResidual <: DebugAction
     io::IO
@@ -542,7 +543,7 @@ end
 @doc """
     DebugIfEntry <: DebugAction
 
-Issue a warning, info, or error if a certain field does _not_ pass a the `check`.
+Issue a warning, info, or error if a certain field does _not_ pass the `check`.
 
 The `message` is printed in this case. If it contains a `@printf` argument identifier,
 that one is filled with the value of the `field`.
@@ -593,7 +594,7 @@ end
 function status_summary(d::DebugIfEntry; context::Symbol = :default)
     (context === :short) && (return repr(d))
     # Inline and default
-    return "A DebugAction printing the entry :$(d.field) of the solver state if $(d.check) of that field is true, in format “$(escape_string(d.msg))” as $(d.type)"
+    return "A DebugAction printing the entry :$(d.field) of the solver state if that field does not pass $(d.check), in format “$(escape_string(d.msg))” as $(d.type)"
 end
 
 @doc """
@@ -640,7 +641,7 @@ end
 debug for the amount of change of the gradient (stored in `get_gradient` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
-# Keyword parameters
+# Keyword arguments
 
 * `storage=`[`StoreStateAction`](@ref)`( [:Iterate, :Gradient] )`: storage of the action for previous data
 * `prefix="Last Change: "`: prefix of the debug output (ignored if you set `format`)
@@ -793,7 +794,7 @@ end
 
     DebugIteration()
 
-# Keyword parameters
+# Keyword arguments
 
 * `format="# %-6d"`: format to print the output
 * `io=stdout`: default stream to print the debug to.
@@ -912,6 +913,7 @@ with the keywords
 * `format="\$prefix%s"`: format to print the primal dual residual, using the `prefix` by default
 * `prefix="PD Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
+* `at_init=false`: whether to print also at initialization
 """
 mutable struct DebugPrimalDualResidual <: DebugAction
     io::IO
@@ -983,6 +985,7 @@ should at least record `:Iterate`, `:X` and `:n`.
 * `format="\$prefix%s"`: format to print the primal residual, using the `prefix` by default
 * `prefix="Primal Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
+* `at_init=false`: whether to print also at initialization
 """
 mutable struct DebugPrimalResidual <: DebugAction
     io::IO
@@ -1236,11 +1239,11 @@ end
     DebugTime()
 
 Measure time and print the intervals. Using `start=true` you can start the timer on construction,
-for example to measure the runtime of an algorithm overall (adding)
+for example to measure the runtime of an algorithm overall.
 
 The measured time is rounded using the given `time_accuracy` and printed after [canonicalization](https://docs.julialang.org/en/v1/stdlib/Dates/#Dates.canonicalize).
 
-# Keyword parameters
+# Keyword arguments
 
 * `io=stdout`:             default stream to print the debug to.
 * `format="\$prefix %s"`:   format to print the output, where `%s` is the canonicalized time.
@@ -1704,12 +1707,12 @@ Generate a [`DebugGroup`](@ref) of [`DebugAction`](@ref)s. The following rules a
 
 1. Any `Symbol` is passed to [`DebugActionFactory`](@ref DebugActionFactory(::Symbol))
 2. Any `(Symbol, String)` generates similar actions as in 1., but the string is used for `format=`,
-   see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,String}))
+   see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,Any}))
 3. Any `String` is passed to [`DebugActionFactory`](@ref)
 4. Any `Function` generates a [`DebugCallback`](@ref).
 5. Any [`DebugAction`](@ref) is included as is.
 
-If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of these is build.
+If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of these is built.
 
 If any integers are present, the last of these is used to wrap the group in a
 [`DebugEvery`](@ref)`(k)`.
@@ -1748,7 +1751,7 @@ create a [`DebugAction`](@ref) where
 * a [`DebugAction`](@ref) is passed through
 * a `Symbol` creates a [`DebugEntry`](@ref) of that symbol, with the exceptions
   listed in [`DebugActionFactory`](@ref DebugActionFactory(::Symbol)).
-* a `Tuple{Symbol,String}` creates a [`DebugEntry`](@ref) of that symbol where the String specifies the format.
+* a `Tuple{Symbol,Any}` creates a [`DebugEntry`](@ref) of that symbol, where the second entry specifies the format.
 * a `<:Function` creates a [`DebugCallback`](@ref) with the function as callback.
 """
 function DebugActionFactory end
@@ -1823,7 +1826,7 @@ function DebugActionFactory(d::Symbol)
     return DebugEntry(d)
 end
 """
-    DebugActionFactory(t::Tuple{Symbol,String})
+    DebugActionFactory(t::Tuple{Symbol,Any})
 
 Convert certain Symbols in the `debug=[ ... ]` vector to [`DebugAction`](@ref)s
 Currently the following ones are done, where the string in `t[2]` is passed as the
