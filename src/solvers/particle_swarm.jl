@@ -251,7 +251,7 @@ Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObj
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `cognitive_weight=1.4`: a cognitive weight factor
 * `inertia=0.65`: the inertia of the particles
-$(_kwargs([:inverse_retraction_method, :retraction_method]))
+$(_kwargs([:inverse_retraction_method, :retraction_method]; p = "swarm[1]"))
 * `social_weight=1.4`: a social weight factor
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenSwarmVelocityLess`](@ref)`(1e-4)"))
 * `swarm_size=100`: swarm size, if it should be generated randomly
