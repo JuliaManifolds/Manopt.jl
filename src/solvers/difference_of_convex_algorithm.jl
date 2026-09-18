@@ -112,8 +112,7 @@ function status_summary(doco::ManifoldDifferenceOfConvexObjective; context::Symb
 end
 
 @doc """
-    DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
-               AbstractManoptSolverState
+    DifferenceOfConvexState <: AbstractSubProblemSolverState
 
 A struct to store the current state of the [`difference_of_convex_algorithm`](@ref).
 It comes in two forms, depending on the realization of the `subproblem`.
@@ -277,9 +276,9 @@ $(_kwargs(:evaluation))
 * `grad_g=missing`:          specify the gradient of `g`. If specified, a subsolver is automatically set up.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)`, plus (when a gradient is provided)$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
 * `g=missing`:               specify the function `g`. If specified, a subsolver is automatically set up.
-* `sub_cost=`[`LinearizedDCCost`](@ref)`(g, p, initial_vector)`: a cost to be used within the default `sub_problem`.
+* `sub_cost=`[`LinearizedDCCost`](@ref)`(g, copy(M, p), copy(M, p, X))`: a cost to be used within the default `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_objective"))
-* `sub_grad=`[`LinearizedDCGrad`](@ref)`(grad_g, p, initial_vector; evaluation=evaluation)`:
+* `sub_grad=`[`LinearizedDCGrad`](@ref)`(grad_g, copy(M, p), copy(M, p, X); evaluation=evaluation)`:
   gradient to be used within the default `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_objective"))
 * `sub_hess`:              (a finite difference approximation using `sub_grad` by default):

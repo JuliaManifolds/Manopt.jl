@@ -298,7 +298,7 @@ using Manopt: estimate_sectional_curvature
         @test get_initial_stepsize(dbt) == 1
         @test startswith(repr(dbt), "DomainBackTrackingStepsize(;")
         @test startswith(Manopt.status_summary(dbt), "A domain backtracking stepsize")
-        # a newly setup stepsize has now message (yet)
+        # a newly set up stepsize has no message yet
         @test Manopt.get_message(dbt) == ""
     end
 

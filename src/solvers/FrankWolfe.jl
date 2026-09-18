@@ -58,7 +58,7 @@ _doc_FW_sub = """
 """
 
 @doc """
-    FrankWolfeState <: AbstractManoptSolverState
+    FrankWolfeState <: AbstractGradientSolverState
 
 A struct to store the current state of the [`Frank_Wolfe_method`](@ref)
 

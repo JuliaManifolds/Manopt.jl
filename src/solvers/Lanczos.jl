@@ -282,7 +282,7 @@ $_math_sc_firstorder
 
 # Fields
 
-* `θ`:      the factor ``θ`` in the second condition
+* `θ`:      the factor ``θ`` in the condition above
 $(_fields(:at_iteration))
 
 # Constructor
@@ -321,7 +321,7 @@ function (c::StopWhenFirstOrderProgress)(
 end
 function get_reason(c::StopWhenFirstOrderProgress)
     if c.at_iteration > 0
-        return "The algorithm has reduced the model grad norm by a factor $(c.θ).\n"
+        return "The model gradient norm dropped below $(c.θ) times the squared norm of the iterate.\n"
     end
     if c.at_iteration == 0 # gradient 0
         return "The gradient of the model is zero.\n"

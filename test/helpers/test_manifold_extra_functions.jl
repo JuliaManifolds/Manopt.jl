@@ -1,8 +1,4 @@
 using Manifolds, Manopt, Test, ManifoldsBase, RecursiveArrayTools
-using LinearAlgebra: I
-
-using Random
-Random.seed!(42)
 # Test the additional manifold functions
 #
 @testset "Additional Manifold functions" begin

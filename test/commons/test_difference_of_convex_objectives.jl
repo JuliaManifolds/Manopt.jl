@@ -8,7 +8,6 @@ using LRUCache, LinearAlgebra, Manifolds, Manopt, Test
     grad_h(M, p) = 2 * log(det(p)) * p
     grad_h!(M, X, p) = (X .= 2 * log(det(p)) * p)
     grad_g(M, p) = 4 * log(det(p))^3 * p
-    grad_g!(M, X, p) = (X .= 4 * log(det(p))^3 * p)
     f(M, p) = g(M, p) - h(M, p)
     grad_f(M, p) = grad_g(M, p) - grad_h(M, p)
     grad_f!(M, X, p) = (X .= grad_g(M, p) - grad_h(M, p))

@@ -224,7 +224,7 @@ $(_args([:M, :f]))
 # Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-$(_kwargs([:inverse_retraction_method, :retraction_method]))
+$(_kwargs([:inverse_retraction_method, :retraction_method]; p = "population.pts[1]"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
 * `α=1.0`: reflection parameter, ``α > 0``
 * `γ=2.0`: expansion parameter, ``γ > 1``

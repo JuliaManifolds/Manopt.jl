@@ -129,7 +129,7 @@ The `outer_norm` has no effect on manifolds that do not consist of components.
         α=1.0, θ=1.3, θ_des=0.5, θ_acc=1.1*θ_des, outer_norm::Union{Missing,Real}=missing
     )
 
-Initializes all fields, where none of them is mandatory. The length is set to ``1.0``.
+Initializes all fields, where none of them is mandatory. The `last_stepsize` is set to ``1.0``.
 
 Since the computation of the convergence monitor ``θ`` requires simplified Newton directions a method for computing them has to be provided.
 This should be implemented as a method of the Newton equation functor that takes `(M, VB, p, p_trial)` as parameters and returns a representation of the (transported) ``F(p_{$(_tex(:rm, "trial"))})``.
@@ -336,6 +336,10 @@ $(_kwargs(:sub_problem; default = "nothing")) That is, you have to provide a met
   `(problem::`[`VectorBundleManoptProblem`](@ref)`, state::VectorBundleNewtonState) -> X` or `(problem, X, state) -> X` to compute the Newton direction.
 $(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)` "))
 $(_kwargs(:X; add_properties = [:as_Memory]))
+
+$(_note(:OtherKeywords))
+
+$(_note(:OutputSection))
 """
 
 @doc "$(doc_vector_bundle_newton)"

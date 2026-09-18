@@ -224,8 +224,8 @@ where
 * ``ω`` denotes the inertia,
 * ``c`` and ``s`` are a cognitive and a social weight, respectively,
 * ``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step
-* $(_math(:VectorTransport)) is a vector transport, and
-* $(_tex(:invretr)) is an inverse retraction
+* ``$(_math(:VectorTransport))`` is a vector transport, and
+* ``$(_tex(:invretr))`` is an inverse retraction
 
 Then the position of the particle is updated as
 
@@ -415,7 +415,7 @@ end
 function status_summary(c::StopWhenSwarmVelocityLess; context::Symbol = :default)
     has_stopped = (c.at_iteration >= 0) && (norm(c.velocity_norms) < c.threshold)
     s = has_stopped ? "reached" : "not reached"
-    return "swarm velocity norm < $(c.threshold):$(_MANOPT_INDENT)$s"
+    return (_is_inline(context) ? "swarm velocity norm < $(c.threshold):$(_MANOPT_INDENT)" : "Stop when the norm of the swarm velocities is less than the threshold $(c.threshold)\n$(_MANOPT_INDENT)") * s
 end
 function Base.show(io::IO, c::StopWhenSwarmVelocityLess)
     return print(io, "StopWhenSwarmVelocityLess($(c.threshold))")

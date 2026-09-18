@@ -157,7 +157,7 @@ given the (two) proximal maps `proxes_f`, see [BergmannPerschSteidl:2016](@cite)
 
 For ``n>2`` proximal maps, the problem is reformulated using the parallel Douglas Rachford:
 a vectorial proximal map on the power manifold ``$(_math(:Manifold))^n`` is introduced as the first
-proximal map and the second proximal map is set to the [`mean`](@extref Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}) (Riemannian center of mass).
+proximal map and the second proximal map is set to the [`mean`](@extref Manifolds :jl:method:`Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}`) (Riemannian center of mass).
 This hence also boils down to two proximal maps, though each evaluates proximal maps in parallel,
 that is, component wise in a vector.
 
@@ -245,8 +245,8 @@ end
 function DouglasRachford!(
         M::AbstractManifold, mpo::O, p;
         callbacks = Dict{Symbol, Function}(),
-        λ::Tλ = (iter) -> 1.0,
-        α::Tα = (iter) -> 0.9,
+        λ::Tλ = k -> 1.0,
+        α::Tα = k -> 0.9,
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
             M, typeof(p)

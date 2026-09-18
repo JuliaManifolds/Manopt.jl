@@ -697,7 +697,7 @@ function step_solver!(amp::AbstractManoptProblem, madss::MeshAdaptiveDirectSearc
     if !(is_successful(madss.poll)) && !(is_successful(madss.search))
         madss.mesh_size /= 4
     elseif madss.mesh_size < 0.25 # else
-        madss.mesh_size *= 4  # Coarsen the mesh but not beyond 1
+        madss.mesh_size *= 4  # Coarsen the mesh but not beyond 1/4
     end
     # Update poll size parameter
     madss.poll_size = n * sqrt(madss.mesh_size)

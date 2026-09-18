@@ -4,6 +4,8 @@
 """
     ProximalPointState{P} <: AbstractManoptSolverState
 
+State for the [`proximal_point`](@ref) solver.
+
 # Fields
 
 $(_fields(:callbacks; add_properties = [:as_dict]))

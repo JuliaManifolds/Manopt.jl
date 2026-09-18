@@ -348,7 +348,7 @@ Given a `cost` function ``\mathcal E: \mathcal M → \overline{ℝ}`` of the for
 \mathcal E(p) = F(p) + G( Λ(p) ),
 ```
 where ``F: \mathcal M → \overline{ℝ}``, ``G: \mathcal N → \overline{ℝ}``,
-and ``Λ: \mathcal M → \mathcal N``. The remaining input parameters are
+and ``Λ: \mathcal M → \mathcal N``.
 """
 
 _doc_PDSN = """
@@ -359,6 +359,11 @@ Perform the Primal-Dual Riemannian semismooth Newton algorithm.
 
 $(_doc_PDSN_formula)
 
+# Input
+
+$(_args(:M))
+$(_args(:M; name = "N", M = "N"))
+$(_args(:f; name = "cost"))
 * `p, X`:                          primal and dual start points ``p∈$(_math(:Manifold))`` and ``X ∈ T_n$(_math(:Manifold, M = "N"))``
 * `m,n`:                           base points on ``$(_math(:Manifold))`` and ``$(_math(:Manifold, M = "N"))``, respectively.
 * `linearized_forward_operator`:   the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.

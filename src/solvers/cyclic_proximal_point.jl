@@ -1,7 +1,7 @@
 @doc """
     CyclicProximalPointState <: AbstractManoptSolverState
 
-stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
+State for the [`cyclic_proximal_point`](@ref) solver.
 
 # Fields
 
@@ -16,7 +16,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 
     CyclicProximalPointState(M::AbstractManifold; kwargs...)
 
-Generate the options
+Generate the state
 
 ## Input
 

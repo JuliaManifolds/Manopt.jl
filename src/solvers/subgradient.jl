@@ -104,7 +104,7 @@ _doc_SGM = """
     subgradient_method!(M, f, ∂f, p; kwargs...)
     subgradient_method!(M, sgo, p; kwargs...)
 
-perform a subgradient method ``p^{(k+1)} = $(_tex(:retr))\\bigl(p^{(k)}, -s^{(k)}∂f(p^{(k)})\\bigr)``,
+perform a subgradient method ``p^{(k+1)} = $(_tex(:retr))_{p^{(k)}}\\bigl(-s^{(k)}∂f(p^{(k)})\\bigr)``,
 where ``$(_tex(:retr))`` is a retraction, ``s^{(k)}`` is a step size.
 
 Though the subgradient might be set valued,
@@ -127,11 +127,9 @@ $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`SubGradientMe
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(5000)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 
-and the ones that are passed to [`decorate_state!`](@ref) for decorators.
+$(_note(:OtherKeywords))
 
-# Output
-
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_SGM)"

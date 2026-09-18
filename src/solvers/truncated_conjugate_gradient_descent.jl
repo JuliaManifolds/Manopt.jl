@@ -11,6 +11,8 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 * `δ::T`:                     the conjugate gradient search direction
 * `δHδ`, `YPδ`, `δPδ`, `YPY`: temporary inner products with `Hδ` and preconditioned inner products.
 * `Hδ`, `HY`:                 temporary results of the Hessian applied to `δ` and `Y`, respectively.
+* `initialResidualNorm`:      the norm of the residual at initialization, used in [`StopWhenResidualIsReducedByFactorOrPower`](@ref)
+* `model_value::R`:           the value of the model ``m(Y)`` without its constant term ``f(p)``, used in [`StopWhenModelIncreased`](@ref)
 * `project!`:                 for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 * `randomize`:          whether to start from the given tangent vector (`true`, without preconditioning) or from the zero vector (`false`)

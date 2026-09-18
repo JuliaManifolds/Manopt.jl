@@ -1,5 +1,5 @@
 @doc """
-    ExactPenaltyMethodState{P,T} <: AbstractManoptSolverState
+    ExactPenaltyMethodState{P,T} <: AbstractSubProblemSolverState
 
 Describes the exact penalty method, with
 
@@ -46,7 +46,7 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 * `ϵ=1e-3`
 * `ϵ_exponent=1 / 100`: a shortcut for the scaling factor ``θ_ϵ``
 * `ϵ_min=1e-6`
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(M, 1.0e-10) )"))
 * `θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent)`
 
 # See also
@@ -250,7 +250,7 @@ $(_kwargs(:evaluation))
 * `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
    If not provided, a call to the gradient of `g` is performed to estimate these.
 * `smoothing=`[`LogarithmicSumOfExponentials`](@ref): a [`SmoothingTechnique`](@ref) to use
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(M, 1.0e-10) )"))
 * `sub_cost=`[`ExactPenaltyCost`](@ref)`(cmo, ρ, u; smoothing=smoothing)`: cost to use in the sub solver.
   $(_note(:KeywordUsedIn, "sub_problem"))
 * `sub_grad=`[`ExactPenaltyGrad`](@ref)`(cmo, ρ, u; smoothing=smoothing)`: gradient to use in the sub solver.

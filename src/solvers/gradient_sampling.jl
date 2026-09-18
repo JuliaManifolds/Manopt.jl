@@ -245,15 +245,15 @@ function status_summary(gss::GradientSamplingState; context::Symbol = :default)
     * retraction method:         $(_MANOPT_INDENT)$(gss.retraction_method)
     * sampling radius:           $(_MANOPT_INDENT)$(gss.sampling_radius)
     * sampling radius reduction: $(_MANOPT_INDENT)$(gss.sampling_radius_reduction)
-    * subgradient_norm_reduction:$(_MANOPT_INDENT)$(gss.subgradient_norm_reduction)
-    * subgradient_norm_tolerance:$(_MANOPT_INDENT)$(gss.subgradient_norm_tolerance)
+    * subgradient norm reduction:$(_MANOPT_INDENT)$(gss.subgradient_norm_reduction)
+    * subgradient norm tolerance:$(_MANOPT_INDENT)$(gss.subgradient_norm_tolerance)
     * vector transport method:   $(_MANOPT_INDENT)$(gss.vector_transport_method)
 
     ## Stepsize
-    $(_in_str(status_summary(gss.stepsize; context = context); indent = 1, headers = 1))
+    $(_in_str(status_summary(gss.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-    $(_in_str(status_summary(gss.stop; context = context); indent = 1, headers = 1))
+    $(_in_str(status_summary(gss.stop; context = context); indent = 0, headers = 1))
     The algorithm converged: $(_converged_str(gss))"""
     return s
 end

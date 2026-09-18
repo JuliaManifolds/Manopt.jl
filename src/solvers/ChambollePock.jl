@@ -128,7 +128,7 @@ the forward operator `Λ` of the objective for the algorithm to work
 
     ChambollePockState(M::AbstractManifold, N::AbstractManifold;
         kwargs...
-    ) where {P, Q, T, R <: Real}
+    )
 
 # Keyword arguments
 
@@ -262,7 +262,7 @@ function show(io::IO, cps::ChambollePockState)
 end
 function status_summary(cps::ChambollePockState; context::Symbol = :default)
     (context === :short) && return repr(cps)
-    (context === :inline) && return "A solver state for Chambolle-Pock algorithm$(_iteration_suffix(cps))"
+    (context === :inline) && return "A solver state for the Chambolle-Pock algorithm$(_iteration_suffix(cps))"
     as = _callbacks_summary(cps)
     s = """
     # Solver state for `Manopt.jl`s Chambolle-Pock Algorithm
@@ -272,7 +272,7 @@ function status_summary(cps::ChambollePockState; context::Symbol = :default)
     * dual_stepsize:    $(cps.dual_stepsize)
     * acceleration:     $(cps.acceleration)
     * relaxation:       $(cps.relaxation)
-    * relax:            $(cps.relax)
+    * relax:            :$(cps.relax)
     * variant:          :$(cps.variant)
     * retraction_method:              $(cps.retraction_method)
     * inverse_retraction_method:      $(cps.inverse_retraction_method)
@@ -318,13 +318,13 @@ This can be done inplace of ``p``.
  # Input parameters
 
 $(_args(:M))
-$(_args(:M; name = "N"))
+$(_args(:M; name = "N", M = "N"))
 $(_args(:f))
 $(_args(:p))
 $(_args(:X; M = "N", p = "n"))
 $(_args(:p; name = "m"))
 $(_args(:p; name = "n", M = "N"))
-* `adjoint_linearized_operator`:  the adjoint ``DΛ^*`` of the linearized operator ``$(_tex_DΛ)``
+* `adjoint_linear_operator`:      the adjoint ``DΛ^*`` of the linearized operator ``$(_tex_DΛ)``
 * `prox_F, prox_G_dual`:          the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 
 If the forward operator `Λ` is provided, this performs the exact Riemannian Chambolle Pock algorithm;
@@ -351,6 +351,8 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)"))
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
 $(_kwargs([:retraction_method, :vector_transport_method]))
 $(_kwargs(:vector_transport_method; name = "vector_transport_method_dual", M = "N", p = "n"))
+
+$(_note(:OtherKeywords))
 
 $(_note(:OutputSection))
 """

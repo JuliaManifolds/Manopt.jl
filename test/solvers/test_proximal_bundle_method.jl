@@ -35,8 +35,7 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
         Y = get_subgradient(mp, p)
         get_subgradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
-        oR = solve!(mp, pbms)
-        xHat = get_solver_result(oR)
+        solve!(mp, pbms)
         # Check Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test norm(M, p, get_subgradient(mp, p)) == 0
@@ -81,8 +80,7 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
         Y = get_subgradient(mp, p)
         get_subgradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
-        sr = solve!(mp, pbms)
-        xHat = get_solver_result(sr)
+        solve!(mp, pbms)
         # Test Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test norm(M, p, get_subgradient(mp, p)) == 0

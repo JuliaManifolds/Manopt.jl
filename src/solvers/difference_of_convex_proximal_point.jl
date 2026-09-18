@@ -351,6 +351,7 @@ $(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objec
 $(_kwargs(:sub_state; default = "`([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hess` is provided`)"))
 $(_kwargs(:stopping_criterion; name = "sub_stopping_criterion", default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
   $(_note(:KeywordUsedIn, "sub_state"))
+$(_kwargs(:X; add_properties = [:as_Memory]))
 
 $(_note(:OtherKeywords))
 

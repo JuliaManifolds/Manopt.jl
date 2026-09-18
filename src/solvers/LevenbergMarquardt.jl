@@ -47,6 +47,7 @@ Describes the state of the Riemannian Levenberg-Marquardt solver, with
   is required to accept a new point; if this is not met, the new point is rejected and
   the damping term is increased.
 $(_fields(:p; add_properties = [:as_Iterate]))
+* `q`:                                    a point for the candidate to evaluate the cost at
 $(_fields(:retraction_method))
 * `residual_values`:                       values of the residuals calculated in the solver setup or the previous iteration
 $(_fields(:stopping_criterion; name = "stop"))
@@ -263,6 +264,7 @@ as well as when these are already combined in a single [`VectorGradientFunction`
 
 as well as in general using the model improvement parameter ``m_k`` in several places, cf [BaranBergmann:2026](@cite)
 
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 * `candidate_acceptance_threshold=0.2`: sufficient model improvement ``η ∈ (0,1)``, i.e. ``m_k ≥ η`` to accept a candidate point
 * `damping_increase_factor=5.0`:        factor ``β_{$(_tex(:text, "i"))}`` to increase damping, when the model is inaccurate
 * `damping_increase_threshold=candidate_acceptance_threshold`: threshold ``η_{$(_tex(:text, "l"))}`` the value ``m_k`` has to be below to increase damping.

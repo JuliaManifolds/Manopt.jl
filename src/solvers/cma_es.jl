@@ -217,7 +217,7 @@ function status_summary(s::CMAESState; context::Symbol = :default)
     (context === :short) && return repr(s)
     (context === :inline) && return "A solver state for the covariance matrix adaptation evolutionary strategy solver$(_iteration_suffix(s))"
     as = _callbacks_summary(s)
-    s = """
+    return """
     # Solver state for `Manopt.jl`s Covariance Matrix Adaptation Evolutionary Strategy
     $(_iterations_str(s))
     ## Parameters$(as)
@@ -246,12 +246,11 @@ function status_summary(s::CMAESState; context::Symbol = :default)
     ## Stopping criterion
     $(_in_str(status_summary(s.stop; context = context); indent = 0, headers = 1))
     The algorithm converged: $(_converged_str(s))"""
-    return s
 end
 #
 # Access functions
 #
-get_iterate(pss::CMAESState) = pss.p
+get_iterate(s::CMAESState) = s.p
 
 function initialize_solver!(::AbstractManoptProblem, s::CMAESState)
     s.covariance_matrix_eigen = eigen(Symmetric(s.covariance_matrix))
@@ -294,7 +293,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, k::Int)
     for (i, fitness) in enumerate(fitness_vals)
         if fitness < s.p_obj
             s.p_obj = fitness
-            copyto!(s.p, s.population[i])
+            copyto!(M, s.p, s.population[i])
         end
     end
 
@@ -390,7 +389,7 @@ $(_args([:M, :f, :p]))
   absolute difference between subsequent point but actually computed from distribution
   parameters.
 $(_kwargs(:stopping_criterion; default = "default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)"))
-$(_kwargs(:callbacks; add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs([:retraction_method, :vector_transport_method]))
 * `basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: a basis used to represent the covariance matrix in coordinates
 * `rng=default_rng()`: random number generator for generating new points on `M`

@@ -47,8 +47,8 @@ function get_parameter(pgnc::ProximalGradientNonsmoothCost, ::Val{:proximity_poi
     return pgnc.proximity_point
 end
 
-function (pgnc::ProximalGradientNonsmoothCost)(M::AbstractManifold, p)
-    return pgnc.cost(M, p) + 1 / (2 * pgnc.λ) * distance(M, p, pgnc.proximity_point)^2
+function (pgnc::ProximalGradientNonsmoothCost)(M::AbstractManifold, q)
+    return pgnc.cost(M, q) + 1 / (2 * pgnc.λ) * distance(M, q, pgnc.proximity_point)^2
 end
 
 @doc """
@@ -92,8 +92,8 @@ function get_parameter(pgns::ProximalGradientNonsmoothSubgradient, ::Val{:proxim
     return pgns.proximity_point
 end
 # Default, compute the subgradient of the proximal map given the subgradient of the nonsmooth part X
-function (pgng::ProximalGradientNonsmoothSubgradient)(M::AbstractManifold, p)
-    return pgng.X(M, p) - 1 / pgng.λ * log(M, p, pgng.proximity_point)
+function (pgng::ProximalGradientNonsmoothSubgradient)(M::AbstractManifold, q)
+    return pgng.X(M, q) - 1 / pgng.λ * log(M, q, pgng.proximity_point)
 end
 
 #
@@ -519,10 +519,10 @@ $(_args(:M))
 
 # Keyword arguments
 
-* `β = k -> (k-1)/(k+2)` - acceleration parameter function `k -> β_k`
-* `inverse_retraction_method` - method for inverse retraction
-* `p` - initial point
-* `X` - initial tangent vector
+* `β=k -> (k-1)/(k+2)`: the acceleration parameter function `k -> β_k`
+$(_kwargs(:inverse_retraction_method))
+* `p=rand(M)`: the last iterate, which the acceleration step inverse retracts to
+$(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct ProximalGradientMethodAcceleration{P, T, F, ITR <: AbstractInverseRetractionMethod}
     β::F

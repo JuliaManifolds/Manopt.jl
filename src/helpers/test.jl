@@ -169,9 +169,7 @@ function adjoint_differential_forward_logs!(
 end
 function differential_forward_logs(M::PowerManifold, p, X)
     power_size = power_dimensions(M)
-    R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
-    maxInd = last(R).I
     d2 = (d > 1) ? ones(Int, d + 1) + (d - 1) * (1:(d + 1) .== d + 1) : 1
     if d > 1
         N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size..., d)

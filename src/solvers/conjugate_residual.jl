@@ -33,7 +33,7 @@ Initialize the state with default values.
 * `α::R=0.0`
 * `β::R=0.0`
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M = "TpM"))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:X; default = _open_link(:rand; M = "TpM")))
 * `warm_start=true`: whether to reuse the values in `X` for the initialization (`true`) or to start from the zero vector (`false`), see the field description above.
 
@@ -242,9 +242,11 @@ Note that the right hand side of Step 7 is the same as evaluating ``$(_tex(:Cal,
 
 $(_kwargs(:evaluation))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M = "TpM"))`)`$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)"))
   where ``c = $(_tex(:norm, "b"))`` is the norm of the vector field `b` at `p`.
 * `warm_start=true`: whether to reuse the initial `X` to warm start the solver (`true`) or to start from the zero vector (`false`), see [`ConjugateResidualState`](@ref).
+
+$(_note(:OtherKeywords))
 
 $(_note(:OutputSection))
 """

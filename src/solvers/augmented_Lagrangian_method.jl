@@ -4,7 +4,7 @@
 
 _sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min) `$(_sc(:All))` `[`StopWhenChangeLess`](@ref)`(M, 1.0e-10))`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1.0e-10)`"
 @doc """
-    AugmentedLagrangianMethodState{P,T} <: AbstractManoptSolverState
+    AugmentedLagrangianMethodState{P,T} <: AbstractSubProblemSolverState
 
 Describes the augmented Lagrangian method, with
 
@@ -300,7 +300,7 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `ϵ_exponent=1/100`: exponent of the ϵ update factor;
   also 1/number of iterations until maximal accuracy is needed to end algorithm naturally
 
-  * `equality_constraints=nothing`: the number ``n`` of equality constraints.
+* `equality_constraints=nothing`: the number ``n`` of equality constraints.
   If not provided, a call to the gradient of `h` is performed to estimate these.
 
 * `gradient_range=nothing`: specify how both gradients of the constraints are represented
