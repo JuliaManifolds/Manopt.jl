@@ -1160,6 +1160,9 @@ function HybridCoefficientRule(
         lower_bound::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = SteepestDescentCoefficient(),
         lower_bound_scale::Real = 1.0
     )
+    length(coefficients) == 0 && throw(
+        ArgumentError("A `HybridCoefficient` requires at least one coefficient to take the minimum of.")
+    )
     p_init = maybe_wrap_variable(p)
     coefficients_new = [DirectionUpdateRuleStorage(M, _produce_type(c, M); p_init = p_init) for c in coefficients]
     lower_bound_new = DirectionUpdateRuleStorage(M, _produce_type(lower_bound, M); p_init = p_init)
@@ -1313,6 +1316,9 @@ at the current iterate ``p``.
 """
 struct RestartOnNonSufficientDescent{F <: Real} <: AbstractRestartCondition
     κ::F
+end
+function show(io::IO, corr::RestartOnNonSufficientDescent)
+    return print(io, "RestartOnNonSufficientDescent($(corr.κ))")
 end
 function (corr::RestartOnNonSufficientDescent)(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k

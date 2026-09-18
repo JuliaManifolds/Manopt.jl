@@ -156,6 +156,13 @@ end
     @test isnan(get_initial_stepsize(s4)) # no initial step size is stored
     @test startswith(Manopt.status_summary(s4), "A Wolfe Powell line search")
     @test Manopt.get_message(s4) == ""
+    # the returned step fulfills both Wolfe conditions and is stored
+    α4 = s4(dmp3, gds3, 1, -gds3.X)
+    q4 = gds3.p .- α4 .* gds3.X
+    d0 = -norm(gds3.X)^2
+    @test f3(M, q4) <= f3(M, gds3.p) + 1.0e-4 * α4 * d0
+    @test -grad_f3(M, q4)' * gds3.X >= 0.999 * d0
+    @test get_last_stepsize(s4) == α4
     @testset "Armijo setter / getters" begin
         # Check that the passdowns work, though; since the defaults are functions, they return nothing
         @test isnothing(Manopt.get_parameter(s, :IncreaseCondition, :Dummy))
@@ -279,6 +286,10 @@ end
         X = grad_f(M, p)
         # Create stepsize with factory
         bb = BarzilaiBorwein()(M) #
+        # the factory hands the point on, so the buffers take its representation
+        bb32 = Manopt._produce_type(BarzilaiBorwein(), M, Float32[2.0, 2.0])
+        @test eltype(bb32.s) === Float32
+        @test eltype(bb32.y) === Float32
         gds = GradientDescentState(M; p = p, stepsize = bb)
         # Check both modes to use BB
         # (1) vector transport when providing a last stepsize – no history -> max
@@ -566,7 +577,9 @@ end
                 max_bracket_iterations = 1,
             )
             α_b1 = hzls_b1(dmp, gs, 1, η)
-            @test α_b1 > 0
+            # positive slope at the first trial step, so bracketing stops with it
+            @test α_b1 == 0.75
+            @test hzls_b1.last_evaluation_index == 2
         end
         @testset "B2 bracketing test" begin
             M = Euclidean(1)
@@ -585,7 +598,9 @@ end
                 max_bracket_iterations = 2,
             )
             α = hzls_b2(dmp, gs, 1, η)
-            @test α > 0
+            # the step and the number of evaluations this branch produces
+            @test α == 0.015625
+            @test hzls_b2.last_evaluation_index == 6
         end
         @testset "B3 bracketing test" begin
             M = Euclidean(1)
@@ -604,7 +619,9 @@ end
                 max_bracket_iterations = 2,
             )
             α = hzls_b3(dmp, gs, 1, η)
-            @test α > 0
+            # the step and the number of evaluations this branch produces
+            @test α == 2.0
+            @test hzls_b3.last_evaluation_index == 3
         end
         @testset "U1 trigger test" begin
             M = Euclidean(1)
@@ -622,7 +639,9 @@ end
             )
             # We expect U1 to be triggered during the update (secant is exact, slope 0 >= 0)
             α = hzls_u1(dmp, gs, 1, η)
-            @test α > 0
+            # the step and the number of evaluations this branch produces
+            @test α == 1.0
+            @test hzls_u1.last_evaluation_index == 3
         end
         @testset "U2 trigger test" begin
             M = Euclidean(1)
@@ -664,7 +683,9 @@ end
                 M; initial_guess = Manopt.ConstantInitialGuess(1.0), max_function_evaluations = 3
             )
             α = hzls_u2(dmp, gs, 1, η)
-            @test α > 0
+            # the step and the number of evaluations this branch produces
+            @test α == 0.5
+            @test hzls_u2.last_evaluation_index == 3
         end
         @testset "U3 trigger test" begin
             M = Euclidean(1)
@@ -707,7 +728,9 @@ end
                 M; initial_guess = Manopt.ConstantInitialGuess(1.0), max_function_evaluations = 5
             )
             α = hzls_u3(dmp, gs, 1, η)
-            @test α > 0
+            # the step and the number of evaluations this branch produces
+            @test α == 0.125
+            @test hzls_u3.last_evaluation_index == 5
         end
         @testset "U3 (b) trigger test" begin
             M = Euclidean(1)
@@ -875,7 +898,9 @@ end
             )
             # We expect the S2 log
             α = hzls_s2(dmp, gs, 1, η)
-            @test α > 0
+            # the step and the number of evaluations this branch produces
+            @test α ≈ 2.7387570112179483e-6
+            @test hzls_s2.last_evaluation_index == 20
         end
 
         @testset "S3 trigger test" begin

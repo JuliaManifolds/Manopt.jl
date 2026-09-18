@@ -322,7 +322,7 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
             additional_decrease_condition::DF = (M, p) -> true, additional_increase_condition::IF = (M, p) -> true,
             candidate_point::P = allocate_result(M, rand),
             contraction_factor::Real = 0.95, initial_stepsize::Real = 1.0, last_stepsize::Real = initial_stepsize,
-            initial_guess::IGF = ArmijoInitialGuess(), retraction_method::TRM = default_retraction_method(M),
+            initial_guess::IGF = ArmijoInitialGuess(), retraction_method::TRM = default_retraction_method(M, typeof(candidate_point)),
             stop_when_stepsize_less::Real = 0.0, stop_when_stepsize_exceeds::Real = max_stepsize(M),
             stop_increasing_at_step::Integer = 100, stop_decreasing_at_step::Integer = 1000,
             sufficient_decrease::Real = 0.1,
@@ -765,6 +765,9 @@ mutable struct BarzilaiBorweinStepsize{
         )
     end
 end
+function BarzilaiBorweinStepsize(M::AbstractManifold, p; kwargs...)
+    return BarzilaiBorweinStepsize(M; p = p, kwargs...)
+end
 function (bb::BarzilaiBorweinStepsize)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int, η = (-get_gradient(mp, get_iterate(s)));
         gradient = nothing, last_stepsize = nothing, kwargs...
@@ -926,7 +929,7 @@ $(_kwargs([:vector_transport_method, :X]))
 $(_note(:ManifoldDefaultsFactory, "BarzilaiBorweinStepsize"))
 """
 function BarzilaiBorwein(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.BarzilaiBorweinStepsize, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.BarzilaiBorweinStepsize, args...; requires_point = true, kwargs...)
 end
 
 """
@@ -1081,13 +1084,13 @@ mutable struct CubicBracketingLinesearchStepsize{
             candidate_direction::T = zero_vector(M, candidate_point),
             temporary_tangent = zero_vector(M, candidate_point),
             initial_stepsize::Real = 1.0,
-            retraction_method::TRM = default_retraction_method(M),
+            retraction_method::TRM = default_retraction_method(M, typeof(candidate_point)),
             stepsize_increase::Real = 1.5,
             max_iterations::I = 100,
             sufficient_curvature::Real = 0.2,
             min_bracket_width::Real = 1.0e-4,
             hybrid::Bool = true,
-            vector_transport_method::VTM = default_vector_transport_method(M),
+            vector_transport_method::VTM = default_vector_transport_method(M, typeof(candidate_point)),
             max_stepsize::Real = max_stepsize(M),
         ) where {I <: Integer, TRM, VTM, P, T}
         # “Unify” the type of these bounds, since they share a type parameter
@@ -2281,9 +2284,6 @@ function (a::WolfePowellLinesearchStepsize)(
     f0 = get_cost(mp, p)
     ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
     fNew = get_cost(mp, a.candidate_point)
-    vector_transport_to!(
-        M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
-    )
     # Temp tangent vector
     Y = zero_vector(M, a.candidate_point)
     if fNew > f0 + a.sufficient_decrease * step * l

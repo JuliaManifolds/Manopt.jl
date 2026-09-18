@@ -247,6 +247,31 @@ using ManifoldDiff: grad_distance
         @test isapprox(f(M, x_opt3), minimum(eigvals(A)); atol = 2.0 * 1.0e-2)
     end
 
+    @testset "Allocating and in-place gradients agree for every coefficient" begin
+        A = Diagonal([2.0, 1.1, 1.0])
+        M = Sphere(size(A, 1) - 1)
+        f(::Sphere, p) = p' * A * p
+        grad_f(M, p) = project(M, p, 2 * A * p)
+        grad_f!(M, X, p) = project!(M, X, p, 2 * A * p)
+        p0 = [2.0, 0.0, 2.0] / sqrt(8.0)
+        sc = StopAfterIteration(15)
+        for c in [
+                SteepestDescentCoefficient(), ConjugateDescentCoefficient(),
+                DaiYuanCoefficient(), FletcherReevesCoefficient(), HagerZhangCoefficient(),
+                HestenesStiefelCoefficient(), LiuStoreyCoefficient(), PolakRibiereCoefficient(),
+                HybridCoefficient(FletcherReevesCoefficient(), PolakRibiereCoefficient()),
+                ConjugateGradientBealeRestart(HagerZhangCoefficient()),
+            ]
+            q1 = conjugate_gradient_descent(
+                M, f, grad_f, p0; coefficient = c, stopping_criterion = sc
+            )
+            q2 = conjugate_gradient_descent(
+                M, f, grad_f!, p0; coefficient = c, stopping_criterion = sc,
+                evaluation = InplaceEvaluation(),
+            )
+            @test q1 == q2
+        end
+    end
     @testset "CG on complex manifolds" begin
         M = Euclidean(2; field = ℂ)
         A = [2 im; -im 2]

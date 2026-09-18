@@ -674,7 +674,7 @@ function (c::StopWhenCostLess)(
         c.at_iteration = -1
     end
     c.last_cost = get_cost(p, s)
-    if c.last_cost < c.threshold
+    if (k >= 0) && (c.last_cost < c.threshold)
         c.at_iteration = k
         return true
     end
@@ -734,7 +734,7 @@ function (c::StopWhenCostNaN)(
         c.at_iteration = -1
     end
     # but still verify whether it yields NaN
-    if isnan(get_cost(p, s))
+    if (k >= 0) && isnan(get_cost(p, s))
         c.at_iteration = k
         return true
     end
@@ -1733,7 +1733,7 @@ function (c::StopWhenSmallerOrEqual)(
     if k == 0 # reset on init
         c.at_iteration = -1
     end
-    if getfield(s, c.value) <= c.minValue
+    if (k >= 0) && (getfield(s, c.value) <= c.minValue)
         c.at_iteration = k
         return true
     end

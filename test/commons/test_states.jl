@@ -23,7 +23,7 @@ Manopt.get_message(::MessageTestState) = "sub message"
         a = ArmijoLinesearch(; initial_stepsize = 1.0)(M)
         @test get_last_stepsize(a) == 1.0
         @test get_initial_stepsize(a) == 1.0
-        Manopt.set_parameter!(s, :Dummy, 1)
+        @test Manopt.set_parameter!(s, :Dummy, 1) === s
     end
 
     @testset "Decreasing Stepsize" begin

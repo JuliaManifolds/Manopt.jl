@@ -56,7 +56,7 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         @test repr(HestenesStiefelCoefficient()(M)) ==
             "Manopt.HestenesStiefelCoefficientRule(; vector_transport_method=$pt)"
         # Requires a manifold
-        @test_throws MethodError HestenesStiefelCoefficient()()
+        @test_throws ArgumentError HestenesStiefelCoefficient()() # needs a manifold
         @test repr(PolakRibiereCoefficient()(M)) ==
             "Manopt.PolakRibiereCoefficientRule(; vector_transport_method=$(pt))"
         cgbr = Manopt.ConjugateGradientBealeRestartRule(
@@ -69,6 +69,10 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         @test repr(LiuStoreyCoefficient(M)()) ==
             "Manopt.LiuStoreyCoefficientRule(; vector_transport_method=$pt)"
         hcs = repr(HybridCoefficient(PolakRibiereCoefficient(), FletcherReevesCoefficient())(M))
+        # at least one coefficient is required
+        @test_throws ArgumentError HybridCoefficient()(M)
+        # the restart condition prints its constructor call
+        @test repr(RestartOnNonSufficientDescent(0.5)) == "RestartOnNonSufficientDescent(0.5)"
         @test contains(hcs, "Manopt.HybridCoefficientRule")
         @test contains(hcs, "Manopt.PolakRibiereCoefficientRule")
         @test contains(hcs, "Manopt.FletcherReevesCoefficientRule")

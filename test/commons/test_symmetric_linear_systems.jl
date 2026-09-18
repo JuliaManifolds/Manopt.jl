@@ -17,17 +17,17 @@ end
     Am = [2.0 1.0; 1.0 4.0]
     bv = [1.0, 2.0]
     X0 = [3.0, 4.0]
-    A(TpM, X, V) = Am * V
-    b(TpM, p) = bv
-    A!(M, W, X, V) = (W .= Am * V)
-    b!(M, W, p) = (W .= bv)
+    A(M, p, X) = Am * X
+    b(M, p) = bv
+    A!(M, Y, p, X) = (Y .= Am * X)
+    b!(M, Y, p) = (Y .= bv)
 
     slso = SymmetricLinearSystemObjective(A, b)
     slso2 = SymmetricLinearSystemObjective(A!, b!; evaluation = InplaceEvaluation())
     @testset "Objective" begin
-        grad_value = A(TpM, p, X0) + b(TpM, p)
+        grad_value = A(M, p, X0) + b(M, p)
         # the cost is the quadratic model 1/2⟨X, A[X]⟩ + ⟨b, X⟩, whose gradient is A[X] + b
-        cost_value = 0.5 * inner(M, p, X0, A(TpM, p, X0)) + inner(M, p, b(TpM, p), X0)
+        cost_value = 0.5 * inner(M, p, X0, A(M, p, X0)) + inner(M, p, b(M, p), X0)
         @test get_cost(TpM, slso, X0) ≈ cost_value
         @test get_cost(TpM, slso2, X0) ≈ cost_value
 
@@ -56,7 +56,7 @@ end
         @test get_gradient!(TpM, Y0, slso2, X0) == grad_value
         @test Y0 == grad_value
 
-        hessAX0 = A(TpM, p, X0)
+        hessAX0 = A(M, p, X0)
         @test get_hessian(TpM, slso, p, X0) == hessAX0
         @test get_hessian(TpM, slso2, p, X0) == hessAX0
         zero_vector!(TpM, Y0, X0)

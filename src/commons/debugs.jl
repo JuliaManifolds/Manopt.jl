@@ -166,8 +166,9 @@ function status_summary(di::DebugDivider; context::Symbol = :default)
     # inline and default
     return "A DebugAction printing the String “$(escape_string(di.divider))” as a divider"
 end
-# A global constant for empty debugs
-const _EMPTY_DIVIDER = DebugDivider("")
+# A global constant for empty debugs; `devnull` because it never prints and, unlike `stdout`,
+# survives being serialized into the precompiled image
+const _EMPTY_DIVIDER = DebugDivider(""; io = devnull)
 
 """
     DebugDualChange(; kwargs...)
@@ -220,7 +221,7 @@ function (d::DebugDualChange)(
     return d.storage(tmp, apds, k)
 end
 function show(io::IO, ddc::DebugDualChange)
-    return print(io, "DebugDualChange(; io = ", ddc.io, ", format=\"$(escape_string(ddc.format))\")")
+    return print(io, "DebugDualChange(; format=\"$(escape_string(ddc.format))\")")
 end
 function status_summary(ddc::DebugDualChange; context::Symbol = :default)
     (context === :short) && return repr(ddc)
@@ -286,7 +287,7 @@ function (d::DebugDualResidual)(
     return d.storage(tmp, apds, k)
 end
 function show(io::IO, d::DebugDualResidual)
-    return print(io, "DebugDualResidual(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
+    return print(io, "DebugDualResidual(; format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
 end
 function status_summary(d::DebugDualResidual; context::Symbol = :default)
     (context === :short) && return repr(d)
@@ -336,7 +337,7 @@ Print the dual variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set to display the field `X` of the state.
 """
-DebugDualIterate(opts...; kwargs...) = DebugEntry(:X, opts...; kwargs...)
+DebugDualIterate(; kwargs...) = DebugEntry(:X; kwargs...)
 
 """
     DebugDualBaseIterate(; kwargs...)
@@ -441,18 +442,18 @@ Print the primal base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set to display the field `m` of the state.
 """
-DebugPrimalBaseIterate(opts...; kwargs...) = DebugEntry(:m, opts...; kwargs...)
+DebugPrimalBaseIterate(; kwargs...) = DebugEntry(:m; kwargs...)
 
 """
-    DebugPrimalBaseChange(opts...; prefix="Primal Base Change:", kwargs...)
+    DebugPrimalBaseChange(; prefix="Primal Base Change:", kwargs...)
 
 Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on the field `m` of the state.
 """
-function DebugPrimalBaseChange(opts...; prefix = "Primal Base Change:", kwargs...)
+function DebugPrimalBaseChange(; prefix = "Primal Base Change:", kwargs...)
     return DebugEntryChange(
-        :m, (p, o, x, y) -> distance(get_manifold(p, 1), x, y),
-        opts...; prefix = prefix, kwargs...,
+        :m, (p, o, x, y) -> distance(get_manifold(p, 1), x, y);
+        prefix = prefix, kwargs...,
     )
 end
 
@@ -949,7 +950,7 @@ function (d::DebugPrimalDualResidual)(
     return d.storage(tmp, apds, k)
 end
 function show(io::IO, d::DebugPrimalDualResidual)
-    return print(io, "DebugPrimalDualResidual(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
+    return print(io, "DebugPrimalDualResidual(; format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
 end
 function status_summary(d::DebugPrimalDualResidual; context::Symbol = :default)
     (context === :short) && return repr(d)
@@ -957,12 +958,12 @@ function status_summary(d::DebugPrimalDualResidual; context::Symbol = :default)
 end
 
 """
-    DebugPrimalIterate(opts...;kwargs...)
+    DebugPrimalIterate(; kwargs...)
 
 Print the primal variable by using [`DebugIterate`](@ref),
 see their constructors for detail.
 """
-DebugPrimalIterate(opts...; kwargs...) = DebugIterate(opts...; kwargs...)
+DebugPrimalIterate(; kwargs...) = DebugIterate(; kwargs...)
 
 
 @doc """
@@ -1022,7 +1023,7 @@ function (d::DebugPrimalResidual)(
     return d.storage(tmp, apds, k)
 end
 function show(io::IO, d::DebugPrimalResidual)
-    return print(io, "DebugPrimalResidual(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
+    return print(io, "DebugPrimalResidual(; format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
 end
 function status_summary(d::DebugPrimalResidual; context::Symbol = :default)
     (context === :short) && return repr(d)
@@ -1051,7 +1052,7 @@ mutable struct DebugProximalParameter <: DebugAction
 end
 function Base.show(io::IO, d::DebugProximalParameter)
     return print(
-        io, "DebugProximalParameter(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init = $(d.at_init))",
+        io, "DebugProximalParameter(; format=\"$(escape_string(d.format))\", at_init=$(d.at_init))",
     )
 end
 function status_summary(d::DebugProximalParameter; context::Symbol = :default)
@@ -1094,7 +1095,7 @@ function Base.show(io::IO, ds::DebugStepsize)
 end
 function status_summary(ds::DebugStepsize; context::Symbol = :default)
     (context === :short) && return "(:Stepsize, \"$(escape_string(ds.format))\")"
-    return "A DebugAction that prints the current step size to $(ds.io) in format “$(escape_string(ds.format))”"
+    return "A DebugAction that prints the current step size in format “$(escape_string(ds.format))”"
 end
 
 @doc """
@@ -1159,7 +1160,7 @@ mutable struct DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
     end
 end
 function show(io::IO, d::DebugWarnIfLagrangeMultiplierIncreases)
-    m = (d.status === :No ? "" : ":$(d.status)")
+    m = ":$(d.status)"
     return print(io, "DebugWarnIfLagrangeMultiplierIncreases($(m); tol=$(d.tol))")
 end
 function status_summary(d::DebugWarnIfLagrangeMultiplierIncreases; context::Symbol = :default)
@@ -1371,7 +1372,7 @@ function (d::DebugWarnIfCostIncreases)(
     return nothing
 end
 function show(io::IO, d::DebugWarnIfCostIncreases)
-    m = (d.status === :No ? "" : ":$(d.status)")
+    m = ":$(d.status)"
     return print(io, "DebugWarnIfCostIncreases($(m); tol=$(d.tol))")
 end
 function status_summary(d::DebugWarnIfCostIncreases; context::Symbol = :default)
@@ -1542,8 +1543,7 @@ function (d::DebugWarnIfGradientNormTooLarge)(
     return nothing
 end
 function show(io::IO, d::DebugWarnIfGradientNormTooLarge)
-    # only print status if active
-    m = (d.status === :No ? "" : ", :$(d.status)")
+    m = ", :$(d.status)"
     return print(io, "DebugWarnIfGradientNormTooLarge($(d.factor)$(m))")
 end
 function status_summary(d::DebugWarnIfGradientNormTooLarge; context::Symbol = :default)
@@ -1592,7 +1592,7 @@ function (d::DebugWarnIfStepsizeCollapsed)(
     return nothing
 end
 function show(io::IO, d::DebugWarnIfStepsizeCollapsed)
-    m = (d.status === :No ? "" : ", :$(d.status)")
+    m = ", :$(d.status)"
     return print(io, "DebugWarnIfStepsizeCollapsed($(d.stop_when_stepsize_less)$(m))")
 end
 function status_summary(d::DebugWarnIfStepsizeCollapsed; context::Symbol = :default)

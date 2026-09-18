@@ -40,6 +40,12 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     #
     rs_empty = RecordSolverState(gds, [])
     @test contains(Manopt.status_summary(rs_empty), "No recordings registered.")
+    # the summary lists every record action with its own summary
+    rs_two = RecordSolverState(gds, Dict(:Iteration => RecordGroup([RecordIteration(), RecordCost()]), :Stop => RecordIteration()))
+    ss_two = Manopt.status_summary(rs_two)
+    @test contains(ss_two, "## Record\n")
+    @test contains(ss_two, "    :Stop = A RecordAction to record the current iteration number")
+    @test contains(ss_two, "    :Iteration = A group of 2 RecordActions:")
     #
     @test get_initial_stepsize(dmp, rs) == 1.0
     @test get_stepsize(dmp, rs, 1) == 1.0
@@ -209,6 +215,11 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         g(dmp, gds, 21) # record
         @test length(get_record(g)) == 1
         gds.stop(dmp, gds, 0) # reset
+        # without a reason nothing is recorded, a reset empties the record even then
+        g(dmp, gds, 22)
+        @test length(get_record(g)) == 1
+        g(dmp, gds, -1)
+        @test get_record(g) == String[]
     end
     @testset "RecordSubsolver" begin
         rss = RecordSubsolver()

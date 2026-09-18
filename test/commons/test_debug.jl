@@ -304,6 +304,10 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
 
         w9 = DebugWarnIfCostIncreases()
         @test startswith(repr(w9), "DebugWarnIfCostIncreases(")
+        # a deactivated action prints its status, so the printed call rebuilds an inactive one
+        w9.status = :No
+        @test repr(w9) == "DebugWarnIfCostIncreases(:No; tol=1.0e-13)"
+        @test repr(DebugWarnIfStepsizeCollapsed(1.0, :No)) == "DebugWarnIfStepsizeCollapsed(1.0, :No)"
         @test startswith(Manopt.status_summary(w9), "A DebugAction warning if the cost increases")
 
         df1 = DebugFactory([:WarnCost])

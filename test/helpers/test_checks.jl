@@ -85,7 +85,7 @@ default(; show = false, reuse = true)
 
         #Hessian not tangent
         Hess_f4f1(::Sphere, p, X) = p
-        @test !check_Hessian(M4, f4, grad_f4, Hess_f4f1, p4, X4)
+        @test !check_Hessian(M4, f4, grad_f4, Hess_f4f1, p4, X4; check_vector = true)
     end
 end
 

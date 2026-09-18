@@ -36,7 +36,7 @@ end
         @test !s3(p, s, 1)
         @test length(get_reason(s3)) == 0
         s.p = 0.3
-
+        @test !s3(p, s, -1) # a reset call does not fire
         @test s3(p, s, 2)
         @test length(get_reason(s3)) > 0
         # repack
@@ -48,6 +48,10 @@ end
         # any/all over an empty set of criteria: identities false/true
         @test !StopWhenAny()(p, s, 1)
         @test StopWhenAll()(p, s, 1)
+        # all criteria fulfilled already at the start
+        s0 = StopAfterIteration(0) & StopAfterIteration(0)
+        @test s0(p, s, 0)
+        @test s0.at_iteration == 0
 
         sn2 = StopAfterIteration(10) | s3
         @test get_stopping_criteria(sn)[1].max_iterations ==

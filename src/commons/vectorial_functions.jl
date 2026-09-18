@@ -101,7 +101,7 @@ function VectorGradientFunction(
 end
 
 @doc """
-    get_value_function(vgf::VectorGradientFunction, recursive=false; evaluation=AllocatingEvaluation())
+    get_value_function(vgf::AbstractVectorFunction, recursive=false; evaluation=AllocatingEvaluation())
 
 Return the function to evaluate (just) the value ``f(p) ∈ ℝ^n``, see [`get_value`](@ref).
 
@@ -111,7 +111,7 @@ For the default `evaluation=`[`AllocatingEvaluation`](@ref)`()` this function ha
 For a value stored as a [`ComponentVectorialType`](@ref) the in-place variant returns the vector of the component functions instead.
 """
 function get_value_function(
-        vgf::VectorGradientFunction, recursive = false;
+        vgf::AbstractVectorFunction, recursive = false;
         evaluation::AbstractEvaluationType = AllocatingEvaluation()
     )
     if evaluation isa AllocatingEvaluation
@@ -299,6 +299,28 @@ function get_gradient!(
     n = vgf.range_dimension
     ei = zeros(n); ei[i] = 1
     return get_adjoint_jacobian!(M, X, vgf, p, ei)
+end
+# a range of indices: one adjoint evaluation per index
+function get_gradient(
+        M::AbstractManifold, vgf::VectorDifferentialFunction, p, i = :,
+        range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
+    )
+    n = _vgf_index_to_length(i, vgf.range_dimension)
+    pM = PowerManifold(M, range, n)
+    X = zero_vector(pM, fill(p, pM))
+    return get_gradient!(M, X, vgf, p, i, range)
+end
+function get_gradient!(
+        M::AbstractManifold, X, vgf::VectorDifferentialFunction, p, i,
+        range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
+    )
+    n = _vgf_index_to_length(i, vgf.range_dimension)
+    pM = PowerManifold(M, range, n)
+    rep_size = representation_size(M)
+    for (j, k) in zip(_to_iterable_indices(1:(vgf.range_dimension), i), 1:n)
+        get_gradient!(M, _write(pM, rep_size, X, (k,)), vgf, p, j)
+    end
+    return X
 end
 
 # Jacobian in matrix form JF
@@ -547,7 +569,7 @@ function get_hessian!(
     return Y
 end
 
-function get_hessian_function(vhf::VectorHessianFunction; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+function get_hessian_function(vhf::VectorHessianFunction, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
     if evaluation isa AllocatingEvaluation
         (vhf.hessians! isa InplaceManifoldFunction) && return vhf.hessians!.f
         (vhf.hessians! isa AbstractVector{<:InplaceManifoldFunction}) && return [h.f for h in vhf.hessians!]

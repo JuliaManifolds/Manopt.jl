@@ -235,7 +235,7 @@ function status_summary(dmp::DefaultManoptProblem; context::Symbol = :default)
     An optimization problem for Manopt.jl
 
     ## Manifold
-    $(_MANOPT_INDENT)$(replace(repr(dmp.manifold), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
+    $(_in_str(repr(dmp.manifold); indent = 1))
 
     ## Objective
     $(_in_str(status_summary(dmp.objective, context = context); indent = 1))"""

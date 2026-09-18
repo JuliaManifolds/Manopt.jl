@@ -125,6 +125,7 @@ This is yet another round of review – maybe also introducing a few test tools
 * `difference_of_convex_proximal_point` and the two Newton solvers initialize their step size.
 * `return_objective = true` returns a minimizer on a manifold of numbers as a number.
 * `debug` and `record` of the proximal parameter work for `difference_of_convex_proximal_point`.
+* `get_gradient` of a `VectorDifferentialFunction` accepts ranges, index vectors and `:`.
 
 ## [0.6.7] September 9, 2026
 

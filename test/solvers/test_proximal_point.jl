@@ -37,7 +37,7 @@ using ManifoldDiff: prox_distance, prox_distance!
     @test startswith(Manopt.status_summary(obj), "A proximal map objective")
 
     dpp = DebugProximalParameter()
-    @test startswith(repr(dpp), "DebugProximalParameter(; io")
+    @test startswith(repr(dpp), "DebugProximalParameter(; format")
     @test startswith(Manopt.status_summary(dpp), "A DebugAction printing the proximal parameter")
     rpp = RecordProximalParameter()
     @test startswith(repr(rpp), "RecordProximalParameter(")

@@ -98,6 +98,9 @@ using Manifolds, Manopt, Random, Test
         @test p == c
         p = get_projected_point(M, objective, c)
         @test p == c
+        # the allocating projection of a decorated objective
+        dco = Manopt.ManifoldCountObjective(M, objective, [:Cost])
+        @test get_projected_point(M, dco, c) == c
         get_projected_point!(M, p, objective, c)
         @test p == c
         # and a point outside of C is projected onto its boundary

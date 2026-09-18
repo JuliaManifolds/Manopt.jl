@@ -450,7 +450,8 @@ function (rsr::RecordStoppingReason)(
         ::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
     )
     s = get_reason(get_stopping_criterion(ams))
-    return (length(s) > 0) && record_or_reset!(rsr, s, k)
+    # record only a nonempty reason, but never skip a reset (k < 0)
+    return ((k < 0) || (length(s) > 0)) && record_or_reset!(rsr, s, k)
 end
 show(io::IO, ::RecordStoppingReason) = print(io, "RecordStoppingReason()")
 function status_summary(::RecordStoppingReason; context::Symbol = :default)

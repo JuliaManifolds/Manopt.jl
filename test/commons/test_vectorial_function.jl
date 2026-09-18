@@ -196,16 +196,17 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
         @test ci[1] == c[1]
         # the value keeps the precision of the point
         @test eltype(get_value(M, vgf, BigFloat.(p))) == BigFloat
-        if !(vgf isa VectorDifferentialFunction)
-            # range access not yet implemented / too expensive for VDF
-            @test get_gradient(M, vgf, p) == gg
-            @test get_gradient(M, vgf, p, :) == gg
-            @test get_gradient(M, vgf, p, 1:2) == gg
-            @test get_gradient(M, vgf, p, [1, 2]) == gg
-            Y = [zero_vector(M, p), zero_vector(M, p)]
-            get_gradient!(M, Y, vgf, p, :)
-            @test Y == gg
-        end
+        # with an array power representation the gradients form the columns of a matrix
+        as_range(v) = Manopt.get_range(vgf.jacobian_type) isa ArrayPowerRepresentation ? hcat(v...) : v
+        @test get_gradient(M, vgf, p) == as_range(gg)
+        @test get_gradient(M, vgf, p, :) == as_range(gg)
+        @test get_gradient(M, vgf, p, 1:2) == as_range(gg)
+        @test get_gradient(M, vgf, p, [1, 2]) == as_range(gg)
+        @test get_gradient(M, vgf, p, [2, 1]) == as_range(reverse(gg))
+        @test get_gradient(M, vgf, p, [false, true]) == as_range(gg[2:2])
+        Y = as_range([zero_vector(M, p), zero_vector(M, p)])
+        get_gradient!(M, Y, vgf, p, :)
+        @test Y == as_range(gg)
         @test get_gradient(M, vgf, p, 1) == gg[1]
         @test get_gradient(M, vgf, p, 2) == gg[2]
         Z = zero_vector(M, p)
@@ -249,6 +250,10 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
     gh = [X, -X]
     # Hessian
     @test Manopt.get_hessian_function(vhf_fa) === hess_g
+    @test Manopt.get_hessian_function(vhf_fa, true) === hess_g
+    # the value function accessor works for every vector function
+    @test get_value_function(vhf_fa) === g
+    @test get_value_function(vgf_dfn) === g
     @test all(Manopt.get_hessian_function(vhf_va) .=== [hess_g1, hess_g2])
     @test Manopt.get_hessian_function(vhf_fi; evaluation = InplaceEvaluation()) === hess_g!
     @test all(Manopt.get_hessian_function(vhf_vi; evaluation = InplaceEvaluation()) .=== [hess_g1!, hess_g2!])
