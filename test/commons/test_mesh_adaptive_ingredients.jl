@@ -46,7 +46,7 @@ using ManifoldsBase, Manifolds, Manopt, Test, Random
 
     @testset "State Accessors" begin
         p = ones(3)
-        mads = MeshAdaptiveDirectSearchState(M, p)
+        mads = MeshAdaptiveDirectSearchState(M; p = p)
         @test startswith(
             Manopt.status_summary(mads; context = :default),
             "# Solver state for `Manopt.jl`s mesh adaptive direct search\n"

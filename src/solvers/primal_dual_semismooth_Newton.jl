@@ -40,8 +40,8 @@ function PrimalDualManifoldSemismoothNewtonObjective(
     cost_ = maybe_wrap_function(cost, p; result = :Number)
     prox_F_ = maybe_wrap_function(prox_F, evaluation)
     diff_prox_F_ = maybe_wrap_function(diff_prox_F, evaluation)
-    prox_G_dual_ = maybe_wrap_function(prox_G_dual, evaluation)
-    diff_prox_G_dual_ = maybe_wrap_function(diff_prox_G_dual, evaluation)
+    prox_G_dual_ = maybe_wrap_function(prox_G_dual, evaluation; result = :TangentVector)
+    diff_prox_G_dual_ = maybe_wrap_function(diff_prox_G_dual, evaluation; result = :TangentVector)
     linearized_forward_operator_ = maybe_wrap_function(linearized_forward_operator, evaluation; result = :SecondManifoldPoint)
     adjoint_linearized_operator_ = maybe_wrap_function(adjoint_linearized_operator, evaluation)
     Λ_ = ismissing(Λ) ? missing : maybe_wrap_function(Λ, evaluation; result = :SecondManifoldPoint)
@@ -104,7 +104,7 @@ $(_kwargs(:vector_transport_method; name = "vector_transport_method_dual", M = "
 * `X=`$(Manopt._link(:zero_vector; M = "N", p = "n"))
 """
 mutable struct PrimalDualSemismoothNewtonState{
-        P, Q, T, C <: AbstractDict{Symbol}, RM <: AbstractRetractionMethod,
+        P, Q, T, C <: AbstractDict{Symbol}, SC <: StoppingCriterion, RM <: AbstractRetractionMethod,
         IRM <: AbstractInverseRetractionMethod, IRM_Dual <: AbstractInverseRetractionMethod,
         VTM <: AbstractVectorTransportMethod, VTM_Dual <: AbstractVectorTransportMethod,
     } <: AbstractPrimalDualSolverState
@@ -118,7 +118,7 @@ mutable struct PrimalDualSemismoothNewtonState{
     primal_stepsize::Float64
     regularization_parameter::Float64
     retraction_method::RM
-    stop::StoppingCriterion
+    stop::SC
     update_dual_base::Union{Function, Missing}
     update_primal_base::Union{Function, Missing}
     vector_transport_method::VTM
@@ -131,7 +131,7 @@ mutable struct PrimalDualSemismoothNewtonState{
             m::P = rand(M), n::Q = rand(N), p::P = rand(M),
             primal_stepsize::Float64 = 1 / sqrt(8),
             regularization_parameter::Float64 = 1.0e-5,
-            stopping_criterion::StoppingCriterion = StopAfterIteration(50),
+            stopping_criterion::SC = StopAfterIteration(50),
             update_dual_base::Union{Function, Missing} = missing,
             update_primal_base::Union{Function, Missing} = missing,
             # the following defaults depend on `p`, so they have to be keyword arguments
@@ -143,11 +143,11 @@ mutable struct PrimalDualSemismoothNewtonState{
             vector_transport_method_dual::VTM_Dual = default_vector_transport_method(N, typeof(n)),
             X::T = zero_vector(N, n),
         ) where {
-            P, Q, T, C <: AbstractDict{Symbol}, RM <: AbstractRetractionMethod,
+            P, Q, T, C <: AbstractDict{Symbol}, SC <: StoppingCriterion, RM <: AbstractRetractionMethod,
             IRM <: AbstractInverseRetractionMethod, IRM_Dual <: AbstractInverseRetractionMethod,
             VTM <: AbstractVectorTransportMethod, VTM_Dual <: AbstractVectorTransportMethod,
         }
-        return new{P, Q, T, C, RM, IRM, IRM_Dual, VTM, VTM_Dual}(
+        return new{P, Q, T, C, SC, RM, IRM, IRM_Dual, VTM, VTM_Dual}(
             callbacks, dual_stepsize, inverse_retraction_method, inverse_retraction_method_dual, m, n, p,
             primal_stepsize, regularization_parameter, retraction_method,
             stopping_criterion, update_dual_base, update_primal_base,
@@ -615,9 +615,8 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
     ∂X₁₁ = spzeros(dims, dims)
     ∂X₂₁ = spzeros(dualdims, dims)
 
-    Mdims = prod(manifold_dimension(M))
-    for j in 1:Mdims
-        eⱼ = zeros(Mdims)
+    for j in 1:dims
+        eⱼ = zeros(dims)
         eⱼ[j] = 1
         Θⱼ = get_vector(M, pdsn.p, eⱼ, Θ)
         Gⱼ = differential_shortest_geodesic_endpoint(M, pdsn.m, pdsn.p, 1 / 2, Θⱼ)
@@ -641,7 +640,6 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
         ∂X₁₁[:, j] = sp_∂X₁₁j
 
         Mⱼ = differential_log_argument(M, pdsn.m, pdsn.p, Θⱼ)
-        noPT = ismissing(get_objective(obj, true).Λ!)
         Kⱼ = pdsn.dual_stepsize * (
             noPT ? linearized_forward_operator(tmp, pdsn.m, Mⱼ, pdsn.n) : vector_transport_to(
                     N, forward_operator(tmp, pdsn.m), linearized_forward_operator(tmp, pdsn.m, Mⱼ, pdsn.n), pdsn.n,
@@ -660,9 +658,8 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
     ∂X₁₂ = spzeros(dims, dualdims)
     ∂X₂₂ = spzeros(dualdims, dualdims)
 
-    Ndims = prod(manifold_dimension(N))
-    for j in 1:Ndims
-        eⱼ = zeros(Ndims)
+    for j in 1:dualdims
+        eⱼ = zeros(dualdims)
         eⱼ[j] = 1
         Ξⱼ = get_vector(N, pdsn.n, eⱼ, Ξ)
         hⱼ = -pdsn.primal_stepsize * adjoint_linearized_operator(tmp, pdsn.m, pdsn.n, Ξⱼ) # officially ∈ T*mM, but embedded in TmM

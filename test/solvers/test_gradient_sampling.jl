@@ -79,6 +79,12 @@ _debug_gradient_sampling = false
     # they hence to not work that well and we end up a bit further away.
     @test isapprox(M, p2, p3; atol = 3.0e-3)
 
+    # the in-place gradient variant produces the same iterates
+    grad_f!(M, X, p) = copyto!(M, X, p, grad_f(M, p))
+    Random.seed!(23)
+    p4 = gradient_sampling(M, f, grad_f!, p0; evaluation = InplaceEvaluation())
+    @test isapprox(M, p2, p4)
+
     if _debug_gradient_sampling
         p1 = get_solver_result(m1)
         p2 = get_solver_result(m2)

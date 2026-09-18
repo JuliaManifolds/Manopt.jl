@@ -90,7 +90,7 @@ end
         crs = ConjugateResidualState(TpM, slso)
         @test set_iterate!(crs, TpM, X0) == crs # setters return state
         @test get_iterate(crs) == X0
-        @test set_gradient!(crs, TpM, X0) == crs # setters return state
+        @test set_gradient!(crs, TpM, get_iterate(crs), X0) == crs # setters return state
         @test get_gradient(crs) == X0
         @test startswith(
             Manopt.status_summary(crs; context = :default),
@@ -101,7 +101,7 @@ end
         @test Manopt.StopWhenRelativeResidualLess(1, 1.0e-8).c == 1.0
         @test set_iterate!(crs2, TpM, X0) == crs2 # setters return state
         @test get_iterate(crs2) == X0
-        @test set_gradient!(crs2, TpM, X0) == crs2 # setters return state
+        @test set_gradient!(crs2, TpM, get_iterate(crs2), X0) == crs2 # setters return state
         @test get_gradient(crs2) == X0
         @test startswith(
             Manopt.status_summary(crs2; context = :default),

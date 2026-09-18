@@ -360,7 +360,6 @@ function Frank_Wolfe_method!(
                     ),
                     sub_kwargs...,
                 );
-                objective_type = objective_type,
                 sub_kwargs...,
             )
         end,

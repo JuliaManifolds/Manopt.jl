@@ -264,7 +264,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
 
             # Coordinate linear-system solution coefficients map back to the right tangent vector.
             dmp = DefaultManoptProblem(TpM1, slco)
-            cnss = Manopt.solve!(dmp, CoordinatesNormalSystemState(M1, p1; basis = B1))
+            cnss = Manopt.solve!(dmp, CoordinatesNormalSystemState(M1; p = p1, basis = B1))
             X_sub = get_vector(M1, p1, cnss.c, B1)
             @test isapprox(M1, p1, get_solver_result(dmp, cnss), X_sub; atol = 1.0e-12, rtol = 1.0e-12)
         end
@@ -356,9 +356,9 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
                 dmp_so = DefaultManoptProblem(TpM1, slso)
                 dmp_so_normal = DefaultManoptProblem(TpM1, slso_normal)
                 dmp_co = DefaultManoptProblem(TpM1, slco)
-                cnss_so = Manopt.solve!(dmp_so, CoordinatesNormalSystemState(M1, p1; basis = B2))
-                cnss_so_normal = Manopt.solve!(dmp_so_normal, CoordinatesNormalSystemState(M1, p1; basis = B2))
-                cnss_co = Manopt.solve!(dmp_co, CoordinatesNormalSystemState(M1, p1; basis = B2))
+                cnss_so = Manopt.solve!(dmp_so, CoordinatesNormalSystemState(M1; p = p1, basis = B2))
+                cnss_so_normal = Manopt.solve!(dmp_so_normal, CoordinatesNormalSystemState(M1; p = p1, basis = B2))
+                cnss_co = Manopt.solve!(dmp_co, CoordinatesNormalSystemState(M1; p = p1, basis = B2))
                 @test isapprox(cnss_so.c, cnss_co.c; atol = 1.0e-12, rtol = 1.0e-12)
                 @test !isapprox(cnss_so_normal.c, cnss_co.c; atol = 1.0e-12, rtol = 1.0e-12)
                 @test isapprox(

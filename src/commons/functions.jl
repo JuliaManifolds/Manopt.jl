@@ -104,6 +104,8 @@ provided return value differs per type, the following cases for results are avai
 * `:TangentVectors` use an elementwise `copyto!` for tangent vectors
 * `:Number` assume the result to be a 0-dimensional array.
 * `:NumberAndTangentVector` for the combination `(c, X)` of a number and a tangent vector – return `c` and handle `X` with the `copyto!` for a tangent vector
+* `:TangentVectorAndNumber` for the combination `(X, d)` of a tangent vector and a number – handle `X` with the `copyto!` for a tangent vector and return `d`
+* `:NumberTangentVectorNumber` for the combination `(c, X, d)` – handle `X` with the `copyto!` for a tangent vector and return `c` and `d`
 * `:MaybeResizeVector` for a vector to return, make sure the size is adapted if needed. This is useful e.g. for return values of sub solvers that might vary in length
 * `:Default` (also all other symbols) just use a plain `copyto!`
 
@@ -140,6 +142,9 @@ function (imf::InplaceManifoldFunction{result})(M, v, args...) where {result}
     (result === :Number) && return (v[] = imf.f(M, args...))
     # for example (c, X) = costgrad(M, p)
     (result === :NumberAndTangentVector) && return ((c, X) = imf.f(M, args...); copyto!(M, v, X); (c, v))
+    # for example (X, d) = graddiff(M, p, Y) and (c, X, d) = costgraddiff(M, p, Y)
+    (result === :TangentVectorAndNumber) && return ((X, d) = imf.f(M, args...); copyto!(M, v, args[imf.point_index], X); (v, d))
+    (result === :NumberTangentVectorNumber) && return ((c, X, d) = imf.f(M, args...); copyto!(M, v, args[imf.point_index], X); (c, v, d))
     # For cases like in ProxBundle where the subsolver can return different sizes, we have to use assign
     if (result === :MaybeResizeVector)
         # For a few in-place assignments, we maybe want to grow/shrink the result vector

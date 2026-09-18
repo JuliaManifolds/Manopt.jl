@@ -12,6 +12,8 @@ include("trust_region_model.jl")
     p[:, :, 1] = [1.0 0.0; 0.0 1.0; 0.0 0.0]
     p[:, :, 2] = [0.0 0.0; 1.0 0.0; 0.0 1.0]
 
+    # the old name of the acceptance rate is declared deprecated
+    @test :ρ_prime in Manopt.accepted_keywords(trust_regions).deprecated
     @test_throws ErrorException trust_regions(
         M, f, rgrad, rhess, p; max_trust_region_radius = -0.1
     )

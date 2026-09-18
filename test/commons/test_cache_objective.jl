@@ -376,6 +376,19 @@ end
         Manopt.set_parameter!(lco3, :Cost, :s, 2.0)
         @test get_cost(M, lco3, p) == 2.0
     end
+    @testset "The subgradient function of a cached objective is cached" begin
+        M = Euclidean(2)
+        calls = Ref(0)
+        fs(M, p) = sum(abs, p)
+        ∂fs(M, p) = (calls[] += 1; sign.(p))
+        sgc = objective_cache_factory(M, ManifoldSubgradientObjective(fs, ∂fs), (:LRU, [:SubGradient], 5))
+        ∂fc = Manopt.get_subgradient_function(sgc)
+        q = [1.0, -2.0]
+        @test ∂fc(M, q) == sign.(q)
+        @test ∂fc(M, q) == sign.(q)
+        @test calls[] == 1
+        @test Manopt.get_subgradient_function(sgc, true) === ∂fs
+    end
     @testset "The simple cache for an objective without a gradient" begin
         M = Euclidean(2)
         fs(M, p) = sum(abs, p)

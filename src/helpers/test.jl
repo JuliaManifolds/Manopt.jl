@@ -351,21 +351,19 @@ end
 function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p::Int, q::Int, α = 1.0)
     return project_collaborative_TV!(N, Θ, λ, x, Ξ, Float64(p), Float64(q), α)
 end
+function _prox_Total_Variation_t(M::AbstractManifold, λ::Number, x::Tuple, p::Int)
+    p == 1 && return min(0.5, λ / distance(M, x[1], x[2]))
+    p == 2 && return λ / (1 + 2 * λ)
+    return throw(
+        ErrorException(
+            "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
+        ),
+    )
+end
 function prox_Total_Variation(
         M::AbstractManifold, λ::Number, x::Tuple{T, T}, p::Int = 1
     ) where {T}
-    d = distance(M, x[1], x[2])
-    if p == 1
-        t = min(0.5, λ / d)
-    elseif p == 2
-        t = λ / (1 + 2 * λ)
-    else
-        throw(
-            ErrorException(
-                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
-            ),
-        )
-    end
+    t = _prox_Total_Variation_t(M, λ, x, p)
     return (
         ManifoldsBase.exp_fused(M, x[1], log(M, x[1], x[2]), t),
         ManifoldsBase.exp_fused(M, x[2], log(M, x[2], x[1]), t),
@@ -374,18 +372,7 @@ end
 function prox_Total_Variation(
         M::PowerManifold, λ::Number, x::Tuple{T, T}, p::Int = 1
     ) where {T}
-    d = distance(M, x[1], x[2])
-    if p == 1
-        t = min(0.5, λ / d)
-    elseif p == 2
-        t = λ / (1 + 2 * λ)
-    else
-        throw(
-            ErrorException(
-                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
-            ),
-        )
-    end
+    t = _prox_Total_Variation_t(M, λ, x, p)
     return (
         ManifoldsBase.exp_fused(M, x[1], log(M, x[1], x[2]), t),
         ManifoldsBase.exp_fused(M, x[2], log(M, x[2], x[1]), t),
@@ -395,18 +382,7 @@ end
 function prox_Total_Variation!(
         M::AbstractManifold, y, λ::Number, x::Tuple{T, T}, p::Int = 1
     ) where {T}
-    d = distance(M, x[1], x[2])
-    if p == 1
-        t = min(0.5, λ / d)
-    elseif p == 2
-        t = λ / (1 + 2 * λ)
-    else
-        throw(
-            ErrorException(
-                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
-            ),
-        )
-    end
+    t = _prox_Total_Variation_t(M, λ, x, p)
     X1 = log(M, x[1], x[2])
     X2 = log(M, x[2], x[1])
     ManifoldsBase.exp_fused!(M, y[1], x[1], X1, t)
@@ -416,18 +392,7 @@ end
 function prox_Total_Variation!(
         M::PowerManifold, y, λ::Number, x::Tuple{T, T}, p::Int = 1
     ) where {T}
-    d = distance(M, x[1], x[2])
-    if p == 1
-        t = min(0.5, λ / d)
-    elseif p == 2
-        t = λ / (1 + 2 * λ)
-    else
-        throw(
-            ErrorException(
-                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
-            ),
-        )
-    end
+    t = _prox_Total_Variation_t(M, λ, x, p)
     X1 = log(M, x[1], x[2])
     X2 = log(M, x[2], x[1])
     ManifoldsBase.exp_fused!(M, y[1], x[1], X1, t)
@@ -503,12 +468,12 @@ end
 #
 #
 # Further example functions - Chambolle-Pock
-function differential_project_collaborative_TV(N::PowerManifold, p, ξ, η, p1 = 2.0, p2 = 1.0)
+function differential_project_collaborative_TV(N::PowerManifold, p, ξ, η, p1 = Inf, p2 = Inf)
     ζ = zero_vector(N, p)
     return differential_project_collaborative_TV!(N, ζ, p, ξ, η, p1, p2)
 end
 function differential_project_collaborative_TV!(
-        N::PowerManifold, ζ, p, ξ, η, p1 = 2.0, p2 = 1.0
+        N::PowerManifold, ζ, p, ξ, η, p1 = Inf, p2 = Inf
     )
     ζ = zero_vector!(N, ζ, p)
     pdims = power_dimensions(N)

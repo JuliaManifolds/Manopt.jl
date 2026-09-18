@@ -377,13 +377,12 @@ function difference_of_convex_algorithm!(
                 sub_kwargs...,
             )
         end,
-        sub_problem::Union{AbstractManoptProblem, Function, Missing} = if ismissing(sub_objective)
+        sub_problem = if ismissing(sub_objective)
             missing
         else
             DefaultManoptProblem(M, sub_objective)
         end,
-        sub_state::Union{AbstractManoptSolverState, AbstractEvaluationType, Missing} = if sub_problem isa
-                Function
+        sub_state::Union{AbstractManoptSolverState, AbstractEvaluationType, Missing} = if !(sub_problem isa Union{AbstractManoptProblem, Missing}) # a closed form
             evaluation
         elseif ismissing(sub_objective)
             missing

@@ -385,7 +385,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 
 # Constructor
 
-    MeshAdaptiveDirectSearchState(M::AbstractManifold, p=rand(M); kwargs...)
+    MeshAdaptiveDirectSearchState(M::AbstractManifold; p=rand(M), kwargs...)
 
 ## Keyword arguments
 
@@ -420,8 +420,9 @@ mutable struct MeshAdaptiveDirectSearchState{
     end
 end
 function MeshAdaptiveDirectSearchState(
-        M::AbstractManifold, p::P = rand(M);
+        M::AbstractManifold;
         callbacks::C = Dict{Symbol, Function}(),
+        p::P = rand(M),
         max_stepsize::Real = isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M),
         mesh_basis::B = default_basis(M, typeof(p)),
         poll_size::Real = manifold_dimension(M),
@@ -634,7 +635,7 @@ function mesh_adaptive_direct_search!(
     dmco = decorate_objective!(M, mco; kwargs...)
     dmp = DefaultManoptProblem(M, dmco)
     madss = MeshAdaptiveDirectSearchState(
-        M, p;
+        M; p = p,
         callbacks = process_callbacks_arg(callbacks, MeshAdaptiveDirectSearchState),
         max_stepsize = max_stepsize,
         mesh_basis = mesh_basis,

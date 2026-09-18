@@ -20,6 +20,8 @@ individual one that provides these values.
 """
 abstract type DirectionUpdateRule end
 
+status_summary(dur::DirectionUpdateRule; context::Symbol = :default) = repr(dur)
+
 """
     AbstractGradientGroupDirectionRule <: DirectionUpdateRule
 

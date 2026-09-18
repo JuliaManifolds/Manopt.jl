@@ -12,11 +12,22 @@ This is yet another round of review – maybe also introducing a few test tools
 
 ### Added
 
+* `ManifoldFirstOrderObjective` accepts a combined gradient and differential function, with or without the cost.
+* `AugmentedLagrangianMethodState` offers a `:BeforeSubsolver` callback.
 * the trait `has_sub_problem` declares that a solver state stores a sub problem, so `get_sub_problem`, `get_sub_state` and `record=[:Subsolver]` work for every such state.
 
 ### Changed
 
 * `VectorBundleNewtonState` is an `AbstractManoptSolverState` storing a Newton direction.
+* `SR1` and `InverseSR1` accept any `Real` stabilization parameter.
+* `trust_regions` warns that `ρ_prime=` is deprecated in favour of `acceptance_rate=`.
+* the augmented Lagrangian updates a user-supplied `λ` in place, like `μ`.
+* `DouglasRachford` and `DouglasRachford!` accept a tuple of proximal maps.
+* the `LevenbergMarquardtState` defaults for `stopping_criterion` and `damping_reduction_factor` agree with those of `LevenbergMarquardt`.
+* `max_stepsize(M)` on `SymmetricPositiveDefinite` returns `log(floatmax())`.
+* the lower bound for `ManifoldsBase.jl` is 2.5.1, as the test project requires.
+* `adaptive_regularization_with_cubics!` requires the point it works in place of.
+* `ProjectedGradientMethodState`, `MeshAdaptiveDirectSearchState` and `CoordinatesNormalSystemState` take the start point as the keyword `p=`; the positional form is deprecated.
 * `NelderMeadSimplex` records the type of the points it was built from and stores number points wrapped, so `NelderMead` also works for number points when called in place or with an objective.
 
 ### Deprecated
@@ -94,6 +105,9 @@ This is yet another round of review – maybe also introducing a few test tools
 * `sub_kwargs = (; cache = …)` works for `trust_regions`.
 * `ConjugateResidualState` promotes integer `α=` and `β=`.
 * `set_gradient!` for `AdaptiveRegularizationState` takes `(state, M, p, X)`.
+* `set_gradient!` for a `ConjugateResidualState` takes `(state, M, p, X)`.
+* `get_subgradient_function` of a counting or caching objective returns that variant.
+* `debug=` accepts `:ProximalParameter`, the symbol `record=` uses.
 * the numeric keywords of `adaptive_regularization_with_cubics` and its state are promoted.
 * `sub_stopping_criterion` reaches the sub solver of `interior_point_Newton`.
 * `AugmentedLagrangianMethodState` accepts integer keywords such as `ρ` and `λ_max`.
@@ -105,6 +119,7 @@ This is yet another round of review – maybe also introducing a few test tools
 * `ProximalGradientMethodAcceleration` starts accelerating in the second iteration.
 * `Frank_Wolfe_method` accepts `inverse_retraction_method=`, which its step uses.
 * `set_iterate!` on a `FrankWolfeState` writes into the stored point.
+* the gradient helpers of the Levenberg-Marquardt surrogate use a given Jacobian cache.
 * `LevenbergMarquardt` passes residuals and Jacobians to its surrogate explicitly, so a surrogate given as `sub_objective=` works.
 * `cma_es` accepts points and a `σ` of any number type, for example `Float32`.
 * `cma_es` keeps the covariance matrix given to `CMAESState` when the solver starts.
@@ -153,7 +168,7 @@ This is yet another round of review – maybe also introducing a few test tools
 * the backtracking of the `proximal_gradient_method` no longer constructs a `ProximalGradientMethodState`
   in every call, but uses two working points of its step size; the internal `_pgm_proximal_step!` now
   takes the sub problem and sub state instead of a whole state. (#643)
-* the modes of `RecordTime` and `DebugTime` are now capitalized consistently, that is `:Cumulative`, `:Iterative` and `:Total`. (#643)
+* the modes of `RecordTime` and `DebugTime` are now capitalized consistently, that is `:Cumulative` and `:Iterative`, and `:Total` for `RecordTime`. (#643)
 * `stochastic_gradient_descent` with `order_type=:FixedRandom` now draws a new permutation at the start of every epoch. (#643)
 * the `TrustRegionsState` fields `Z`, `HZ` and `f_proposal` were removed, since they were never read; the Cauchy point is stored in `Y`. (#643)
 * `ProximalPointState` is an `AbstractManoptSolverState`, since it stores no gradient, and it provides `get_iterate` and `set_iterate!`. (#643)

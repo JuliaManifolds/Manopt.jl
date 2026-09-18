@@ -666,10 +666,7 @@ function get_reason(c::StopWhenBestCostInGenerationConstant)
     return ""
 end
 function show(io::IO, c::StopWhenBestCostInGenerationConstant)
-    return print(
-        io,
-        "StopWhenBestCostInGenerationConstant($(c.iteration_range))\n    $(status_summary(c))",
-    )
+    return print(io, "StopWhenBestCostInGenerationConstant($(c.iteration_range))")
 end
 
 """
@@ -765,10 +762,7 @@ function get_reason(c::StopWhenEvolutionStagnates)
     return ""
 end
 function show(io::IO, c::StopWhenEvolutionStagnates)
-    return print(
-        io,
-        "StopWhenEvolutionStagnates($(c.min_size), $(c.max_size), $(c.fraction))\n    $(status_summary(c))",
-    )
+    return print(io, "StopWhenEvolutionStagnates($(c.min_size), $(c.max_size), $(c.fraction))")
 end
 
 @doc """

@@ -293,7 +293,8 @@ calls_with_kwargs(::typeof(NelderMead!)) = (decorate_objective!, decorate_state!
 function initialize_solver!(mp::AbstractManoptProblem, s::NelderMeadState)
     # init cost and p
     s.costs = get_cost.(Ref(mp), s.population.pts)
-    return s.p = s.population.pts[argmin(s.costs)] # select min
+    s.p = s.population.pts[argmin(s.costs)] # select min
+    return s
 end
 function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     M = get_manifold(mp)

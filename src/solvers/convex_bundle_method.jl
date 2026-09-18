@@ -232,20 +232,10 @@ mutable struct ConvexBundleMethodState{
         ξ = zero(R)
         if isnothing(ϱ) || isnothing(k_min) || isnothing(k_max)
             if isnothing(k_min) || isnothing(k_max)
-                estimation_points = [
-                    close_point(
-                        M, p_estimate, diameter / 3; retraction_method = retraction_method
-                    ) for _ in 1:k_size
-                ]
-                estimation_vectors_1 = [rand(M; vector_at = pe) for pe in estimation_points]
-                estimation_vectors_2 = [rand(M; vector_at = pe) for pe in estimation_points]
                 s = [
-                    sectional_curvature(
-                        M,
-                        estimation_points[i],
-                        estimation_vectors_1[i],
-                        estimation_vectors_2[i],
-                    ) for i in 1:k_size
+                    estimate_sectional_curvature(
+                        M, close_point(M, p_estimate, diameter / 3; retraction_method = retraction_method)
+                    ) for _ in 1:k_size
                 ]
                 isnothing(k_min) && (k_min = minimum(s))
                 isnothing(k_max) && (k_max = maximum(s))
@@ -370,6 +360,9 @@ function status_summary(cbms::ConvexBundleMethodState; context::Symbol = :defaul
     * retraction:                                       $(cbms.retraction_method)
     * Lagrange parameter value:                         $(cbms.ξ)
     * vector transport:                                 $(cbms.vector_transport_method)
+
+    ## Stepsize
+    $(_in_str(status_summary(cbms.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
     $(_in_str(status_summary(cbms.stop; context = context); indent = 0, headers = 1))

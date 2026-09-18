@@ -66,7 +66,7 @@ The following fields are keyword arguments
 
 * `candidate_acceptance_threshold = 0.2`,
 * `damping_increase_factor = 5.0`
-* `damping_reduction_factor = 0.5`
+* `damping_reduction_factor = 1 / damping_increase_factor`
 * `damping_term_min = 0.1`
 * `damping_term_max = Inf`
 * `damping_term = damping_term_min`
@@ -76,7 +76,7 @@ The following fields are keyword arguments
 * `p = `$(_link(:rand))
 * `X = `$(_link(:zero_vector))
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)"))
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `minimum_acceptable_model_improvement::Real = eps(number_eltype(p))`
 
@@ -126,13 +126,13 @@ mutable struct LevenbergMarquardtState{
             M::AbstractManifold, sub_problem, sub_state, initial_residual_values, initial_jacobian_matrices = nothing;
             p = rand(M), X = zero_vector(M, p), direction = copy(M, p, X),
             callbacks = Dict{Symbol, Function}(),
-            stopping_criterion::StoppingCriterion = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
+            stopping_criterion::StoppingCriterion = StopAfterIteration(500) | StopWhenGradientNormLess(1.0e-12) | StopWhenStepsizeLess(1.0e-12),
             retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
             candidate_acceptance_threshold::Real = 0.2,
             damping_increase_factor::Real = 5.0,
             damping_increase_threshold::Real = candidate_acceptance_threshold,
             damping_reduction_threshold::Real = Inf,
-            damping_reduction_factor::Real = 0.5,
+            damping_reduction_factor::Real = 1 / damping_increase_factor,
             damping_term_min::Real = 0.1,
             damping_term_max::Real = Inf,
             damping_term::Real = damping_term_min,
@@ -452,7 +452,7 @@ function LevenbergMarquardt!(
         sub_objective = construct_lm_subobjective(use_unified_basis, nlso, damping_term_min, scaling_threshold, scaling_mode, initial_residual_values, initial_jacobian_matrices),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
         sub_state = (has_anisotropic_max_stepsize(M) || use_unified_basis) ?
-            CoordinatesNormalSystemState(M, p; basis = get_basis(first(get_residual_functions(nlso)).jacobian_type)) :
+            CoordinatesNormalSystemState(M; p = p, basis = get_basis(first(get_residual_functions(nlso)).jacobian_type)) :
             ConjugateResidualState(TangentSpace(M, p), sub_objective; X = zero_vector(M, p)),
         kwargs..., #collect rest
     ) where {O <: Union{ManifoldNonlinearLeastSquaresObjective, AbstractDecoratedManifoldObjective}}

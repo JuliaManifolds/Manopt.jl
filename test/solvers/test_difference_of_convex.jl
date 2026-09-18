@@ -1,5 +1,11 @@
 using LinearAlgebra, Manifolds, Manopt, Random, Test
 
+# a callable struct as closed form sub problem
+struct CallableSubProblem{F}
+    f::F
+end
+(c::CallableSubProblem)(args...) = c.f(args...)
+
 # a step size that records the direction it is handed, to check that one is passed at all
 struct RecordingStepsize <: Manopt.Stepsize
     directions::Vector{Any}
@@ -152,6 +158,9 @@ import Manifolds: inner
             M, grad_h!, p0; g = g, grad_g = (grad_g!), evaluation = InplaceEvaluation()
         )
         p5 = difference_of_convex_proximal_point(M, grad_h, p0; g = g, grad_g = grad_g)
+        # a callable struct is accepted as closed form proximal map
+        prox_g_c(M, λ, p) = p
+        @test difference_of_convex_proximal_point(M, grad_h, p0; prox_g = CallableSubProblem(prox_g_c), stopping_criterion = StopAfterIteration(2)) == difference_of_convex_proximal_point(M, grad_h, p0; prox_g = prox_g_c, stopping_criterion = StopAfterIteration(2))
         # the proximal parameter can be recorded and printed
         io_λ = IOBuffer()
         s_λ = difference_of_convex_proximal_point(
@@ -252,6 +261,8 @@ import Manifolds: inner
             return q
         end
         p11 = difference_of_convex_algorithm(M, f, g, grad_h, p0; sub_problem = dca_sub)
+        # a callable struct is accepted as closed form sub problem
+        @test difference_of_convex_algorithm(M, f, g, grad_h, p0; sub_problem = CallableSubProblem(dca_sub)) == p11
         function dca_sub!(M, q, p, X)
             copyto!(M, q, p)
             lin_s = LinearizedDCCost(g, copy(M, p), copy(M, p, X))

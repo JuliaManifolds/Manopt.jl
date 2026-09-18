@@ -110,6 +110,12 @@ using LinearAlgebra: Symmetric
         grad_f(M, p) = A * p - (p' * A * p) * p
         Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
         obj = ManifoldHessianObjective(f, grad_f, Hess_f)
+        # the subgradient function of a counting objective counts
+        sgo = ManifoldSubgradientObjective(f, grad_f)
+        sgc = ManifoldCountObjective(M, sgo, [:SubGradient])
+        @test Manopt.get_subgradient_function(sgc)(M, p) == grad_f(M, p)
+        @test get_count(sgc, :SubGradient) == 1
+        @test Manopt.get_subgradient_function(sgc, true) === grad_f
         c_obj = ManifoldCountObjective(M, obj, [:Cost, :Gradient, :Hessian])
         # undecorated / recursive cost -> exactly f
         @test Manopt.get_cost_function(obj) === Manopt.get_cost_function(c_obj, true)

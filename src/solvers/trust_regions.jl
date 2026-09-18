@@ -517,7 +517,7 @@ function trust_regions!(
     trs = TrustRegionsState(
         M, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, TrustRegionsState),
-        p = p, X = get_gradient(dmp, p),
+        p = p,
         trust_region_radius = trust_region_radius,
         max_trust_region_radius = max_trust_region_radius,
         acceptance_rate = acceptance_rate,
@@ -535,6 +535,7 @@ function trust_regions!(
     return get_solver_return(get_objective(dmp), dtrs)
 end
 calls_with_kwargs(::typeof(trust_regions!)) = (decorate_objective!, decorate_state!)
+deprecated_keywords(::typeof(trust_regions!)) = Set([:ρ_prime])
 
 function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     M = get_manifold(mp)
@@ -651,7 +652,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     end
     # (c) decreased and performed well enough -> accept step
     if model_decreased && (ρ > trs.acceptance_rate)
-        copyto!(trs.p, trs.p_proposal)
+        copyto!(M, trs.p, trs.p_proposal)
         # If working with approximate Hessian -> update base point there
         update_hessian_basis!(M, get_hessian_function(mho, true), trs.p)
         # and the gradient at the new iterate

@@ -45,6 +45,15 @@ using ManifoldDiff: prox_distance, prox_distance!
     )
     adjoint_DΛ(N, m, n, ξ) =
         Manopt.Test.adjoint_differential_forward_logs(N.manifold, m, ξ[N, :vector])
+    prox_f!(M, y, λ, x) = prox_distance!(M, y, λ / α, data, x, 2)
+    function DΛ!(M, Y, m, X)
+        N = TangentBundle(M)
+        zero_vector!(M, Y[N, :point], m)
+        Manopt.Test.differential_forward_logs!(M, Y[N, :vector], m, X)
+        return Y
+    end
+    adjoint_DΛ!(N, X, m, n, ξ) =
+        Manopt.Test.adjoint_differential_forward_logs!(N.manifold, X, m, ξ[N, :vector])
 
     m = fill(mid_point(pixelM, data[1], data[2]), 2)
     n = Λ(M, m)
@@ -77,7 +86,17 @@ using ManifoldDiff: prox_distance, prox_distance!
         o5 = ChambollePock(callargs_linearized...; linearized_forward_operator = DΛ, relax = :dual)
         @test o5 ≈ o1 atol = 2 * 1.0e-7
         @test_throws ArgumentError ChambollePock(callargs_exact...; variant = :exact)
+        # unknown symbols are rejected with their value
+        @test_throws DomainError ChambollePock(callargs_linearized...; linearized_forward_operator = DΛ, relax = :foo)
+        @test_throws DomainError ChambollePock(callargs_linearized...; linearized_forward_operator = DΛ, variant = :foo)
         @test o1 ≈ o3
+        # the in-place functions give the same results
+        callargs_ip = [M, N, f, x0, ξ0, m, n, prox_f!, prox_g_dual!, adjoint_DΛ!]
+        ip = (; relax = :dual, evaluation = InplaceEvaluation())
+        o1i = ChambollePock(callargs_ip...; linearized_forward_operator = DΛ!, ip...)
+        @test isapprox(M, o1i, o1)
+        o3i = ChambollePock(callargs_ip...; Λ = Λ!, ip...)
+        @test isapprox(M, o3i, o3)
         o1a = ChambollePock(
             callargs_linearized...;
             linearized_forward_operator = DΛ,

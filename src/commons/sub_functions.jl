@@ -180,7 +180,7 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
     Xt = zero_vector(M, p)
     # First Summand of Hess L
     Y1, Y2 = submanifold_components(N, Y)
-    copyto!(M, Y1, get_hessian(M, cKKTvfJ.cmo, p, Xp)) # Hess f
+    get_hessian!(M, Y1, cKKTvfJ.cmo, p, Xp) # Hess f
     # Build the rest iteratively
     for i in 1:m #ineq
         get_hess_inequality_constraint!(M, Xt, cKKTvfJ.cmo, p, Xp, i)
@@ -461,7 +461,9 @@ function Base.show(io::IO, KKTvf::KKTVectorField)
 end
 function status_summary(KKTvf::KKTVectorField; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvf))
-    return "The KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvf.cmo; context = context))"
+    return """
+    The KKT vector field for the constrained objective
+    $(_in_str(status_summary(KKTvf.cmo; context = context); indent = 1))"""
 end
 
 @doc """
@@ -545,7 +547,9 @@ function Base.show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
 end
 function status_summary(KKTvfJ::KKTVectorFieldJacobian; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvfJ))
-    return "The Jacobian of the KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfJ.cmo; context = context))"
+    return """
+    The Jacobian of the KKT vector field for the constrained objective
+    $(_in_str(status_summary(KKTvfJ.cmo; context = context); indent = 1))"""
 end
 
 @doc """
@@ -628,7 +632,9 @@ function Base.show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
 end
 function status_summary(KKTvfAdJ::KKTVectorFieldAdjointJacobian; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvfAdJ))
-    return "The adjoint Jacobian of the KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfAdJ.cmo; context = context))"
+    return """
+    The adjoint Jacobian of the KKT vector field for the constrained objective
+    $(_in_str(status_summary(KKTvfAdJ.cmo; context = context); indent = 1))"""
 end
 
 @doc """
@@ -667,7 +673,9 @@ function Base.show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
 end
 function status_summary(KKTvfNSq::KKTVectorFieldNormSq; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvfNSq))
-    return "The squared norm of the KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfNSq.cmo; context = context))"
+    return """
+    The squared norm of the KKT vector field for the constrained objective
+    $(_in_str(status_summary(KKTvfNSq.cmo; context = context); indent = 1))"""
 end
 
 @doc """
@@ -741,7 +749,9 @@ function Base.show(io::IO, KKTvfNSqGrad::KKTVectorFieldNormSqGradient)
 end
 function status_summary(KKTvfNSqGrad::KKTVectorFieldNormSqGradient; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvfNSqGrad))
-    return "The gradient of the squared norm of the KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfNSqGrad.cmo; context = context))"
+    return """
+    The gradient of the squared norm of the KKT vector field for the constrained objective
+    $(_in_str(status_summary(KKTvfNSqGrad.cmo; context = context); indent = 1))"""
 end
 
 @doc """

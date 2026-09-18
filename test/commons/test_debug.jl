@@ -310,6 +310,9 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test repr(DebugWarnIfStepsizeCollapsed(1.0, :No)) == "DebugWarnIfStepsizeCollapsed(1.0, :No)"
         @test startswith(Manopt.status_summary(w9), "A DebugAction warning if the cost increases")
 
+        # both spellings of the proximal parameter build the same action
+        @test DebugFactory([:ProximalParameter])[:Iteration] isa DebugProximalParameter
+        @test DebugFactory([(:ProximalParameter, "λ: %f")])[:Iteration] isa DebugProximalParameter
         df1 = DebugFactory([:WarnCost])
         @test isa(df1[:Iteration], DebugWarnIfCostNotFinite)
         df2 = DebugFactory([:WarnGradient])

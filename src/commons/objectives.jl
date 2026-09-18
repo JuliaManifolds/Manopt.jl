@@ -257,8 +257,12 @@ end
 
 Returns the internally stored unconstrained [`AbstractManifoldObjective`](@ref)
 within the [`ConstrainedManifoldObjective`](@ref).
+This acts transparently through [`AbstractDecoratedManifoldObjective`](@ref)s
 """
 get_unconstrained_objective(co::ConstrainedManifoldObjective) = co.objective
+function get_unconstrained_objective(admo::AbstractDecoratedManifoldObjective)
+    return get_unconstrained_objective(get_objective(admo, false))
+end
 
 function get_cost(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
     return get_cost(M, co.objective, p)
@@ -1538,6 +1542,16 @@ function get_gradient_function(
         return (M, X, p) -> get_gradient!(M, X, sco, p)
     end
 end
+function get_subgradient_function(
+        sco::ManifoldCachedObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation()
+    )
+    recursive && (return get_subgradient_function(sco.objective, recursive; evaluation = evaluation))
+    if evaluation isa AllocatingEvaluation
+        return (M, p) -> get_subgradient(M, sco, p)
+    else
+        return (M, X, p) -> get_subgradient!(M, X, sco, p)
+    end
+end
 
 function get_cost_and_gradient(M::AbstractManifold, mco::ManifoldCachedObjective, p)
     #Neither cost not grad cached -> evaluate normally
@@ -2476,6 +2490,14 @@ function get_gradient_function(mco::ManifoldCountObjective, recursive = false; e
         return (M, X, p) -> get_gradient!(M, X, mco, p)
     end
 end
+function get_subgradient_function(mco::ManifoldCountObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+    recursive && return get_subgradient_function(mco.objective, recursive; evaluation = evaluation)
+    if evaluation isa AllocatingEvaluation
+        return (M, p) -> get_subgradient(M, mco, p)
+    else
+        return (M, X, p) -> get_subgradient!(M, X, mco, p)
+    end
+end
 
 function get_gradient(M::AbstractManifold, co::ManifoldCountObjective, p; kwargs...)
     _count_if_exists(co, :Gradient)
@@ -2769,6 +2791,10 @@ Currently the following cases are covered, sorted by their popularity
     the other missing third information, the differential for the first or the gradient for the second
 5. a tuple `(f, g, d)` of three functions, computing cost `f`, gradient `g`,
     and differential `d` separately
+6. a tuple `(f, gd)` of a cost function and a combined function `(X, d) = gd(M, p, Y)`
+    computing the gradient `X` and the differential `d` in direction `Y` together
+7. a single function `fgd` representing a combined function `(c, X, d) = fgd(M, p, Y)`
+    that computes cost, gradient and differential in direction `Y` together
 
 In all cases a gradient and/or a differential that is present is assumed to work in-place,
 see the [`InplaceManifoldFunction`](@ref) wrapper for alternatives.
@@ -2785,14 +2811,18 @@ They can also be addressed by their alternate constructors
 * `cost = missing` the cost function `c = f(M,p)`
 * `costdifferential = missing` the combined cost and differential function  `fdf(M, p, X)`
 * `costgradient = missing` the combined cost and gradient function `fg(M,p)` or in-place `fg!(M, X, p)`
+* `costgradientdifferential = missing` the combined cost, gradient and differential function `fgd(M, p, Y)` or in-place `fgd!(M, X, p, Y)`
 * `differential = missing` the differential `d = df(M, p, X)`
 $(_kwargs(:evaluation))
 * `gradient=missing` the gradient function `g(M, p)` or in-place `g!(M, X, p)`
+* `gradientdifferential = missing` the combined gradient and differential function `gd(M, p, Y)` or in-place `gd!(M, X, p, Y)`
 * `p = missing` provide a point to automatically ensure the functions of the objective “act” on mutating variables.
 
 Where:
- * At least one of `cost`, `costgradient` or `costdifferential` must be provided.
- * Either `gradient`, `costgradient`, `differential` or `costdifferential` must be provided.
+ * At least one of `cost`, `costgradient`, `costdifferential` or `costgradientdifferential` must be provided.
+ * Either `gradient`, `costgradient`, `differential`, `costdifferential`, `gradientdifferential`
+   or `costgradientdifferential` must be provided.
+ * A combined function with a differential is called with a zero direction when only its other values are needed.
  * If more than one function provides the same thing (e.g. cost), it is assumed that all
    such functions return the same value. Optimization algorithms will attempt to make the
    most efficient use of provided functions fitting for the access required.
@@ -2806,6 +2836,7 @@ end
 function ManifoldFirstOrderObjective(;
         cost = missing, differential = missing, gradient = missing,
         costgradient = missing, costdifferential = missing,
+        gradientdifferential = missing, costgradientdifferential = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), p = missing
     )
     no_cost = ismissing(cost)
@@ -2813,20 +2844,14 @@ function ManifoldFirstOrderObjective(;
     no_grad = ismissing(gradient)
     ncg = ismissing(costgradient)
     ncd = ismissing(costdifferential)
+    ngd = ismissing(gradientdifferential)
+    ncgd = ismissing(costgradientdifferential)
 
-    if no_cost && ncg && ncd
-        throw(
-            ArgumentError(
-                "Either cost, costgradient or costdifferential keyword argument needs to be provided",
-            ),
-        )
+    if no_cost && ncg && ncd && ncgd
+        throw(ArgumentError("No keyword argument providing a cost was given."))
     end
-    if no_grad && ncg && no_diff && ncd
-        throw(
-            ArgumentError(
-                "Either gradient, costgradient, differential or costdifferential keyword argument needs to be provided",
-            ),
-        )
+    if no_grad && ncg && no_diff && ncd && ngd && ncgd
+        throw(ArgumentError("No keyword argument providing a gradient or a differential was given."))
     end
     nt = (;)
     if !no_cost
@@ -2843,6 +2868,12 @@ function ManifoldFirstOrderObjective(;
     end
     if !ncd
         nt = merge(nt, (; costdifferential = maybe_wrap_function(costdifferential, p; result = :Number)))
+    end
+    if !ngd
+        nt = merge(nt, (; gradientdifferential = maybe_wrap_function(gradientdifferential, p, evaluation; result = :TangentVectorAndNumber)))
+    end
+    if !ncgd
+        nt = merge(nt, (; costgradientdifferential = maybe_wrap_function(costgradientdifferential, p, evaluation; result = :NumberTangentVectorNumber)))
     end
     return ManifoldFirstOrderObjective{typeof(nt)}(nt)
 end
@@ -2902,6 +2933,8 @@ function get_cost(M::AbstractManifold, mfo::ManifoldFirstOrderObjective, p)
         return mfo.functions[:costdifferential](M, p, X)[1]
     end
     haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, X, p)[1])
+    haskey(mfo.functions, :costgradientdifferential) &&
+        (return mfo.functions[:costgradientdifferential](M, X, p, zero_vector(M, p))[1])
     return error("$mfo does not seem to provide a cost")
 end
 
@@ -2937,6 +2970,13 @@ function get_cost_and_differential(
         return mfo.functions[:costdifferential](M, p, X)
     elseif haskey(mfo.functions, :cost) && haskey(mfo.functions, :differential)
         return (mfo.functions[:cost](M, p), mfo.functions[:differential](M, p, X))
+    elseif haskey(mfo.functions, :costgradientdifferential)
+        _Y = ismissing(gradient) ? zero_vector(M, p) : gradient
+        cost, _, d = mfo.functions[:costgradientdifferential](M, _Y, p, X)
+        return (cost, d)
+    elseif haskey(mfo.functions, :cost) && haskey(mfo.functions, :gradientdifferential)
+        _Y = ismissing(gradient) ? zero_vector(M, p) : gradient
+        return (mfo.functions[:cost](M, p), mfo.functions[:gradientdifferential](M, _Y, p, X)[2])
     elseif haskey(mfo.functions, :costgradient)
         _Y = ismissing(gradient) ? zero_vector(M, p) : gradient
         # here we can not avoid the evaluation of the gradient even if it was already evaluated
@@ -2959,6 +2999,13 @@ function get_cost_and_gradient!(
         return mfo.functions[:cost](M, p), mfo.functions[:gradient](M, X, p)
     end
     Y = zero_vector(M, p)
+    if haskey(mfo.functions, :costgradientdifferential)
+        cost, X, _ = mfo.functions[:costgradientdifferential](M, X, p, Y)
+        return (cost, X)
+    end
+    if haskey(mfo.functions, :cost) && haskey(mfo.functions, :gradientdifferential)
+        return (mfo.functions[:cost](M, p), mfo.functions[:gradientdifferential](M, X, p, Y)[1])
+    end
     if haskey(mfo.functions, :costdifferential) && haskey(mfo.functions, :gradient)
         return (
             mfo.functions[:costdifferential](M, p, Y)[1], mfo.functions[:gradient](M, X, p),
@@ -3003,6 +3050,12 @@ function get_differential(
     haskey(mfo.functions, :differential) && (return mfo.functions[:differential](M, p, X))
     haskey(mfo.functions, :costdifferential) &&
         (return mfo.functions[:costdifferential](M, p, X)[2])
+    if haskey(mfo.functions, :gradientdifferential) || haskey(mfo.functions, :costgradientdifferential)
+        _Y = ismissing(gradient) ? zero_vector(M, p) : gradient
+        haskey(mfo.functions, :gradientdifferential) &&
+            (return mfo.functions[:gradientdifferential](M, _Y, p, X)[2])
+        return mfo.functions[:costgradientdifferential](M, _Y, p, X)[3]
+    end
     # default: inner with gradient
     # (a) we have gradient but it is not evaluated -> eval
     (!evaluated && !ismissing(gradient)) && (get_gradient!(M, gradient, mfo, p))
@@ -3051,6 +3104,10 @@ function get_gradient!(
     )
     haskey(mfo.functions, :gradient) && (return mfo.functions[:gradient](M, X, p))
     haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, X, p)[2])
+    haskey(mfo.functions, :gradientdifferential) &&
+        (return mfo.functions[:gradientdifferential](M, X, p, zero_vector(M, p))[1])
+    haskey(mfo.functions, :costgradientdifferential) &&
+        (return mfo.functions[:costgradientdifferential](M, X, p, zero_vector(M, p))[2])
     return error("$mfo does not seem to provide a gradient")
 end
 

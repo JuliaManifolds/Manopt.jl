@@ -225,7 +225,7 @@ function Manopt.ChambollePockState(
         p,
         copy(M, p),
         X,
-        copy(N, X),
+        copy(N, n, X),
         convert(R, primal_stepsize),
         convert(R, dual_stepsize),
         convert(R, acceleration),
@@ -411,6 +411,12 @@ function ChambollePock!(
         evaluation = evaluation
     )
     keywords_accepted(ChambollePock!; kwargs...)
+    (variant in (:exact, :linearized)) || throw(
+        DomainError(variant, "The variant has to be one of :exact or :linearized.")
+    )
+    (relax in (:primal, :dual)) || throw(
+        DomainError(relax, "The relaxation has to be one of :primal or :dual.")
+    )
     (variant === :exact && ismissing(Λ)) &&
         throw(ArgumentError("The `:exact` variant requires the forward operator `Λ`."))
     (variant === :linearized && ismissing(linearized_forward_operator)) &&

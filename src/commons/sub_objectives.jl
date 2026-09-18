@@ -682,7 +682,7 @@ function get_gradient!(
         len_o = length(o)
         _add_gradient!(
             M, Y, o, r, p, X;
-            value_cache = value_cache[(start + 1):(start + len_o)], threshold = lmsco.threshold, mode = lmsco.mode,
+            value_cache = view(value_cache, (start + 1):(start + len_o)), threshold = lmsco.threshold, mode = lmsco.mode,
         )
         start += len_o
     end
@@ -701,13 +701,21 @@ function _add_gradient!(
     residual_scaling, operator_scaling = get_LevenbergMarquardt_scaling(ρ_prime, ρ_double_prime, F_sq, threshold, mode)
     # Compute J_F^*(p)[C^T C J_F(p)[X]], but since C is symmetric, we can do that squared indirectly
     b = zero(a)
-    get_jacobian!(M, b, o, p, X)
+    if isnothing(jacobian_cache)
+        get_jacobian!(M, b, o, p, X)
+    else # J_F(p)[X] from the cached matrix
+        b .= jacobian_cache * get_coordinates(M, p, X, get_basis(o.jacobian_type))
+    end
     # Compute C^TCb = C^2 b (inplace of b)
     b .= ρ_prime .* (I - operator_scaling * (a * a'))^2 * b
     # add C^T y = C^T (sqrt(ρ(p)) / (1 - α) F(p)) (which overall has a ρ_prime upfront)
     b .+= residual_scaling .* sqrt(ρ_prime) .* (I - operator_scaling * (a * a')) * a
     # apply the adjoint
-    add_adjoint_jacobian!(M, Y, o, p, b)
+    if isnothing(jacobian_cache)
+        add_adjoint_jacobian!(M, Y, o, p, b)
+    else # J_F^*(p)[b] from the cached matrix
+        add_vector!(M, Y, p, jacobian_cache' * b, get_basis(o.jacobian_type))
+    end
     return Y
 end
 # Componentwise
@@ -718,7 +726,11 @@ function _add_gradient!(
     # per single component a for-loop similar to the one for the blocks
     r = cr.robustifier
     b = zero(value_cache)
-    get_jacobian!(M, b, o, p, X)
+    if isnothing(jacobian_cache)
+        get_jacobian!(M, b, o, p, X)
+    else # J_F(p)[X] from the cached matrix
+        b .= jacobian_cache * get_coordinates(M, p, X, get_basis(o.jacobian_type))
+    end
     # Componentwise a few things decouple
     for (i, ai) in enumerate(value_cache)
         ai_sq = abs(ai)^2
@@ -731,7 +743,11 @@ function _add_gradient!(
         b[i] += residual_scaling * sqrt(ρ_prime) * (1 - operator_scaling * ai_sq) * ai
     end
     # apply the adjoint
-    add_adjoint_jacobian!(M, Y, o, p, b)
+    if isnothing(jacobian_cache)
+        add_adjoint_jacobian!(M, Y, o, p, b)
+    else # J_F^*(p)[b] from the cached matrix
+        add_vector!(M, Y, p, jacobian_cache' * b, get_basis(o.jacobian_type))
+    end
     return Y
 end
 
@@ -782,7 +798,7 @@ function get_hessian!(
         len_o = length(o)
         _add_hessian!(
             M, Z, o, r, p, X, Y;
-            value_cache = value_cache[(start + 1):(start + len_o)], threshold = lmsco.threshold, mode = lmsco.mode,
+            value_cache = view(value_cache, (start + 1):(start + len_o)), threshold = lmsco.threshold, mode = lmsco.mode,
         )
         start += len_o
     end

@@ -165,9 +165,9 @@ This hence also boils down to two proximal maps, though each evaluates proximal 
 that is, component wise in a vector.
 
 !!! note
-    The parallel Douglas Rachford does not work in-place for now, since
-    while creating the new starting point `p'` on the power manifold, a copy of `p`
-    is created.
+    For the parallel Douglas Rachford the starting point `p` becomes the first
+    component of a point on the power manifold, and `DouglasRachford!` works
+    in-place of that component, that is of `p` itself.
 
 If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proximal maps are kept unchanged.
 
@@ -208,7 +208,7 @@ $(_note(:OutputSection))
 @doc "$(_doc_Douglas_Rachford)"
 DouglasRachford(::AbstractManifold, args...; kwargs...)
 function DouglasRachford(
-        M::AbstractManifold, f::TF, proxes_f::Vector{<:Any}, p;
+        M::AbstractManifold, f::TF, proxes_f::Union{Tuple, AbstractVector}, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), parallel = 0, kwargs...,
     ) where {TF}
     p_ = maybe_wrap_variable(p)
@@ -234,7 +234,7 @@ calls_with_kwargs(::typeof(DouglasRachford)) = (DouglasRachford!,)
 @doc "$(_doc_Douglas_Rachford)"
 DouglasRachford!(::AbstractManifold, args...; kwargs...)
 function DouglasRachford!(
-        M::AbstractManifold, f::TF, proxes_f::Vector{<:Any}, p;
+        M::AbstractManifold, f::TF, proxes_f::Union{Tuple, AbstractVector}, p;
         evaluation = AllocatingEvaluation(), parallel::Integer = 0, kwargs...,
     ) where {TF}
     proxes_f_ = [maybe_wrap_function(prox_f, p, evaluation; result = :Point) for prox_f in proxes_f]

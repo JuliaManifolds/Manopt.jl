@@ -184,6 +184,16 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
                 Zwc = get_gradient(M, nlsoCw, p; value_cache = f(M, p), jacobian_cache = [J(M, p)])
                 @test calls[] == 0
                 @test isapprox(M, p, Zw, Zwc; atol = 1.0e-15)
+                # the surrogate gradient helpers use a given Jacobian cache for both robustifier kinds
+                Jp = J(M, p)
+                kw = (; value_cache = f(M, p), threshold = 1.0e-4, mode = :Strict)
+                for r in (HuberRobustifier(), ComponentwiseRobustifierFunction(HuberRobustifier()))
+                    Ya = zero_vector(M, p)
+                    Manopt._add_gradient!(M, Ya, vgf2, r, p, X; kw...)
+                    Yc = zero_vector(M, p)
+                    Manopt._add_gradient!(M, Yc, vgf2, r, p, X; jacobian_cache = Jp, kw...)
+                    @test isapprox(M, p, Ya, Yc; atol = 1.0e-14)
+                end
             end
         end
         @testset "Dummy decorator pass through" begin

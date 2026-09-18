@@ -120,6 +120,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
     end
 
     @test Manopt.get_unconstrained_objective(cofa) isa ManifoldFirstOrderObjective
+    # and through a decorator
+    @test Manopt.get_unconstrained_objective(ManifoldCountObjective(M, cofa, [:Cost])) === Manopt.get_unconstrained_objective(cofa)
     cofha = ConstrainedManifoldObjective(
         f, grad_f, g, grad_g, h, grad_h;
         hess_f = hess_f, hess_g = hess_g, hess_h = hess_h,
@@ -448,6 +450,12 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             Zg2 = 2.0 * KKTvfAdJ(N, q, Zg1)
             W = KKTvfNG(N, q)
             @test W == Zg2
+            # the in-place variants agree with the allocating ones
+            Vi = copy(N, q, Zg2)
+            @test KKTvf(N, Vi, q) == Y
+            @test KKTvfJ(N, Vi, q, Y) == Z
+            @test KKTvfAdJ(N, Vi, q, Y) == Z2
+            @test KKTvfNG(N, Vi, q) == W
         end
         @testset "Condensed KKT, Jacobian" begin
             CKKTvf = CondensedKKTVectorField(coh, μ, s, β)
@@ -622,20 +630,20 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             Ye = get_hess_equality_constraint(M, obj, p, X, :)
             @test Ye == Xe
             for i in 1:1 #number of equality constr
-                X = get_hess_equality_constraint(M, ddo, p, X, i)
-                Y = get_hess_equality_constraint(M, obj, p, X, i)
-                @test X == Y
-                X = get_hess_equality_constraint!(M, X, ddo, p, X, i)
-                Y = get_hess_equality_constraint!(M, Y, obj, p, X, i)
-                @test X == Y
+                Xh = get_hess_equality_constraint(M, ddo, p, X, i)
+                Yh = get_hess_equality_constraint(M, obj, p, X, i)
+                @test Xh == Yh
+                get_hess_equality_constraint!(M, Xh, ddo, p, X, i)
+                get_hess_equality_constraint!(M, Yh, obj, p, X, i)
+                @test Xh == Yh
             end
             for j in 1:2 # for every inequality constraint
-                X = get_hess_inequality_constraint(M, ddo, p, X, j)
-                Y = get_hess_inequality_constraint(M, obj, p, X, j)
-                @test X == Y
-                X = get_hess_inequality_constraint!(M, X, ddo, p, X, j)
-                Y = get_hess_inequality_constraint!(M, Y, obj, p, X, j)
-                @test X == Y
+                Xh = get_hess_inequality_constraint(M, ddo, p, X, j)
+                Yh = get_hess_inequality_constraint(M, obj, p, X, j)
+                @test Xh == Yh
+                get_hess_inequality_constraint!(M, Xh, ddo, p, X, j)
+                get_hess_inequality_constraint!(M, Yh, obj, p, X, j)
+                @test Xh == Yh
             end
             Xe = get_hess_inequality_constraint(M, ddo, p, X, :)
             Ye = get_hess_inequality_constraint(M, obj, p, X, :)

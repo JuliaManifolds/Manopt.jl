@@ -350,9 +350,10 @@ function step_solver!(mp::AbstractManoptProblem, s::ParticleSwarmState, ::Any)
         vector_transport_to!(
             M, s.velocity[i], s.q, s.velocity[i], s.swarm[i], s.vector_transport_method
         )
-        if get_cost(mp, s.swarm[i]) < get_cost(mp, s.positional_best[i])
+        c = get_cost(mp, s.swarm[i])
+        if c < get_cost(mp, s.positional_best[i])
             copyto!(M, s.positional_best[i], s.swarm[i])
-            if get_cost(mp, s.positional_best[i]) < get_cost(mp, s.p)
+            if c < get_cost(mp, s.p)
                 copyto!(M, s.p, s.positional_best[i])
             end
         end

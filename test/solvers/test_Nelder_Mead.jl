@@ -26,6 +26,9 @@ Random.seed!(29)
             )
             x = get_solver_result(rst)
             rec = get_record(rst)
+            # initialization returns the state
+            s_init = NelderMeadState(M)
+            @test Manopt.initialize_solver!(DefaultManoptProblem(M, ManifoldCostObjective(Rosenbrock)), s_init) === s_init
             nonincreasing = [rec[i] >= rec[i + 1] for i in 1:(length(rec) - 1)]
             @test any(map(!, nonincreasing)) == false
 

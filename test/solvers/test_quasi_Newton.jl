@@ -207,7 +207,7 @@ end
 
         for T in [
                     InverseDFP(), DFP(), Broyden(0.5), InverseBroyden(0.5),
-                    Broyden(0.5, :Davidon), Broyden(0.5, :InverseDavidon), InverseBFGS(), BFGS(),
+                    Broyden(0.5, :Davidon), InverseBroyden(0.5, :InverseDavidon), InverseBFGS(), BFGS(),
                 ],
                 c in [true, false]
             x_direction = quasi_Newton(
@@ -279,6 +279,9 @@ end
     end
 
     @testset "update rules" begin
+        # the stabilization parameter takes any real number
+        @test SR1(1).r === 1.0
+        @test InverseSR1(1 // 2).r === 0.5
         n = 4
         A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
         A = (A + A') / 2
@@ -593,6 +596,13 @@ end
         Manopt.update_hessian!(d, dmp, qns, p, 1)
         # scale ⟨s,y⟩/‖y‖² = 2 * 2/4 = 1 on the complement, s/y = 1/2 along s
         @test d.matrix ≈ [0.5 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
+    end
+    @testset "One gradient evaluation at the start" begin
+        Ne = Euclidean(2)
+        fe(M, q) = sum(abs2, q)
+        grad_fe(M, q) = 2q
+        r = quasi_Newton(Ne, fe, grad_fe, [1.0, 1.0]; count = [:Gradient], return_objective = true, stopping_criterion = StopAfterIteration(0))
+        @test get_count(r[1], :Gradient) == 1
     end
     @testset "Byrd's rule on a complex manifold" begin
         Mc = Euclidean(2; field = ℂ)

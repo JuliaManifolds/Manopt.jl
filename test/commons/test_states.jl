@@ -192,7 +192,7 @@ Manopt.get_message(::MessageTestState) = "sub message"
         M = Euclidean(3)
         p = [1.0, 2.0, 3.0]
         @test Manopt.get_message(SubGradientMethodState(M; p = p, stepsize = MessageTestStepsize())) == "step message"
-        pgms = ProjectedGradientMethodState(M, p; stepsize = MessageTestStepsize(), backtrack = MessageTestStepsize())
+        pgms = ProjectedGradientMethodState(M; p = p, stepsize = MessageTestStepsize(), backtrack = MessageTestStepsize())
         @test Manopt.get_message(pgms) == "step message\nstep message"
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), ManifoldCostObjective((TpM, X) -> 0.0))
         @test Manopt.get_message(AdaptiveRegularizationState(M, sub_problem, MessageTestState(); p = p)) == "sub message"
@@ -218,8 +218,8 @@ Manopt.get_message(::MessageTestState) = "sub message"
             StochasticGradientDescentState(M; p = copy(p)),
             AlternatingGradientDescentState(M; p = copy(p)),
             GradientSamplingState(M; p = copy(p)),
-            ProjectedGradientMethodState(M, copy(p)),
-            MeshAdaptiveDirectSearchState(M, copy(p)),
+            ProjectedGradientMethodState(M; p = copy(p)),
+            MeshAdaptiveDirectSearchState(M; p = copy(p)),
             LevenbergMarquardtState(M, sub_problem, MessageTestState(), zeros(2); p = copy(p)),
             CMAESState(
                 M, copy(p), 2, 5, 1.5, 0.1, 0.2, 0.3, 0.4, 1.0, 1.2, StopAfterIteration(1),

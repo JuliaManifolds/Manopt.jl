@@ -425,7 +425,9 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
             ),
         ) / (pbms.ε * norm_d)
     end
-    if get_cost(mp, pbms.p) ≤ (get_cost(mp, pbms.p_last_serious) + pbms.m * pbms.ν)
+    f_p = get_cost(mp, pbms.p)
+    f_last_serious = get_cost(mp, pbms.p_last_serious)
+    if f_p ≤ (f_last_serious + pbms.m * pbms.ν)
         copyto!(M, pbms.p_last_serious, pbms.p)
         if pbms.δ < zero(eltype(pbms.μ))
             pbms.μ = log(k + 1)
@@ -439,7 +441,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
         push!(pbms.bundle, (copy(M, pbms.p), copy(M, pbms.p, pbms.X)))
         push!(
             pbms.lin_errors,
-            get_cost(mp, pbms.p_last_serious) - get_cost(mp, pbms.p) + inner(
+            f_last_serious - f_p + inner(
                 M,
                 pbms.p_last_serious,
                 vector_transport_to(
@@ -452,7 +454,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
         )
         push!(
             pbms.approx_errors,
-            get_cost(mp, pbms.p_last_serious) - get_cost(mp, pbms.p) +
+            f_last_serious - f_p +
                 inner(
                 M,
                 pbms.p_last_serious,

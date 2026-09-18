@@ -17,6 +17,10 @@ using Manifolds, Manopt, ManifoldsBase, Test
     @test get_iterate(s) == η2
     @test get_iterate(s) === stored
     set_iterate!(s, TangentSpace(M, p), η)
+    # the iterate can also be set as a parameter
+    Manopt.set_parameter!(s, :Iterate, η2)
+    @test get_iterate(s) == η2
+    set_iterate!(s, TangentSpace(M, p), η)
     # the default radius comes from the base manifold (finite here), not the flat tangent space
     @test s.trust_region_radius ≈ injectivity_radius(M) / 4
     # standalone solve with a negative-curvature model stays finite with the default radius

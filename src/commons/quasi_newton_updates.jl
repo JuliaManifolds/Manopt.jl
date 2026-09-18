@@ -166,13 +166,13 @@ This method can be stabilized by only performing the update if the absolute valu
 for some ``r>0``. For more details, see Section 6.2 in [NocedalWright:2006](@cite).
 
 # Constructor
-    SR1(r::Float64=-1.0)
+    SR1(r::Real=-1.0)
 
 Generate the `SR1` update.
 """
 struct SR1 <: AbstractQuasiNewtonUpdateRule
     r::Float64
-    SR1(r::Float64 = -1.0) = new(r)
+    SR1(r::Real = -1.0) = new(r)
 end
 
 @doc """
@@ -208,13 +208,13 @@ This method can be stabilized by only performing the update if the absolute valu
 for some ``r>0``. For more details, see Section 6.2 in [NocedalWright:2006](@cite).
 
 # Constructor
-    InverseSR1(r::Float64=-1.0)
+    InverseSR1(r::Real=-1.0)
 
 Generate the `InverseSR1`.
 """
 struct InverseSR1 <: AbstractQuasiNewtonUpdateRule
     r::Float64
-    InverseSR1(r::Float64 = -1.0) = new(r)
+    InverseSR1(r::Real = -1.0) = new(r)
 end
 
 @doc """
@@ -646,8 +646,8 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     } <: AbstractQuasiNewtonDirectionUpdate
     memory_s::CircularBuffer{T}
     memory_y::CircularBuffer{T}
-    ξ::Vector{F}
-    ρ::Vector{F}
+    ξ::V
+    ρ::V
     initial_scale::G
     project!::Proj
     vector_transport_method::VT

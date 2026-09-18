@@ -145,6 +145,15 @@ using Manopt, Manifolds, Test
         stochastic_gradient_descent!(M, msgo2, q2)
         @test is_point(M, q1, true)
         @test is_point(M, q2, true)
+        # an in-place gradient gives the same run as the allocating one
+        sc = StopAfterIteration(50)
+        q3 = copy(M, p)
+        stochastic_gradient_descent!(
+            M, sgrad_f2!, q3;
+            evaluation = InplaceEvaluation(), order_type = :Linear, stopping_criterion = sc,
+        )
+        q3a = stochastic_gradient_descent(M, sgrad_f2, p; order_type = :Linear, stopping_criterion = sc)
+        @test isapprox(M, q3, q3a)
     end
     @testset "Circle example" begin
         Mc = Circle()

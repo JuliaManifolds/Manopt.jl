@@ -16,6 +16,11 @@ using LinearAlgebra: I, tr
         p0 = project(M, ones(d))
         # This run (and the following ones) converge to the minimizer in 12 iterations
         sol = augmented_Lagrangian_method(M, f, grad_f, p0; g = g, grad_g = grad_g)
+        # a user-supplied multiplier vector is updated in place and the run is unchanged
+        μ0 = ones(d)
+        sol_μ = augmented_Lagrangian_method(M, f, grad_f, p0; g = g, grad_g = grad_g, μ = μ0)
+        @test sol_μ == sol
+        @test μ0 != ones(d)
         @test distance(M, sol, v0) < 8 * 1.0e-4
         sol2 = copy(M, p0)
         augmented_Lagrangian_method!(M, f, grad_f, sol2; g = g, grad_g = grad_g)
@@ -57,6 +62,8 @@ using LinearAlgebra: I, tr
             Manopt.status_summary(alms; context = :default),
             "# Solver state for `Manopt.jl`s Augmented Lagrangian Method\n"
         )
+        @test startswith(repr(alms), "AugmentedLagrangianMethodState(DefaultManoptProblem(")
+        @test Manopt.status_summary(alms; context = :short) == repr(alms)
         @test Manopt.get_sub_problem(alms) === sp
         @test Manopt.get_sub_state(alms) === ss
         # With dummy closed form solution
@@ -97,7 +104,7 @@ using LinearAlgebra: I, tr
         )
         @test alm_record == [
             (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
-            (:BeforeStep, 1), (:Subsolver, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
+            (:BeforeStep, 1), (:BeforeSubsolver, 1), (:Subsolver, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
         ]
         almsc_cb = AugmentedLagrangianMethodState(
             M, co, f; callbacks = Dict(:Step => alm_cb),

@@ -56,7 +56,8 @@ solved using a linear system in coordinates of the tangent space at the current 
 
 # Constructor
     CoordinatesNormalSystemState(
-        M::AbstractManifold, p = rand(M);
+        M::AbstractManifold;
+        p = rand(M),
         linsolve = default_lm_lin_solve!,
         basis = DefaultOrthonormalBasis(),
         A = nothing
@@ -74,8 +75,8 @@ mutable struct CoordinatesNormalSystemState{F, TA <: AbstractMatrix, TB <: Abstr
     linsolve!::F
 end
 function CoordinatesNormalSystemState(
-        M::AbstractManifold, p = rand(M);
-        linsolve::F = default_lm_lin_solve!, basis::B = DefaultOrthonormalBasis(), A = nothing
+        M::AbstractManifold;
+        p = rand(M), linsolve::F = default_lm_lin_solve!, basis::B = DefaultOrthonormalBasis(), A = nothing
     ) where {F, B <: AbstractBasis}
     n = number_of_coordinates(M, basis)
     c = zeros(number_eltype(p), n)

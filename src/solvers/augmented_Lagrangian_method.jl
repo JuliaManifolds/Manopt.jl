@@ -158,9 +158,19 @@ function AugmentedLagrangianMethodState(
     return AugmentedLagrangianMethodState(M, co, sub_problem_, ClosedFormSubSolverState(); kwargs...)
 end
 
+function Base.show(io::IO, alms::AugmentedLagrangianMethodState)
+    print(io, "AugmentedLagrangianMethodState(", alms.sub_problem, ", ", alms.sub_state, "; ")
+    print(io, "callbacks = ", alms.callbacks, ", p = ", alms.p, ", ")
+    print(io, "ϵ = ", alms.ϵ, ", ϵ_min = ", alms.ϵ_min, ", θ_ϵ = ", alms.θ_ϵ, ", ")
+    print(io, "λ = ", alms.λ, ", λ_min = ", alms.λ_min, ", λ_max = ", alms.λ_max, ", ")
+    print(io, "μ = ", alms.μ, ", μ_max = ", alms.μ_max, ", ")
+    print(io, "ρ = ", alms.ρ, ", θ_ρ = ", alms.θ_ρ, ", τ = ", alms.τ, ", ")
+    print(io, "stopping_criterion = ", status_summary(alms.stop; context = :short))
+    return print(io, ")")
+end
 get_iterate(alms::AugmentedLagrangianMethodState) = alms.p
 get_callbacks(alms::AugmentedLagrangianMethodState) = alms.callbacks
-additional_callbacks(::Type{<:AugmentedLagrangianMethodState}) = [:Subsolver]
+additional_callbacks(::Type{<:AugmentedLagrangianMethodState}) = [:BeforeSubsolver, :Subsolver]
 function set_iterate!(alms::AugmentedLagrangianMethodState, M, p)
     alms.p = p
     return alms
@@ -506,6 +516,7 @@ function step_solver!(
 
     set_parameter!(alms, Val(:StoppingCriterion), Val(:MinIterateChange), alms.ϵ)
 
+    callback(:BeforeSubsolver, mp, alms, k)
     new_p = get_solver_result(solve!(alms.sub_problem, alms.sub_state))
     callback(:Subsolver, mp, alms, k)
     alms.last_stepsize = distance(M, alms.p, new_p, default_inverse_retraction_method(M))
@@ -523,6 +534,7 @@ function step_solver!(
     M = get_manifold(mp)
     set_parameter!(alms, Val(:StoppingCriterion), Val(:MinIterateChange), alms.ϵ)
 
+    callback(:BeforeSubsolver, mp, alms, k)
     # the closed form works in place of `p`; keep the previous iterate for the step length
     q = copy(M, alms.p)
     alms.sub_problem(M, alms.p, alms.ρ, alms.μ, alms.λ, q)
@@ -538,19 +550,9 @@ function _alm_update!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
     penalty = maximum(
         [abs.(max.(-alms.μ ./ alms.ρ, cost_ineq))..., abs.(cost_eq)...]; init = 0
     )
-    # update multipliers
-    n_ineq_constraint = length(cost_ineq)
-    alms.μ .=
-        min.(
-        ones(n_ineq_constraint) .* alms.μ_max,
-        max.(alms.μ .+ alms.ρ .* cost_ineq, zeros(n_ineq_constraint)),
-    )
-    n_eq_constraint = length(cost_eq)
-    alms.λ =
-        min.(
-        ones(n_eq_constraint) .* alms.λ_max,
-        max.(ones(n_eq_constraint) .* alms.λ_min, alms.λ + alms.ρ .* cost_eq),
-    )
+    # update multipliers, both in place of the vectors the state stores
+    alms.μ .= min.(alms.μ_max, max.(alms.μ .+ alms.ρ .* cost_ineq, 0))
+    alms.λ .= min.(alms.λ_max, max.(alms.λ_min, alms.λ .+ alms.ρ .* cost_eq))
     # update ρ if necessary
     (penalty > alms.τ * alms.penalty) && (alms.ρ = alms.ρ / alms.θ_ρ)
     alms.penalty = penalty

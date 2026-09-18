@@ -1,5 +1,6 @@
 ---
 title: "Using automatic differentiation in Manopt.jl"
+author: "Ronny Bergmann"
 ---
 
 [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/latest/) supports automatic differentiation.
@@ -231,6 +232,9 @@ Both terms agree up to $1.8×10^{-12}$:
 
 ```{julia}
 norm(G1 - G2)
+```
+
+```{julia}
 isapprox(N, q, G1, G2; atol = 2 * 1.0e-12)
 ```
 

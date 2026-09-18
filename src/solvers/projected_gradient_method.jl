@@ -18,11 +18,12 @@ $(_fields(:X; name = "Y"))
 
 # Constructor
 
-    ProjectedGradientMethodState(M, p=rand(M); kwargs...)
+    ProjectedGradientMethodState(M; p=rand(M), kwargs...)
 
 ## Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
+$(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:stepsize; name = "backtrack", default = "`[`ArmijoLinesearchStepsize`](@ref)`(M; stop_increasing_at_step=0)")) ``β_k`` from ``p_k`` to the candidate ``q_k``
 $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:retraction_method))
@@ -53,9 +54,10 @@ struct ProjectedGradientMethodState{P, T, C <: AbstractDict{Symbol}, S, S2, SC, 
     end
 end
 function ProjectedGradientMethodState(
-        M::AbstractManifold, p = rand(M);
+        M::AbstractManifold;
         backtrack::Stepsize = ArmijoLinesearchStepsize(M; stop_increasing_at_step = 0),
         callbacks::C = Dict{Symbol, Function}(),
+        p = rand(M),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
             M, typeof(p)
@@ -231,11 +233,11 @@ $(_note(:OutputSection))
 """
 
 @doc "$(_doc_pgm)"
-function projected_gradient_method(M, f, grad_f, proj; kwargs...)
+function projected_gradient_method(M::AbstractManifold, f, grad_f, proj; kwargs...)
     return projected_gradient_method(M, f, grad_f, proj, rand(M); kwargs...)
 end
 function projected_gradient_method(
-        M, f, grad_f, proj, p; indicator = missing, evaluation = AllocatingEvaluation(), kwargs...
+        M::AbstractManifold, f, grad_f, proj, p; indicator = missing, evaluation = AllocatingEvaluation(), kwargs...
     )
     p_ = maybe_wrap_variable(p)
     cs_obj = ManifoldConstrainedSetObjective(
@@ -244,7 +246,7 @@ function projected_gradient_method(
     rs = projected_gradient_method(M, cs_obj, p_; kwargs...)
     return maybe_unwrap_variable(p, rs)
 end
-function projected_gradient_method(M, obj::ManifoldConstrainedSetObjective, p = rand(M); kwargs...)
+function projected_gradient_method(M::AbstractManifold, obj::ManifoldConstrainedSetObjective, p = rand(M); kwargs...)
     keywords_accepted(projected_gradient_method; kwargs...)
     q = copy(M, p)
     return projected_gradient_method!(M, obj, q; kwargs...)
@@ -253,7 +255,7 @@ calls_with_kwargs(::typeof(projected_gradient_method)) = (projected_gradient_met
 
 @doc "$(_doc_pgm)"
 function projected_gradient_method!(
-        M, f, grad_f, proj, p; indicator = missing, evaluation = AllocatingEvaluation(), kwargs...
+        M::AbstractManifold, f, grad_f, proj, p; indicator = missing, evaluation = AllocatingEvaluation(), kwargs...
     )
     cs_obj = ManifoldConstrainedSetObjective(
         f, grad_f, proj; evaluation = evaluation, indicator = indicator
@@ -261,7 +263,7 @@ function projected_gradient_method!(
     return projected_gradient_method!(M, cs_obj, p; kwargs...)
 end
 function projected_gradient_method!(
-        M, obj::ManifoldConstrainedSetObjective, p;
+        M::AbstractManifold, obj::ManifoldConstrainedSetObjective, p;
         backtrack::Union{Stepsize, ManifoldDefaultsFactory} = ArmijoLinesearchStepsize(
             M; stop_increasing_at_step = 0
         ),
@@ -280,7 +282,7 @@ function projected_gradient_method!(
     dobj = decorate_objective!(M, obj; kwargs...)
     dmp = DefaultManoptProblem(M, dobj)
     pgms = ProjectedGradientMethodState(
-        M, p;
+        M; p = p,
         backtrack = _produce_type(backtrack, M, p),
         callbacks = process_callbacks_arg(callbacks, ProjectedGradientMethodState),
         retraction_method = retraction_method, inverse_retraction_method = inverse_retraction_method,

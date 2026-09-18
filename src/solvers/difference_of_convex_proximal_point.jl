@@ -459,7 +459,7 @@ function difference_of_convex_proximal_point!(
                 objective_type = objective_type, sub_kwargs...,
             )
         end,
-        sub_problem::Union{AbstractManoptProblem, F, Missing} where {F} = if !ismissing(prox_g)
+        sub_problem = if !ismissing(prox_g)
             prox_g # closed form solution
         else
             ismissing(sub_objective) ? missing : DefaultManoptProblem(M, sub_objective)
@@ -535,7 +535,7 @@ function step_solver!(
         amp::AbstractManoptProblem,
         dcps::DifferenceOfConvexProximalState{P, T, F, ClosedFormSubSolverState},
         k,
-    ) where {P, T, F <: Function}
+    ) where {P, T, F}
     M = get_manifold(amp)
     # each line is one step in the documented solver steps. Note the reuse of `dcps.X`
     get_subtrahend_gradient!(amp, dcps.X, dcps.p)
@@ -554,11 +554,7 @@ end
 #=
     Variant II: subsolver variant of the prox
 =#
-function step_solver!(
-        amp::AbstractManoptProblem,
-        dcps::DifferenceOfConvexProximalState{P, T, <:AbstractManoptProblem, <:AbstractManoptSolverState},
-        k,
-    ) where {P, T}
+function step_solver!(amp::AbstractManoptProblem, dcps::DifferenceOfConvexProximalState, k)
     M = get_manifold(amp)
     # Evaluate gradient of h into X
     get_subtrahend_gradient!(amp, dcps.X, dcps.p)

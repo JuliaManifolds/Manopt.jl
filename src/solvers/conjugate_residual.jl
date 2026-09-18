@@ -55,11 +55,11 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion, C <: Abs
     stop::TStop
     warm_start::Bool
     function ConjugateResidualState(;
-            callbacks::C, X::T, r::T, d::T, Ar::T, Ad::T, α::R, β::R, rAr::R, stopping_criterion::SC, warm_start::Bool
+            callbacks::C, X::T, r::T, d::T, Ar::T, Ad::T, α::R, β::R, stopping_criterion::SC, warm_start::Bool
         ) where {T, R, SC <: StoppingCriterion, C <: AbstractDict{Symbol}}
         crs = new{T, R, SC, C}()
         crs.callbacks = callbacks; crs.X = X; crs.r = r; crs.d = d; crs.Ar = Ar; crs.Ad = Ad
-        crs.α = α; crs.β = β; crs.rAr = rAr; crs.stop = stopping_criterion
+        crs.α = α; crs.β = β; crs.rAr = zero(R); crs.stop = stopping_criterion
         crs.warm_start = warm_start
         return crs
     end
@@ -73,7 +73,7 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion, C <: Abs
             kwargs...,
         ) where {T, SC <: StoppingCriterion, C <: AbstractDict{Symbol}}
         R = float(promote_type(typeof(α), typeof(β)))
-        return ConjugateResidualState(; callbacks = callbacks, X = X, r = r, d = d, Ar = Ar, Ad = Ad, α = convert(R, α), β = convert(R, β), rAr = zero(R), stopping_criterion = stopping_criterion, warm_start = warm_start)
+        return ConjugateResidualState(; callbacks = callbacks, X = X, r = r, d = d, Ar = Ar, Ad = Ad, α = convert(R, α), β = convert(R, β), stopping_criterion = stopping_criterion, warm_start = warm_start)
     end
 end
 get_callbacks(crs::ConjugateResidualState) = crs.callbacks
@@ -84,8 +84,8 @@ function set_iterate!(crs::ConjugateResidualState, ::AbstractManifold, X)
 end
 
 get_gradient(crs::ConjugateResidualState) = crs.r
-function set_gradient!(crs::ConjugateResidualState, ::AbstractManifold, r)
-    crs.r = r
+function set_gradient!(crs::ConjugateResidualState, TpM::AbstractManifold, p, r)
+    copyto!(TpM, crs.r, p, r)
     return crs
 end
 function status_summary(crs::ConjugateResidualState; context::Symbol = :default)

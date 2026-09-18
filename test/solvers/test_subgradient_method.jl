@@ -7,7 +7,7 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
     q0 = [10.0, 5.0]
     sc = StopAfterIteration(200)
     sgs = SubGradientMethodState(
-        M; p = p0, stopping_criterion = sc, stepsize = Manopt.ConstantStepsize(M),
+        M; p = copy(M, p0), stopping_criterion = sc, stepsize = Manopt.ConstantStepsize(M),
     )
     sgs_ac = SubGradientMethodState(
         M; p = q0, stopping_criterion = sc, stepsize = Manopt.ConstantStepsize(M, 1.0; type = :absolute),
@@ -72,7 +72,7 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
         @test_throws MethodError get_proximal_map!(mp, X, 1.0, sgs.p)
         sgs2 = subgradient_method(M, f, ∂f, p0; return_state = true)
         p_star2 = get_solver_result(sgs2)
-        @test get_subgradient(sgs2) == -∂f(M, p_star2)
+        @test get_subgradient(sgs2) == ∂f(M, p_star2)
         @test f(M, p_star2) <= f(M, p0)
         set_iterate!(sgs2, M, p)
         @test get_iterate(sgs2) == p

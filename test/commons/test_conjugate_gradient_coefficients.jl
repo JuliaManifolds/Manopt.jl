@@ -73,6 +73,9 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         @test_throws ArgumentError HybridCoefficient()(M)
         # the restart condition prints its constructor call
         @test repr(RestartOnNonSufficientDescent(0.5)) == "RestartOnNonSufficientDescent(0.5)"
+        # every direction update rule has a status summary
+        frc = FletcherReevesCoefficient()(M)
+        @test Manopt.status_summary(frc) == repr(frc)
         @test contains(hcs, "Manopt.HybridCoefficientRule")
         @test contains(hcs, "Manopt.PolakRibiereCoefficientRule")
         @test contains(hcs, "Manopt.FletcherReevesCoefficientRule")

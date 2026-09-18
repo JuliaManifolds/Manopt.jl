@@ -106,6 +106,7 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
                 p;
                 evaluation = InplaceEvaluation(),
                 stopping_criterion = StopAfterIteration(1),
+                sub_stopping_criterion = StopAfterIteration(1),
             )
             @test is_point(M, p3)
             p3b = Frank_Wolfe_method(
@@ -115,9 +116,12 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
                 p;
                 evaluation = AllocatingEvaluation(),
                 stopping_criterion = StopAfterIteration(1),
+                sub_stopping_criterion = StopAfterIteration(1),
             )
             #test that the subproblem is delivering a point.
             @test is_point(M, p3b)
+            @test all(isfinite, p3)
+            @test p3 == p3b
         end
         @testset "Number test" begin
             M = Euclidean()

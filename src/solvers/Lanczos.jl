@@ -118,9 +118,9 @@ function status_summary(ls::LanczosState; context::Symbol = :default)
 
     ## Stopping criteria
     (a) For the Lanczos Iteration
-    $(status_summary(ls.stop))
+    $(status_summary(ls.stop; context = context))
     (b) For the Newton sub solver
-    $(status_summary(ls.stop_newton))
+    $(status_summary(ls.stop_newton; context = context))
     The algorithm converged: $Conv"""
 end
 

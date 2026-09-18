@@ -244,6 +244,7 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `equality_constraints=nothing`: the number ``n`` of equality constraints.
   If not provided, a call to the gradient of `h` is performed to estimate these.
+$(_kwargs(:evaluation))
 * `gradient_equality_range=gradient_range`:
    specify how gradients of the equality constraints are represented, see [`VectorGradientFunction`](@ref).
 * `gradient_inequality_range=gradient_range`:
@@ -270,6 +271,9 @@ $(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` "))
 * `ϵ=1e-3`: the accuracy tolerance
 * `ϵ_exponent=1/100`: exponent of the ϵ update factor;
 * `ϵ_min=1e-6`: the lower bound for the accuracy tolerance
+* `θ_ρ=0.3`: the scaling factor of the penalty parameter
+* `θ_u=(u_min / u)^(u_exponent)`: the scaling factor of the smoothing parameter
+* `θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent)`: the scaling factor of the accuracy tolerance
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
 mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.

@@ -24,6 +24,8 @@ using Manifolds, Manopt, Test, LRUCache
     @test conjugate_residual(TpM, A, b, X0; α = 1, β = 2) == pT2
     @test ConjugateResidualState(TpM, slso; α = 1, β = 2).α === 1.0
     @test ConjugateResidualState(TpM, slso; α = 1.0f0, β = 2.0f0).β === 2.0f0
+    # the internal field is not a keyword
+    @test !(:rAr in Manopt.accepted_keywords(conjugate_residual).accepted)
     Y0 = copy(X0)
     rT = conjugate_residual!(TpM, slso, Y0)
     @test rT === Y0            # in-place: result lands in the passed vector

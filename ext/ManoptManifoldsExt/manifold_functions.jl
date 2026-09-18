@@ -89,6 +89,7 @@ The injectivity radius of `SymmetricPositiveDefinite` is infinite, but we return
 logarithm of the maximum floating-point number to avoid numerical issues.
 """
 max_stepsize(::SymmetricPositiveDefinite, p) = log(floatmax(eltype(p)))
+max_stepsize(::SymmetricPositiveDefinite) = log(floatmax())
 
 """
     max_stepsize(M::Hyperrectangle, p)

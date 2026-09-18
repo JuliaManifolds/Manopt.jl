@@ -1781,7 +1781,7 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:IterativeTime` creates a [`DebugTime`](@ref)`(; mode=:Iterative)`
-* `:ProxParameter` creates a [`DebugProximalParameter`](@ref)`()`
+* `:ProxParameter` or `:ProximalParameter` creates a [`DebugProximalParameter`](@ref)`()`
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:Stop` creates a [`DebugStoppingCriterion`](@ref)`()`
 * `:Time` creates a [`DebugTime`](@ref)
@@ -1805,7 +1805,7 @@ function DebugActionFactory(d::Symbol)
     (d == :Iterate) && return DebugIterate()
     (d == :Iteration) && return DebugIteration()
     (d == :Feasibility) && return DebugFeasibility()
-    (d == :ProxParameter) && return DebugProximalParameter()
+    (d in (:ProxParameter, :ProximalParameter)) && return DebugProximalParameter()
     (d == :Stepsize) && return DebugStepsize()
     (d == :Stop) && return DebugStoppingCriterion()
     (d == :WarnStepsize) && return DebugWarnIfStepsizeCollapsed()
@@ -1838,7 +1838,7 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 * `:GradientNorm` creates a [`DebugGradientNorm`](@ref)
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
-* `:ProxParameter` creates a [`DebugProximalParameter`](@ref)
+* `:ProxParameter` or `:ProximalParameter` creates a [`DebugProximalParameter`](@ref)
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:Stop` creates a [`DebugStoppingCriterion`](@ref), where `t[2]` is used as its `prefix` and not as a format
 * `:Time` creates a [`DebugTime`](@ref)
@@ -1858,7 +1858,7 @@ function DebugActionFactory(t::Tuple{Symbol, Any})
     (t[1] == :Iteration) && return DebugIteration(; format = t[2])
     (t[1] == :Iterate) && return DebugIterate(; format = t[2])
     (t[1] == :IterativeTime) && return DebugTime(; mode = :Iterative, format = t[2])
-    (t[1] == :ProxParameter) && return DebugProximalParameter(; format = t[2])
+    (t[1] in (:ProxParameter, :ProximalParameter)) && return DebugProximalParameter(; format = t[2])
     (t[1] == :Stepsize) && return DebugStepsize(; format = t[2])
     (t[1] == :Stop) && return DebugStoppingCriterion(t[2])
     (t[1] == :Time) && return DebugTime(; format = t[2])
