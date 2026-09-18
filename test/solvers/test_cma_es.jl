@@ -149,8 +149,8 @@ flat_example(::AbstractManifold, p) = 0.0
         sc2 = StopWhenEvolutionStagnates(1, 2, 0.5)
         @test contains(Manopt.status_summary(sc2), "not yet filled")
         # with filled histories the summary reports the two medians
-        push!(sc2.best_history, 1.0, 1.0)
-        push!(sc2.median_history, 2.0, 2.0)
+        push!(sc2.best_history, 1.0); push!(sc2.best_history, 1.0)
+        push!(sc2.median_history, 2.0); push!(sc2.median_history, 2.0)
         @test contains(Manopt.status_summary(sc2), "the best mean did not decrease 1.0 <= 1.0")
         @test contains(Manopt.status_summary(sc2; context = :inline), "1.0 <= 1.0 && 2.0 <= 2.0")
         sc3 = StopWhenPopulationStronglyConcentrated(0.1)
