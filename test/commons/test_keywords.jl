@@ -101,4 +101,18 @@ using Manifolds, Manopt, Test
         @test contains(str, "* b")
         @test contains(str, "f does not accept any keywords.") # From Hint
     end
+    @testset "Keywords inside a factory are reported by the solver" begin
+        wrong = HagerZhangCoefficient(; typo = 1)
+        right = HagerZhangCoefficient(; denom_threshold = 0.1)
+        @test_logs (:warn, r"passed to the keyword `coefficient=`") Manopt.keywords_accepted(
+            conjugate_gradient_descent, :warn; coefficient = wrong,
+        )
+        @test !Manopt.keywords_accepted(conjugate_gradient_descent, :none; coefficient = wrong)
+        @test_throws Manopt.ManoptKeywordError Manopt.keywords_accepted(
+            conjugate_gradient_descent, :error; coefficient = wrong,
+        )
+        # a factory with accepted keywords and a value that is not a factory pass
+        @test Manopt.keywords_accepted(conjugate_gradient_descent, :error; coefficient = right)
+        @test Manopt.factory_keywords_accepted(conjugate_gradient_descent, :error, :stopping_criterion, StopAfterIteration(1))
+    end
 end

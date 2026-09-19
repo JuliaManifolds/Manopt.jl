@@ -256,5 +256,44 @@ function keywords_accepted(
         (mode === :error) && throw(ManoptKeywordError(f, error_kws))
         # else handle as :none and do not warn or error
     end
-    return (length(a) == 0) && (length(d) == 0)
+    # A value that is a factory carries keywords of its own, these are checked as well.
+    # For every other value `factory_keywords_accepted` returns `true` without checking anything.
+    factories_fine = all([factory_keywords_accepted(f, mode, k, v) for (k, v) in kwargs])
+    return (length(a) == 0) && (length(d) == 0) && factories_fine
+end
+
+"""
+    factory_keywords_accepted(f, mode::Symbol, keyword::Symbol, value)
+
+Check the keywords stored in a [`ManifoldDefaultsFactory`](@ref) that was passed to the function `f`.
+
+A factory keeps its keywords until the object is built, which happens inside the solver. This check runs
+already when the solver is called, so that a wrong keyword is reported in the name of the solver.
+
+# Input
+
+* `f`: the function, usually a solver, that received the factory
+* `mode`: how to report a keyword that is not accepted, see [`keywords_accepted`](@ref)
+* `keyword`: the name of the keyword of `f` that the factory was passed to
+* `value`: the value of that keyword; if it is not a factory, nothing is checked
+
+# Output
+
+`true` if the constructor of the factory accepts all keywords stored in the factory, or if `value` is
+not a factory, and `false` otherwise.
+
+# Example
+
+For the call `gradient_descent(M, f, grad_f; stepsize = ArmijoLinesearch(; contraction_factor = 0.9))` the
+check is `factory_keywords_accepted(gradient_descent, :warn, :stepsize, ArmijoLinesearch(; contraction_factor = 0.9))`.
+It tests whether `contraction_factor` is a keyword of the Armijo line search.
+"""
+factory_keywords_accepted(f, mode::Symbol, keyword::Symbol, value) = true # not a factory: nothing to check
+function factory_keywords_accepted(f, mode::Symbol, keyword::Symbol, mdf::ManifoldDefaultsFactory{T}) where {T}
+    akw = accepted_keywords(T).accepted
+    u = sort!([kf for kf in keys(mdf.kwargs) if kf ∉ akw])
+    (length(u) == 0) && return true
+    (mode === :warn) && (@warn "$(f): the `$(nameof(T))` passed to the keyword `$(keyword)=` does not accept the keyword(s)\n\n  * $(join(u, "\n  * "))\n\nHint: it does accept the following keywords:\n\n  $(join(sort!(collect(akw)), ", "))\n")
+    (mode === :error) && throw(ManoptKeywordError(T, Keywords(Set{Symbol}(u), Set{Symbol}(); from = T)))
+    return false
 end

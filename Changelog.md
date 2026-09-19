@@ -18,6 +18,7 @@ This is yet another round of review – maybe also introducing a few test tools
 * `CubicBracketingLinesearch`, `WolfePowellLinesearch` and `WolfePowellBinaryLinesearch` accept an `initial_guess=` keyword for their first trial step.
 * a keyword `copy_point=` lets the three approximate Hessians reuse the point they are built with as working memory.
 * a test running `JET.jl` on the package.
+* a wrong keyword inside a step size or direction factory is reported by the solver it is passed to.
 
 ### Changed
 
