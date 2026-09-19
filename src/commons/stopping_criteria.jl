@@ -424,7 +424,7 @@ end
 function (c::StopAfterIteration)(
         ::P, ::S, k::Int
     ) where {P <: AbstractManoptProblem, S <: AbstractManoptSolverState}
-    if k == 0 # reset on init
+    if k <= 0 # reset on init
         c.at_iteration = -1
     end
     if k >= c.max_iterations
@@ -538,7 +538,7 @@ function StopWhenChangeLess(
     return StopWhenChangeLess(DefaultManifold(), ε; storage = storage, kwargs...)
 end
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, k)
-    if k == 0 # reset on init
+    if k <= 0 # reset on init
         c.at_iteration = -1
         c.last_change = Inf
     end
@@ -671,7 +671,7 @@ end
 function (c::StopWhenCostLess)(
         p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
-    if k == 0 # reset on init
+    if k <= 0 # reset on init
         c.at_iteration = -1
     end
     c.last_cost = get_cost(p, s)
@@ -731,7 +731,7 @@ end
 function (c::StopWhenCostNaN)(
         p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
-    if k == 0 # reset on init
+    if k <= 0 # reset on init
         c.at_iteration = -1
     end
     # but still verify whether it yields NaN
@@ -934,7 +934,7 @@ end
 function (sc::StopWhenEntryChangeLess)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k
     )
-    if k == 0 # reset on init
+    if k <= 0 # reset on init
         sc.at_iteration = -1
     end
     if has_storage(sc.storage, sc.field)
@@ -1053,7 +1053,7 @@ function (c::StopWhenGradientChangeLess)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
     M = get_manifold(mp)
-    if k == 0 # reset on init
+    if k <= 0 # reset on init
         c.at_iteration = -1
     end
     if has_storage(c.storage, PointStorageKey(:Iterate)) &&
@@ -1232,7 +1232,7 @@ function (sc::StopWhenGradientNormLess)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
     M = get_manifold(mp)
-    if k == 0 # reset on init
+    if k <= 0 # reset on init
         sc.at_iteration = -1
     end
     if (k > 0)
@@ -1296,7 +1296,7 @@ mutable struct StopWhenIterateNaN <: StoppingCriterion
     StopWhenIterateNaN() = new(-1)
 end
 function (c::StopWhenIterateNaN)(::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
-    if k == 0 # reset on init
+    if k <= 0 # reset on init
         c.at_iteration = -1
     end
     if (k >= 0) && _any_isnan(get_iterate(s))
@@ -1408,11 +1408,11 @@ end
 function status_summary(sc::StopWhenLagrangeMultiplierLess; context::Symbol = :default)
     (context == :short) && return repr(sc)
     s = (sc.at_iteration >= 0) ? "reached" : "not reached"
-    msg = "Lagrange multipliers"
-    isnothing(sc.names) && (msg *= " with tolerances $(sc.tolerances)")
-    if !isnothing(sc.names)
-        msg *= " " * join(["$si < $bi" for (si, bi) in zip(sc.names, sc.tolerances)], ", ")
-    end
+    names = sc.names
+    msg = "Lagrange multipliers " * (
+        isnothing(names) ? "with tolerances $(sc.tolerances)" :
+            join(["$si < $bi" for (si, bi) in zip(names, sc.tolerances)], ", ")::AbstractString
+    )
     return (_is_inline(context) ? "" : "A stopping criterion to stop when the Lagrange multipliers are less than $(sc.tolerances).\n$(_MANOPT_INDENT)") * "$(msg):$(_MANOPT_INDENT)$(s)"
 end
 function show(io::IO, sc::StopWhenLagrangeMultiplierLess)
@@ -1587,7 +1587,7 @@ function (sc::StopWhenProjectedNegativeGradientNormLess)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
     M = get_manifold(mp)
-    if k == 0 # reset on init
+    if k <= 0 # reset on init
         sc.at_iteration = -1
     end
     if (k > 0)
@@ -1741,7 +1741,7 @@ end
 function (c::StopWhenSmallerOrEqual)(
         ::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
-    if k == 0 # reset on init
+    if k <= 0 # reset on init
         c.at_iteration = -1
     end
     if (k >= 0) && (getfield(s, c.value) <= c.minValue)
@@ -1800,7 +1800,7 @@ end
 function (c::StopWhenStepsizeLess)(
         p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
-    if k == 0 # reset on init
+    if k <= 0 # reset on init
         c.at_iteration = -1
     end
     c.last_stepsize = get_last_stepsize(p, s, k)
@@ -1871,7 +1871,7 @@ function (c::StopWhenSubgradientNormLess)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
     M = get_manifold(mp)
-    if (k == 0) # reset on init
+    if (k <= 0) # reset on init
         c.at_iteration = -1
     end
     c.value = norm(M, get_iterate(s), get_subgradient(s))

@@ -17,6 +17,7 @@ $(_fields(:stepsize))
 * `order`: stores the current permutation
 $(_fields(:retraction_method))
 $(_fields(:X; add_properties = [:as_Gradient]))
+* `k`: an internal counter for the current position within `order`
 
 # Constructor
 
@@ -197,7 +198,7 @@ end
 
 _doc_SGD = """
     stochastic_gradient_descent(M, grad_f, p=rand(M); kwargs...)
-    stochastic_gradient_descent(M, msgo; kwargs...)
+    stochastic_gradient_descent(M, msgo, p=rand(M); kwargs...)
     stochastic_gradient_descent!(M, grad_f, p; kwargs...)
     stochastic_gradient_descent!(M, msgo, p; kwargs...)
 

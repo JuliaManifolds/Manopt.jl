@@ -622,4 +622,19 @@ end
             any_criteria.criteria, cost_problem, nelder_mead_state, 1
         )
     end
+    @testset "Negative k resets" begin
+        M = Euclidean(2)
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective((M, p) -> sum(p .^ 2), (M, p) -> 2 .* p))
+        st = GradientDescentState(M; p = [0.0, 0.0])
+        still_active = Symbol[]
+        for sc in (
+                StopWhenGradientNormLess(1.0), StopAfterIteration(1), StopWhenCostLess(1.0), StopWhenCostNaN(),
+                StopWhenIterateNaN(), StopWhenStepsizeLess(1.0), StopWhenChangeLess(M, 1.0), StopWhenGradientChangeLess(M, 1.0),
+            )
+            sc.at_iteration = 1 # as if it had fired
+            sc(mp, st, -1)
+            (sc.at_iteration != -1) && push!(still_active, nameof(typeof(sc)))
+        end
+        @test still_active == Symbol[]
+    end
 end

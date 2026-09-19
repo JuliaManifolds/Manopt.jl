@@ -151,6 +151,13 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
     )
     @test startswith(Manopt.status_summary(cop), "A constrained optimization problem for Manopt.jl")
     @test startswith(repr(cop), "ConstrainedManoptProblem(")
+    @testset "a range of nothing means the default range" begin
+        copn = ConstrainedManoptProblem(M, cofha; gradient_equality_range = nothing, gradient_inequality_range = nothing)
+        @test get_grad_equality_constraint(copn, p) == get_grad_equality_constraint(cop, p)
+        @test get_grad_inequality_constraint(copn, p, 1:2) == get_grad_inequality_constraint(cop, p, 1:2)
+        ccofha = Manopt.objective_cache_factory(M, cofha, (:LRU, [:GradEqualityConstraints], 5))
+        @test get_grad_equality_constraint(M, ccofha, p, :, nothing) == get_grad_equality_constraint(M, ccofha, p, :)
+    end
     @testset "ConstrainedManoptProblem special cases" begin
         Y = zero_vector(M, p)
         for mcp in [mp, cop]
@@ -186,8 +193,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         @test Manopt.get_hessian_function(cofhm; evaluation = InplaceEvaluation()) == hess_f!
         @test Manopt.get_hessian_function(covha) == hess_f
         @test Manopt.get_hessian_function(covhm; evaluation = InplaceEvaluation()) == hess_f!
-        for coh in [cofha, cofhm, covha, covhm]
-            @testset "Hessian access for $coh" begin
+        for (i, coh) in enumerate([cofha, cofhm, covha, covhm])
+            @testset "Hessian access for $(nameof(typeof(coh))) $i" begin
                 @test get_hessian(M, coh, p, X) == hf
                 Y = zero_vector(M, p)
                 @test get_hessian!(M, Y, coh, p, X) == hf
@@ -273,8 +280,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         @test get_hess_inequality_constraint(M, co2v, p, X, :) == []
     end
     @testset "Gradient access" begin
-        for co in [cofa, cofm, cova, covm, cofha, cofhm, covha, covhm]
-            @testset "Gradients for $co" begin
+        for (i, co) in enumerate([cofa, cofm, cova, covm, cofha, cofhm, covha, covhm])
+            @testset "Gradients for $(nameof(typeof(co))) $i" begin
                 dmp = DefaultManoptProblem(M, co)
                 @test get_equality_constraint(dmp, p, :) == c[2]
                 @test get_equality_constraint(dmp, p, 1) == c[2][1]
@@ -521,8 +528,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         agh = sum((c[2] .* ρ .+ λ) .* gh)
         ag = gf + agg + agh
         X = zero_vector(M, p)
-        for P in [cofa, cofm, cova, covm]
-            @testset "$P" begin
+        for (i, P) in enumerate([cofa, cofm, cova, covm])
+            @testset "$(nameof(typeof(P))) $i" begin
                 ALC = AugmentedLagrangianCost(P, ρ, μ, λ)
                 @test ALC(M, p) ≈ ac
                 gALC = AugmentedLagrangianGrad(P, ρ, μ, λ)
@@ -539,8 +546,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
     @testset "Exact Penalties Cost & Grad" begin
         u = 1.0
         ρ = 0.1
-        for P in [cofa, cofm, cova, covm]
-            @testset "$P" begin
+        for (i, P) in enumerate([cofa, cofm, cova, covm])
+            @testset "$(nameof(typeof(P))) $i" begin
                 EPCe = ExactPenaltyCost(P, ρ, u; smoothing = LogarithmicSumOfExponentials())
                 EPGe = ExactPenaltyGrad(P, ρ, u; smoothing = LogarithmicSumOfExponentials())
                 # LogExp Cost

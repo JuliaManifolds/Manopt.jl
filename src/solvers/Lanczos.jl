@@ -212,7 +212,7 @@ end
 #
 # Solve Lanczos sub problem
 #
-function min_cubic_Newton!(mp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosState, k)
+function min_cubic_Newton!(mp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosState, k::Int)
     TpM = get_manifold(mp)
     p = TpM.point
     M = base_manifold(TpM)

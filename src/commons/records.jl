@@ -569,9 +569,9 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any, 1})
     # Run through all (updated) pairs
     for d in b
         record = RecordGroupFactory(s, d.second)
-        (:WhenActive in a) && (record = RecordWhenActive(record))
+        any(x -> x === :WhenActive, a) && (record = RecordWhenActive(record))
         # Add RecordEvery to all but Start and Stop
-        (!(d.first in [:Start, :Stop]) && (ae > 0)) && (record = RecordEvery(record, ae))
+        (!(d.first === :Start || d.first === :Stop) && (ae > 0)) && (record = RecordEvery(record, ae))
         dictionary[d.first] = record
     end
     return dictionary
@@ -608,9 +608,11 @@ function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any, 1})
         end
     end
     (length(group) == 0) && return RecordGroup()
-    (length(group) > 1) && (record = RecordGroup(group))
-    (length(group) == 1) &&
-        (record = first(group) isa RecordAction ? first(group) : first(group).first)
+    record = if length(group) > 1
+        RecordGroup(group)
+    else
+        first(group) isa RecordAction ? first(group) : first(group).first
+    end
     # filter integer numbers
     e = filter(x -> isa(x, Int), a)
     if length(e) > 0

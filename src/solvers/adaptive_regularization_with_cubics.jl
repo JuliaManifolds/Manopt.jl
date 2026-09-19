@@ -213,7 +213,7 @@ function AdaptiveRegularizationState(
         retraction_method::RTM = default_retraction_method(M, typeof(p)),
         σmin::Real = 1.0e-10, η1::Real = 0.1, η2::Real = 0.9, γ1::Real = 0.1, γ2::Real = 2.0,
     ) where {
-        P, T, Pr <: Union{<:AbstractManoptProblem, F} where {F},
+        P, T, Pr,
         St <: AbstractManoptSolverState, SC <: StoppingCriterion, RTM <: AbstractRetractionMethod,
         C <: AbstractDict{Symbol},
     }

@@ -151,6 +151,17 @@ import Manifolds: inner
         @test isapprox(f(M, p1), 0.0; atol = 1.0e-16)
         # not provided `grad_g` or problem missing
         @test_throws ErrorException difference_of_convex_algorithm(M, f, g, grad_h, p0; sub_problem = missing)
+        # a sub problem alone is enough, the default sub state is built for it
+        X_sp = grad_h(M, p0)
+        sub_objective_sp = ManifoldGradientObjective(
+            LinearizedDCCost(g, copy(M, p0), X_sp), LinearizedDCGrad(grad_g, copy(M, p0), X_sp)
+        )
+        p_sp = difference_of_convex_algorithm(
+            M, f, g, grad_h, p0;
+            sub_problem = DefaultManoptProblem(M, sub_objective_sp), stopping_criterion = StopAfterIteration(5),
+        )
+        @test is_point(M, p_sp; error = :error)
+        @test f(M, p_sp) < f(M, p0)
         @test_throws ErrorException difference_of_convex_algorithm(M, f, g, grad_h, p0; sub_hess = missing)
         @test_throws ErrorException difference_of_convex_algorithm(M, f, g, grad_h, p0)
 

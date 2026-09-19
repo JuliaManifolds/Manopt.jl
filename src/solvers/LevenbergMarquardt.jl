@@ -184,8 +184,7 @@ function status_summary(lms::LevenbergMarquardtState; context::Symbol = :default
     * retraction method:             $(_MANOPT_INDENT)$(lms.retraction_method)
 
     ## Stopping criterion
-
-    $(status_summary(lms.stop; context = context))
+    $(_in_str(status_summary(lms.stop; context = context); indent = 0, headers = 1))
     The algorithm converged: $(_converged_str(lms))"""
 end
 function show(io::IO, lms::LevenbergMarquardtState)
@@ -295,7 +294,10 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(
 * `use_unified_basis = false`:           specify to use a single basis for all Jacobian evaluations at a certain iterate, see `sub_objective`
   this requires that all Jacobians involved are of type [`CoefficientVectorialType`](@ref), since only then a jacobian can be represented as a matrix,
   and then here unified in the sense that all use the same basis.
+
 $(_note(:OtherKeywords))
+
+$(_note(:TutorialMode))
 
 $(_note(:OutputSection))
 """

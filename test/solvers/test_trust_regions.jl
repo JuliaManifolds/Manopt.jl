@@ -265,6 +265,14 @@ include("trust_region_model.jl")
                 H(M, p_star, X)
                 @test q == p
             end
+            # without the copy the point passed in is the working memory and moves to (a finite difference step next to) the evaluation point
+            for T in (ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS)
+                q2 = copy(M, p)
+                H2 = T(M, q2, grad_f; copy_point = false)
+                H2(M, p_star, X)
+                @test isapprox(M, q2, p_star; atol = 1.0e-3)
+                @test !isapprox(M, q2, p; atol = 1.0e-3)
+            end
         end
 
         @testset "Allocating Variant" begin

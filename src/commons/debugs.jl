@@ -1692,9 +1692,9 @@ function DebugFactory(a::Vector{<:Any})
     for d in b
         offset = d.first === :BeforeIteration ? 0 : 1
         debug = DebugGroupFactory(d.second; activation_offset = offset)
-        (:WhenActive in a) && (debug = DebugWhenActive(debug))
+        any(x -> x === :WhenActive, a) && (debug = DebugWhenActive(debug))
         # Add DebugEvery to all but Start and Stop
-        (!(d.first in [:Start, :Stop]) && (ae > 0)) && (debug = DebugEvery(debug, ae; activation_offset = offset))
+        (!(d.first === :Start || d.first === :Stop) && (ae > 0)) && (debug = DebugEvery(debug, ae; activation_offset = offset))
         dictionary[d.first] = debug
     end
     return dictionary

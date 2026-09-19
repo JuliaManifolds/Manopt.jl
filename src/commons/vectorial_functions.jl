@@ -303,8 +303,9 @@ end
 # a range of indices: one adjoint evaluation per index
 function get_gradient(
         M::AbstractManifold, vgf::VectorDifferentialFunction, p, i = :,
-        range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     )
+    range = isnothing(range) ? get_range(vgf.jacobian_type) : range
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
     X = zero_vector(pM, fill(p, pM))
@@ -312,8 +313,9 @@ function get_gradient(
 end
 function get_gradient!(
         M::AbstractManifold, X, vgf::VectorDifferentialFunction, p, i,
-        range::Union{AbstractPowerRepresentation, Nothing} = get_range(vgf.jacobian_type),
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     )
+    range = isnothing(range) ? get_range(vgf.jacobian_type) : range
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
@@ -509,8 +511,9 @@ end
 function get_hessian(
         M::AbstractManifold, vhf::VectorHessianFunction, p, X,
         i = :, # as long as the length can be found it should work, see _vgf_index_to_length
-        range::Union{AbstractPowerRepresentation, Nothing} = get_range(vhf.hessian_type),
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     )
+    range = isnothing(range) ? get_range(vhf.hessian_type) : range
     n = _vgf_index_to_length(i, vhf.range_dimension)
     pM = PowerManifold(M, range, n)
     P = fill(p, pM)
@@ -528,8 +531,9 @@ end
 # (a) arbitrary i
 function get_hessian!(
         M::AbstractManifold, Y, vhf::VectorHessianFunction{FT, JT, <:ComponentVectorialType},
-        p, X, i, range::Union{AbstractPowerRepresentation, Nothing} = get_range(vhf.hessian_type),
+        p, X, i, range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     ) where {FT, JT}
+    range = isnothing(range) ? get_range(vhf.hessian_type) : range
     n = _vgf_index_to_length(i, vhf.range_dimension)
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
@@ -543,8 +547,9 @@ end
 # (b) a single function
 function get_hessian!(
         M::AbstractManifold, Y, vhf::VectorHessianFunction{FT, JT, <:FunctionVectorialType},
-        p, X, i::Integer, range::Union{AbstractPowerRepresentation, Nothing} = get_range(vhf.hessian_type),
+        p, X, i::Integer, range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     ) where {FT, JT}
+    range = isnothing(range) ? get_range(vhf.hessian_type) : range
     pM = PowerManifold(M, range, vhf.range_dimension...)
     P = fill(p, pM)
     y = zero_vector(pM, P)
@@ -554,8 +559,9 @@ function get_hessian!(
 end
 function get_hessian!(
         M::AbstractManifold, Y, vhf::VectorHessianFunction{FT, JT, <:FunctionVectorialType},
-        p, X, i, range::Union{AbstractPowerRepresentation, Nothing} = get_range(vhf.hessian_type),
+        p, X, i, range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     ) where {FT, JT}
+    range = isnothing(range) ? get_range(vhf.hessian_type) : range
     #Single access for function is a bit expensive
     n = _vgf_index_to_length(i, vhf.range_dimension)
     pM_out = PowerManifold(M, range, n)

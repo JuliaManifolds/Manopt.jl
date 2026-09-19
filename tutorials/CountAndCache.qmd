@@ -19,8 +19,8 @@ mutable struct MyCost{I <: Integer}
 end
 MyCost() = MyCost{Int64}(0)
 function (c::MyCost)(M, p)
-    return c.count += 1
-    # [ .. Actual implementation of the cost here ]
+    c.count += 1
+    return # [ .. Actual implementation of the cost here ]
 end
 ```
 

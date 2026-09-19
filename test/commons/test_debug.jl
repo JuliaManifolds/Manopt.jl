@@ -500,7 +500,6 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
     end
     # Deprecated – remove on next breaking release
     @testset "decorate_state! and callbacks" begin
-        # Wrap this in a function so the callback uses right scope for n
         M = ManifoldsBase.DefaultManifold(2)
         p = [4.0, 2.0]
         st = GradientDescentState(
@@ -511,12 +510,17 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         n = 0
         cb() = (n += 1)
-        @test_logs (:warn,) (decorate_state!(st; callback = cb))
+        dst = @test_logs (:warn,) decorate_state!(st; callback = cb)
+        solve!(mp, dst)
+        @test n > 0
         @test_logs (:warn,) (decorate_state!(st; callback = cb, debug = DebugDivider("")))
         @test_logs (:warn,) (decorate_state!(st; callback = cb, debug = [:Cost]))
         @test_logs (:warn,) (:warn,) (decorate_state!(st; callback = cb, debug = Dict{Symbol, DebugAction}()))
+        n = 0
         cb2(p, s, k) = ((k > 1) && (n += 1))
-        @test_logs (:warn,) dst2 = decorate_state!(st; debug = cb2)
+        dst2 = @test_logs (:warn,) decorate_state!(st; debug = cb2)
+        solve!(mp, dst2)
+        @test n > 0
         dbc = Manopt.DebugCallback(() -> nothing; simple = true)
         @test startswith(repr(dbc), "DebugCallback(")
         @test startswith(Manopt.status_summary(dbc; context = :short), "#")

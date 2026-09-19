@@ -1298,7 +1298,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
     t = min(cbls.initial_guess(mp, s, k, cbls.last_stepsize, η), max_step)
     c_old = init
     c = get_univariate_triple!(mp, cbls, p, η, t)
-    a, b = nothing, nothing
+    a, b = c_old, c
     # Construct initial bracket
     while ((n_iter += 1) <= cbls.max_iterations)
         (c.f < init.f && check_curvature(c)) && return t
@@ -3026,7 +3026,7 @@ function _hz_bracket(
     )
     # B0
     current_step = c
-    local c_index, f_eval, f_wolfe # COV_EXCL_LINE
+    c_index, f_eval, f_wolfe = 1, false, false
     ls_early_exit = false
     for j in 1:hzls.max_bracket_iterations
         c_index, f_eval, f_wolfe = _hz_evaluate_next_step(hzls, M, mp, p, η, current_step)

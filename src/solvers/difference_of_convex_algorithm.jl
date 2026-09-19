@@ -32,7 +32,7 @@ Note that the gradient and the subdifferential might be given in two possible si
 Create the difference of convex objective given a `cost` function and the subdifferential `∂h` of the non-smooth part.
 The `gradient` of the cost and the `evaluation = ` type are keywords.
 
-## Keyword Arguments
+## Keyword arguments
 
 $(_kwargs(:evaluation))
 * `gradient = missing` provide a gradient of the cost ``f``
@@ -112,7 +112,7 @@ function status_summary(doco::ManifoldDifferenceOfConvexObjective; context::Symb
 end
 
 @doc """
-    DifferenceOfConvexState <: AbstractSubProblemSolverState
+    DifferenceOfConvexState <: AbstractManoptSolverState
 
 A struct to store the current state of the [`difference_of_convex_algorithm`](@ref).
 It comes in two forms, depending on the realization of the `subproblem`.
@@ -378,10 +378,10 @@ function difference_of_convex_algorithm!(
         else
             DefaultManoptProblem(M, sub_objective)
         end,
-        sub_state::Union{AbstractManoptSolverState, AbstractEvaluationType, Missing} = if !(sub_problem isa Union{AbstractManoptProblem, Missing}) # a closed form
-            evaluation
-        elseif ismissing(sub_objective)
+        sub_state::Union{AbstractManoptSolverState, AbstractEvaluationType, Missing} = if ismissing(sub_problem)
             missing
+        elseif !(sub_problem isa AbstractManoptProblem) # a closed form
+            evaluation
         else
             decorate_state!(
                 if ismissing(sub_hess)
@@ -402,7 +402,7 @@ function difference_of_convex_algorithm!(
     keywords_accepted(difference_of_convex_algorithm!; kwargs...)
     dmdco = decorate_objective!(M, mdco; objective_type = objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmdco)
-    ismissing(sub_problem) && error(
+    (ismissing(sub_problem) || ismissing(sub_state)) && error(
         """
         Subproblem seems to be missing. Please provide _either_
         * a `sub_problem=` to be solved

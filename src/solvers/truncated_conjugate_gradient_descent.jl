@@ -136,7 +136,7 @@ function status_summary(tcgs::TruncatedConjugateGradientState; context::Symbol =
     * trust region radius: $(tcgs.trust_region_radius)
 
     ## Stopping criterion
-    $(_in_str(status_summary(tcgs.stop; context = context); indent = 1, headers = 1))
+    $(_in_str(status_summary(tcgs.stop; context = context); indent = 0, headers = 1))
     The algorithm converged: $(_converged_str(tcgs))"""
 end
 get_callbacks(tcgs::TruncatedConjugateGradientState) = tcgs.callbacks
@@ -443,6 +443,11 @@ _doc_TCGD = """
         kwargs...
     )
     truncated_conjugate_gradient_descent(TpM::TangentSpace, trmo::TrustRegionModelObjective, p, X;
+        kwargs...
+    )
+    truncated_conjugate_gradient_descent!(M, f, grad_f, Hess_f, p, X; kwargs...)
+    truncated_conjugate_gradient_descent!(M, mho::ManifoldHessianObjective, p, X; kwargs...)
+    truncated_conjugate_gradient_descent!(TpM::TangentSpace, trmo::TrustRegionModelObjective, p, X;
         kwargs...
     )
 

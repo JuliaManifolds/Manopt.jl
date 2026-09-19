@@ -246,7 +246,7 @@ $(_args([:M, :f]))
 
 Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObjective`](@ref) `mco`.
 
-# Keyword Arguments
+# Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `cognitive_weight=1.4`: a cognitive weight factor
@@ -355,7 +355,7 @@ function step_solver!(mp::AbstractManoptProblem, s::ParticleSwarmState, ::Any)
             end
         end
     end
-    return
+    return s
 end
 
 #

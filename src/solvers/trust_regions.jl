@@ -162,7 +162,7 @@ function TrustRegionsState(
         augmentation_threshold::Real = 0.75, augmentation_factor::Real = 2.0,
         project!::Proj = (copyto!), σ::Real = randomize ? 1.0e-3 : 0.0,
     ) where {
-        P, T, Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
+        P, T, Pr, St <: AbstractManoptSolverState,
         C <: AbstractDict{Symbol}, SC <: StoppingCriterion, RTR <: AbstractRetractionMethod, Proj,
     }
     R = promote_type(
@@ -265,7 +265,7 @@ function status_summary(trs::TrustRegionsState; context::Symbol = :default)
     $(sub)
 
     ## Stopping criterion
-    $(_in_str(status_summary(trs.stop; context = context); indent = 1, headers = 1))
+    $(_in_str(status_summary(trs.stop; context = context); indent = 0, headers = 1))
     The algorithm converged: $(_converged_str(trs))"""
     return s
 end

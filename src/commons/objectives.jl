@@ -212,6 +212,9 @@ function status_summary(cmo::ConstrainedManifoldObjective; context::Symbol = :de
     il = isnothing(cmo.inequality_constraints) ? 0 : length(cmo.inequality_constraints)
     _is_inline(context) && (return "A constrained objective based on $(status_summary(cmo.objective; context = context)) with $(el == 0 ? "no" : el) equality and $(il == 0 ? "no" : il) inequality constraints.")
     s = status_summary(cmo.objective; context = context)
+    eq, ineq = cmo.equality_constraints, cmo.inequality_constraints
+    eq_s = (isnothing(eq) || el == 0) ? "$(_MANOPT_INDENT)none" : _in_str(status_summary(eq; context = context); indent = 1, headers = 1)
+    ineq_s = (isnothing(ineq) || il == 0) ? "$(_MANOPT_INDENT)none" : _in_str(status_summary(ineq; context = context); indent = 1, headers = 1)
     return """
     A constrained objective with $(el == 0 ? "no" : el) equality and $(il == 0 ? "no" : il) inequality constraints.
     For verifications, the constraints are checked with an absolute tolerance of `atol = $(cmo.atol)`
@@ -221,10 +224,10 @@ function status_summary(cmo::ConstrainedManifoldObjective; context::Symbol = :de
 
 
     ## Equality constraints
-    $(el == 0 ? "$(_MANOPT_INDENT)none" : _in_str(status_summary(cmo.equality_constraints; context = context); indent = 1, headers = 1))
+    $(eq_s)
 
     ## Inequality constraints
-    $(il == 0 ? "$(_MANOPT_INDENT)none" : _in_str(status_summary(cmo.inequality_constraints; context = context); indent = 1, headers = 1))
+    $(ineq_s)
     """
 end
 function show(io::IO, cmo::ConstrainedManifoldObjective)
@@ -1709,8 +1712,9 @@ function get_grad_equality_constraint(
 end
 function get_grad_equality_constraint(
         M::AbstractManifold, co::ManifoldCachedObjective{<:ConstrainedManifoldObjective}, p, j::Colon,
-        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     )
+    range = isnothing(range) ? NestedPowerRepresentation() : range
     !(haskey(co.cache, :GradEqualityConstraints)) &&
         return get_grad_equality_constraint(M, co.objective, p, j, range)
     pM = PowerManifold(M, range, equality_constraints_length(co.objective))
@@ -1725,8 +1729,9 @@ function get_grad_equality_constraint(
 end
 function get_grad_equality_constraint(
         M::AbstractManifold, co::ManifoldCachedObjective, p, i,
-        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     )
+    range = isnothing(range) ? NestedPowerRepresentation() : range
     key = copy(M, p)
     n = _vgf_index_to_length(i, equality_constraints_length(co.objective))
     pM = PowerManifold(M, range, n)
@@ -1773,8 +1778,9 @@ function get_grad_equality_constraint!(
 end
 function get_grad_equality_constraint!(
         M::AbstractManifold, X, co::ManifoldCachedObjective{<:ConstrainedManifoldObjective}, p, i::Colon,
-        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     )
+    range = isnothing(range) ? NestedPowerRepresentation() : range
     !(haskey(co.cache, :GradEqualityConstraints)) &&
         return get_grad_equality_constraint!(M, X, co.objective, p, i, range)
     pM = PowerManifold(M, range, equality_constraints_length(co.objective))
@@ -1791,8 +1797,9 @@ function get_grad_equality_constraint!(
 end
 function get_grad_equality_constraint!(
         M::AbstractManifold, X, co::ManifoldCachedObjective, p, i,
-        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     )
+    range = isnothing(range) ? NestedPowerRepresentation() : range
     key = copy(M, p)
     n = _vgf_index_to_length(i, equality_constraints_length(co.objective))
     pM = PowerManifold(M, range, n)
@@ -1850,8 +1857,9 @@ function get_grad_inequality_constraint(
 end
 function get_grad_inequality_constraint(
         M::AbstractManifold, co::ManifoldCachedObjective{<:ConstrainedManifoldObjective}, p, i::Colon,
-        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     )
+    range = isnothing(range) ? NestedPowerRepresentation() : range
     !(haskey(co.cache, :GradInequalityConstraints)) &&
         return get_grad_inequality_constraint(M, co.objective, p, i, range)
     pM = PowerManifold(M, range, inequality_constraints_length(co.objective))
@@ -1866,8 +1874,9 @@ function get_grad_inequality_constraint(
 end
 function get_grad_inequality_constraint(
         M::AbstractManifold, co::ManifoldCachedObjective, p, i,
-        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     )
+    range = isnothing(range) ? NestedPowerRepresentation() : range
     key = copy(M, p)
     n = _vgf_index_to_length(i, inequality_constraints_length(co.objective))
     pM = PowerManifold(M, range, n)
@@ -1914,8 +1923,9 @@ function get_grad_inequality_constraint!(
 end
 function get_grad_inequality_constraint!(
         M::AbstractManifold, X, co::ManifoldCachedObjective{<:ConstrainedManifoldObjective}, p, j::Colon,
-        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     )
+    range = isnothing(range) ? NestedPowerRepresentation() : range
     !(haskey(co.cache, :GradInequalityConstraints)) &&
         return get_grad_inequality_constraint!(M, X, co.objective, p, j, range)
     pM = PowerManifold(M, range, inequality_constraints_length(co.objective))
@@ -1934,8 +1944,9 @@ function get_grad_inequality_constraint!(
 end
 function get_grad_inequality_constraint!(
         M::AbstractManifold, X, co::ManifoldCachedObjective, p, i,
-        range::Union{AbstractPowerRepresentation, Nothing} = NestedPowerRepresentation(),
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     )
+    range = isnothing(range) ? NestedPowerRepresentation() : range
     key = copy(M, p)
     n = _vgf_index_to_length(i, inequality_constraints_length(co.objective))
     pM = PowerManifold(M, range, n)
@@ -2309,7 +2320,8 @@ function ManifoldCountObjective(
         l = _get_counter_size(M, objective, symbol, p)
         push!(counts, Pair(symbol, l == 1 ? init : fill(init, l)))
     end
-    return ManifoldCountObjective(objective, Dict(counts))
+    # a dictionary typed by the counters that are present, so that scalar-only objectives infer `I`
+    return ManifoldCountObjective(objective, all(c -> c.second isa Integer, counts) ? Dict{Symbol, I}(counts) : Dict(counts))
 end
 
 function _get_counter_size(

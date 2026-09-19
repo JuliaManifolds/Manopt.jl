@@ -94,12 +94,12 @@ function get_grad_equality_constraint(
 end
 function get_grad_equality_constraint(cmp::ConstrainedManoptProblem, p, j = :)
     return get_grad_equality_constraint(
-        get_manifold(cmp), get_objective(cmp), p, j, cmp.grad_equality_range
+        get_manifold(cmp), get_objective(cmp), p, j, get_range(cmp.grad_equality_range)
     )
 end
 function get_grad_equality_constraint!(cmp::ConstrainedManoptProblem, X, p, j = :)
     return get_grad_equality_constraint!(
-        get_manifold(cmp), X, get_objective(cmp), p, j, cmp.grad_equality_range
+        get_manifold(cmp), X, get_objective(cmp), p, j, get_range(cmp.grad_equality_range)
     )
 end
 function get_grad_inequality_constraint(
@@ -109,7 +109,7 @@ function get_grad_inequality_constraint(
 end
 function get_grad_inequality_constraint(cmp::ConstrainedManoptProblem, p, j = :)
     return get_grad_inequality_constraint(
-        get_manifold(cmp), get_objective(cmp), p, j, cmp.grad_inequality_range
+        get_manifold(cmp), get_objective(cmp), p, j, get_range(cmp.grad_inequality_range)
     )
 end
 function get_grad_inequality_constraint!(
@@ -122,7 +122,7 @@ function get_grad_inequality_constraint!(
 end
 function get_grad_inequality_constraint!(cmp::ConstrainedManoptProblem, X, p, j = :)
     return get_grad_inequality_constraint!(
-        get_manifold(cmp), X, get_objective(cmp), p, j, cmp.grad_inequality_range
+        get_manifold(cmp), X, get_objective(cmp), p, j, get_range(cmp.grad_inequality_range)
     )
 end
 function get_hess_equality_constraint!(
@@ -135,7 +135,7 @@ function get_hess_equality_constraint!(
 end
 function get_hess_equality_constraint!(cmp::ConstrainedManoptProblem, Y, p, X, j = :)
     return get_hess_equality_constraint!(
-        get_manifold(cmp), Y, get_objective(cmp), p, X, j, cmp.hess_equality_range
+        get_manifold(cmp), Y, get_objective(cmp), p, X, j, get_range(cmp.hess_equality_range)
     )
 end
 function get_hess_equality_constraint(
@@ -148,7 +148,7 @@ function get_hess_equality_constraint(
 end
 function get_hess_equality_constraint(cmp::ConstrainedManoptProblem, p, X, j = :)
     return get_hess_equality_constraint(
-        get_manifold(cmp), get_objective(cmp), p, X, j, cmp.hess_equality_range
+        get_manifold(cmp), get_objective(cmp), p, X, j, get_range(cmp.hess_equality_range)
     )
 end
 function get_hess_inequality_constraint(
@@ -161,7 +161,7 @@ function get_hess_inequality_constraint(
 end
 function get_hess_inequality_constraint(cmp::ConstrainedManoptProblem, p, X, j = :)
     return get_hess_inequality_constraint(
-        get_manifold(cmp), get_objective(cmp), p, X, j, cmp.hess_inequality_range
+        get_manifold(cmp), get_objective(cmp), p, X, j, get_range(cmp.hess_inequality_range)
     )
 end
 function get_hess_inequality_constraint!(
@@ -174,7 +174,7 @@ function get_hess_inequality_constraint!(
 end
 function get_hess_inequality_constraint!(cmp::ConstrainedManoptProblem, Y, p, X, j = :)
     return get_hess_inequality_constraint!(
-        get_manifold(cmp), Y, get_objective(cmp), p, X, j, cmp.hess_inequality_range
+        get_manifold(cmp), Y, get_objective(cmp), p, X, j, get_range(cmp.hess_inequality_range)
     )
 end
 

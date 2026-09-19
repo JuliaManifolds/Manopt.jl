@@ -157,12 +157,12 @@ p4 = exact_penalty_method(
 );
 ```
 
-where we now see that the sub solver requires only one or two steps. Since the iteration number is printed in `:BeforeIteration`, that is _before_ the step, the sub solver run of an iteration is shown _after_ its iteration number and _before_ the cost, which is printed in `:Iteration` after the step.
+where we now see that the sub solver requires only a single step. Since the iteration number is printed in `:BeforeIteration`, that is _before_ the step, the sub solver run of an iteration is shown _after_ its iteration number and _before_ the cost, which is printed in `:Iteration` after the step.
 
 ## Advanced debug output
 
-There are two more advanced variants that can be used. The first is a tuple of a symbol and a string, where the string is used as the format print, that most [`DebugAction`](@ref)s have. The second is, to directly provide a `DebugAction`.
-
+Both variants introduced above, a tuple of a symbol and a format string and a [`DebugAction`](@ref)
+provided directly, can also be combined in one `debug=` array.
 We can for example change the way the `:ϵ` is printed by adding a format string
 and use [`DebugCost`](@ref)`()` which is equivalent to using `:Cost`.
 Especially with the format change, the lines are more consistent in length.

@@ -184,8 +184,10 @@ function default_stepsize(M::AbstractManifold, ::Type{QuasiNewtonState}; kwargs.
 end
 _doc_QN_init_scaling = raw"``\frac{s⟨s_k,y_k⟩_{p_k}}{\lVert y_k\rVert_{p_k}^2}``"
 _doc_QN = """
-    quasi_Newton(M, f, grad_f, p; kwargs...)
+    quasi_Newton(M, f, grad_f, p=rand(M); kwargs...)
+    quasi_Newton(M, gradient_objective, p; kwargs...)
     quasi_Newton!(M, f, grad_f, p; kwargs...)
+    quasi_Newton!(M, gradient_objective, p; kwargs...)
 
 Perform a quasi Newton iteration to solve
 
@@ -203,6 +205,8 @@ The ``k``th iteration consists of
 # Input
 
 $(_args([:M, :f, :grad_f, :p]))
+
+$(_note(:GradientObjective))
 
 # Keyword arguments
 
@@ -251,6 +255,8 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(max(100
 $(_kwargs(:vector_transport_method))
 
 $(_note(:OtherKeywords))
+
+$(_note(:TutorialMode))
 
 $(_note(:OutputSection))
 """

@@ -16,6 +16,8 @@ This is yet another round of review – maybe also introducing a few test tools
 * `AugmentedLagrangianMethodState` offers a `:BeforeSubsolver` callback.
 * the trait `has_sub_problem` declares that a solver state stores a sub problem, so `get_sub_problem`, `get_sub_state` and `record=[:Subsolver]` work for every such state.
 * `CubicBracketingLinesearch`, `WolfePowellLinesearch` and `WolfePowellBinaryLinesearch` accept an `initial_guess=` keyword for their first trial step.
+* a keyword `copy_point=` lets the three approximate Hessians reuse the point they are built with as working memory.
+* a test running `JET.jl` on the package.
 
 ### Changed
 
@@ -144,6 +146,8 @@ This is yet another round of review – maybe also introducing a few test tools
 * `debug` and `record` of the proximal parameter work for `difference_of_convex_proximal_point`.
 * `get_gradient` of a `VectorDifferentialFunction` accepts ranges, index vectors and `:`.
 * A stochastic gradient given as a single in-place function raises a clear error.
+* a range of `nothing` means the default range in all accessors of vector functions, cached constrained objectives and a `ConstrainedManoptProblem`.
+* `difference_of_convex_algorithm` and `difference_of_convex_proximal_point` build their default sub state also when only a `sub_problem=` is given.
 
 ## [0.6.7] September 9, 2026
 
@@ -159,7 +163,7 @@ This is yet another round of review – maybe also introducing a few test tools
   and `quasi_Newton`, and the Riemannian median on hyperbolic space, benchmarked with `cyclic_proximal_point`. (#640)
 * introduce a `StepsizeInitialGuess` that allows to use a `Stepsize` as initial guess of a line search. (#641)
 * [Runic.jl](https://github.com/fredrikekre/Runic.jl) is now also used to check code formatting in the `.qmd` and `.md` files of the repository (#643)
-* a keyword `γ` for `interior_point_Newton`, the initial value of its centrality condition.
+* a keyword `γ` for `interior_point_Newton`, the initial value of its centrality condition. (#643)
 * allocating `get_linear_operator(M, neo, p, B)` and `get_vector_field(M, neo, p, B)` for the coordinates surrogate of the normal equations. (#643)
 * `DebugProximalParameter` and `RecordProximalParameter` can now also be used with `proximal_point`. (#643)
 
@@ -178,8 +182,8 @@ This is yet another round of review – maybe also introducing a few test tools
 
 ### Fixed
 
-The following fixes were reported by an AI assisted code review. Each single point was still carefully checked, and committed by hand. Most of them are minor fixes and allowing several areas of `Manopt.jl` to also work on decorators and other edge cases. Only very few of the fixes are actually bug fixes, e.g. the line search direction in the interior point Newton was slightly wrong.
-They are still all listed here in detail in case (a) someone else's code breaks or (b) it was not done carefully enough – to then avoid these approaches in the future. <the following list stems from (#643) as some changes above as well. This is the assisted review PR.
+The following fixes were reported by an AI assisted code review. Each single point was still carefully checked, and committed by hand. Most of them are minor fixes allowing several areas of `Manopt.jl` to also work on decorators and other edge cases. Only very few of the fixes are actually bug fixes, e.g. the line search direction in the interior point Newton was slightly wrong.
+They are still all listed here in detail in case (a) someone else's code breaks or (b) it was not done carefully enough – to then avoid these approaches in the future. The following list, like some of the changes above, stems from the assisted review pull request (#643).
 
 * `adaptive_regularization_with_cubics` now also runs with a closed-form sub solver; setting the iterate of a `ClosedFormSubSolverState` is a no-op instead of an error.
 * `adaptive_regularization_with_cubics` now wraps an allocating closed-form sub solver.

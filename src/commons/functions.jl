@@ -225,10 +225,15 @@ $(_fields([:retraction_method, :vector_transport_method]))
 
     ApproxHessianFiniteDifference(M, p, grad_f; kwargs...)
 
+## Input
+
+$(_args([:M, :p, :grad_f]))
+
 ## Keyword arguments
 
 * `steplength=2^-14`: step length ``c`` to approximate the gradient evaluations
 * `tangent_vector=zero_vector(M, p)`: memory used to initialize the internal temporary gradient storages
+* `copy_point=true`: store a copy of `p` as the internal working point; with `false` the point `p` itself is used and overwritten during the evaluations
 $(_kwargs(:evaluation))
 $(_kwargs([:retraction_method, :vector_transport_method]))
 
@@ -249,11 +254,12 @@ function ApproxHessianFiniteDifference(
         retraction_method::RTR = default_retraction_method(M, typeof(p)),
         vector_transport_method::VTR = default_vector_transport_method(M, typeof(p)),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        copy_point::Bool = true,
     ) where {
         mT <: AbstractManifold, P, G, R <: Real,
         RTR <: AbstractRetractionMethod, VTR <: AbstractVectorTransportMethod,
     }
-    p_ = copy(M, maybe_wrap_variable(p))
+    p_ = copy_point ? copy(M, maybe_wrap_variable(p)) : maybe_wrap_variable(p)
     X = copy(M, p_, tangent_vector)
     Y = copy(M, p_, tangent_vector)
     grad_f_ = maybe_wrap_function(grad_f, p, evaluation, result = :TangentVector)
@@ -300,12 +306,17 @@ $(_fields(:vector_transport_method))
 
     ApproxHessianSymmetricRankOne(M, p, grad_f; kwargs...)
 
+## Input
+
+$(_args([:M, :p, :grad_f]))
+
 ## Keyword arguments
 
 $(_kwargs(:evaluation))
 * `initial_operator=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`: the matrix representation of the initial approximating operator.
 * `basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: an orthonormal basis in the tangent space of the initial iterate `p`.
 * `nu=-1.0`: the value ``ν`` above; a negative value disables the safeguard on the denominator.
+* `copy_point=true`: store a copy of `p` as the internal working point; with `false` the point `p` itself is used and overwritten during the evaluations
 $(_kwargs(:vector_transport_method))
 """
 mutable struct ApproxHessianSymmetricRankOne{P, G, T, B <: AbstractBasis{ℝ}, VTR, R <: Real} <: AbstractApproximateHessianFunction
@@ -324,10 +335,11 @@ function ApproxHessianSymmetricRankOne(
         nu::R = -1.0,
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        copy_point::Bool = true,
     ) where {
         mT <: AbstractManifold, P, G, B <: AbstractBasis{ℝ}, R <: Real, VTM <: AbstractVectorTransportMethod,
     }
-    p_ = copy(M, maybe_wrap_variable(p))
+    p_ = copy_point ? copy(M, maybe_wrap_variable(p)) : maybe_wrap_variable(p)
     X = zero_vector(M, p_)
     grad_f_ = maybe_wrap_function(grad_f, p, evaluation; result = :TangentVector)
     # Fill X with current gradient
@@ -397,12 +409,17 @@ $(_fields(:vector_transport_method))
 # Constructor
     ApproxHessianBFGS(M, p, grad_f; kwargs...)
 
+## Input
+
+$(_args([:M, :p, :grad_f]))
+
 ## Keyword arguments
 
 $(_kwargs(:evaluation))
 * `initial_operator=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`: the matrix representation of the initial approximating operator.
 * `basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: an orthonormal basis in the tangent space of the initial iterate `p`.
 * `scale=true`: the value to store in the `scale` field above.
+* `copy_point=true`: store a copy of `p` as the internal working point; with `false` the point `p` itself is used and overwritten during the evaluations
 $(_kwargs(:vector_transport_method))
 """
 mutable struct ApproxHessianBFGS{
@@ -425,8 +442,9 @@ function ApproxHessianBFGS(
         scale::Bool = true,
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        copy_point::Bool = true,
     ) where {mT <: AbstractManifold, P, G, B <: AbstractBasis{ℝ}, VTM <: AbstractVectorTransportMethod}
-    p_ = copy(M, maybe_wrap_variable(p))
+    p_ = copy_point ? copy(M, maybe_wrap_variable(p)) : maybe_wrap_variable(p)
     X = zero_vector(M, p_)
     grad_f_ = maybe_wrap_function(grad_f, p, evaluation; result = :TangentVector)
     grad_f_(M, X, p)

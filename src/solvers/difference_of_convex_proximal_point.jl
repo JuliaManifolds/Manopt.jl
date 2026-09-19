@@ -462,10 +462,10 @@ function difference_of_convex_proximal_point!(
         else
             ismissing(sub_objective) ? missing : DefaultManoptProblem(M, sub_objective)
         end,
-        sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState, Missing} = if !ismissing(prox_g)
-            evaluation
-        elseif ismissing(sub_objective)
+        sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState, Missing} = if ismissing(sub_problem)
             missing
+        elseif !ismissing(prox_g) # a closed form
+            evaluation
         else
             decorate_state!(
                 if ismissing(sub_hess)
@@ -493,7 +493,7 @@ function difference_of_convex_proximal_point!(
     }
     keywords_accepted(difference_of_convex_proximal_point!; kwargs...)
     # Check whether either the right defaults were provided or a `sub_problem`.
-    if ismissing(sub_problem)
+    if ismissing(sub_problem) || ismissing(sub_state)
         error(
             """
             The `sub_problem` is not correctly initialized. Provide _one of_ the following setups

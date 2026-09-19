@@ -172,7 +172,7 @@ function GradientSamplingState(
             M, GradientSamplingState; retraction_method = retraction_method
         ),
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
-    ) where {P, T, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, C <: AbstractDict{Symbol}, Pr <: Union{G, AbstractManoptProblem} where {G}, St <: AbstractManoptSolverState}
+    ) where {P, T, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, C <: AbstractDict{Symbol}, Pr, St <: AbstractManoptSolverState}
     R = float(
         promote_type(
             typeof(sampling_radius), typeof(sampling_radius_reduction),

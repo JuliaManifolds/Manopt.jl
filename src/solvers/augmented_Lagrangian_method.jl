@@ -4,7 +4,7 @@
 
 _sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min) `$(_sc(:All))` `[`StopWhenChangeLess`](@ref)`(M, 1.0e-10))`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1.0e-10)`"
 @doc """
-    AugmentedLagrangianMethodState{P,T} <: AbstractSubProblemSolverState
+    AugmentedLagrangianMethodState{P,T} <: AbstractManoptSolverState
 
 Describes the augmented Lagrangian method, with
 
@@ -279,19 +279,26 @@ where ``θ_ρ ∈ (0,1)`` is a constant scaling factor and ``τ ∈ (0,1)`` the 
 
 # Input
 
-$(_args([:M, :f, :grad_f]))
+$(_args([:M, :f, :grad_f, :p]))
 
-# Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)
+# Keyword arguments for the constraints
 
+These are only used to build the objective, that is if the solver is not called with a
+[`ConstrainedManifoldObjective`](@ref) `cmo`.
+
+* `equality_constraints=nothing`: the number ``n`` of equality constraints.
+  If not provided, a call to the gradient of `h` is performed to estimate these.
 * `g=missing`: the inequality constraints
-* `h=missing`: the equality constraints
 * `grad_g=missing`: the gradient of the inequality constraints
 * `grad_h=missing`: the gradient of the equality constraints
+* `h=missing`: the equality constraints
+* `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
+  If not provided, a call to the gradient of `g` is performed to estimate these.
 
 Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be provided.
-But if neither of them is provided the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
+Otherwise the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
 
-# Keyword Arguments
+# Keyword arguments
 
 $(_kwargs(:evaluation))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
@@ -300,9 +307,6 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `ϵ_exponent=1/100`: exponent of the ϵ update factor;
   also 1/number of iterations until maximal accuracy is needed to end algorithm naturally
 
-* `equality_constraints=nothing`: the number ``n`` of equality constraints.
-  If not provided, a call to the gradient of `h` is performed to estimate these.
-
 * `gradient_range=nothing`: specify how both gradients of the constraints are represented
 
 * `gradient_equality_range=gradient_range`:
@@ -310,9 +314,6 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 
 * `gradient_inequality_range=gradient_range`:
    specify how gradients of the inequality constraints are represented, see [`VectorGradientFunction`](@ref).
-
-* `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
-   If not provided, a call to the gradient of `g` is performed to estimate these.
 
 * `λ=ones(length(get_equality_constraint(M, cmo, p, :)))`: the Lagrange multiplier with respect to the equality constraints
 * `λ_max=20.0`:       an upper bound for the Lagrange multiplier belonging to the equality constraints

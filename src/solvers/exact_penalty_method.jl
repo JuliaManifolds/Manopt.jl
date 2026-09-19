@@ -1,5 +1,5 @@
 @doc """
-    ExactPenaltyMethodState{P,T} <: AbstractSubProblemSolverState
+    ExactPenaltyMethodState{P,T} <: AbstractManoptSolverState
 
 Describes the exact penalty method, with
 
@@ -225,30 +225,32 @@ $(_doc_EMP_ρ_update)
 
 $(_args([:M, :f, :grad_f, :p]))
 
-# Keyword arguments
- if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`
+# Keyword arguments for the constraints
 
+These are only used to build the objective, that is if the solver is not called with a
+[`ConstrainedManifoldObjective`](@ref) `cmo`.
+
+* `equality_constraints=nothing`: the number ``n`` of equality constraints.
+  If not provided, a call to the gradient of `h` is performed to estimate these.
 * `g=missing`: the inequality constraints
 * `grad_g=missing`: the gradient of the inequality constraints
 * `grad_h=missing`: the gradient of the equality constraints
 * `h=missing`: the equality constraints
+* `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
+  If not provided, a call to the gradient of `g` is performed to estimate these.
 
 Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be provided.
 Otherwise the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
 
-# Further keyword arguments
+# Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-* `equality_constraints=nothing`: the number ``n`` of equality constraints.
-  If not provided, a call to the gradient of `h` is performed to estimate these.
 $(_kwargs(:evaluation))
 * `gradient_equality_range=gradient_range`:
    specify how gradients of the equality constraints are represented, see [`VectorGradientFunction`](@ref).
 * `gradient_inequality_range=gradient_range`:
    specify how gradients of the inequality constraints are represented, see [`VectorGradientFunction`](@ref).
 * `gradient_range=nothing`: specify how both gradients of the constraints are represented
-* `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
-   If not provided, a call to the gradient of `g` is performed to estimate these.
 * `smoothing=`[`LogarithmicSumOfExponentials`](@ref): a [`SmoothingTechnique`](@ref) to use
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(M, 1.0e-10) )"))
 * `sub_cost=`[`ExactPenaltyCost`](@ref)`(cmo, ρ, u; smoothing=smoothing)`: cost to use in the sub solver.

@@ -277,9 +277,7 @@ $(_note(:OtherKeywords))
 If you provide a [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword only determines how a closed form solution passed as `sub_problem` is called.
 The decorations are still applied to the objective.
 
-# Output
-
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
+$(_note(:OutputSection))
 """
 
 @doc "$_doc_Frank_Wolfe_method"

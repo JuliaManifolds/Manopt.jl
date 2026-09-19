@@ -102,7 +102,7 @@ M = ScaledSphere(d, r)
  If we generate a few points
 
 ```{julia}
-#| output : false
+#| output: false
 # generate 100 points around the north pole
 pts = [ [zeros(d)..., M.radius] .+ 0.5 .* ([rand(d)..., 0.5] .- 0.5) for _ in 1:N]
 # project them onto the r-sphere
@@ -116,7 +116,7 @@ Finally, we have to provide information about how points and tangent vectors are
 manifold by implementing their ``[`representation_size`](@extref `ManifoldsBase.representation_size-Tuple{AbstractManifold}`)``{=commonmark} function, which is often required when allocating memory.
 
 ```{julia}
-#| output : false
+#| output: false
 import ManifoldsBase: distance, log!, representation_size
 function distance(M::ScaledSphere, p, q)
     return M.radius * distance(Sphere(M.dimension), p ./ M.radius, q ./ M.radius)
@@ -132,7 +132,7 @@ representation_size(M::ScaledSphere) = (M.dimension + 1,)
 ## Define the cost and gradient
 
 ```{julia}
-#| output : false
+#| output: false
 f(M, q) = sum(distance(M, q, p)^2 for p in pts)
 grad_f(M, q) = sum(- 2 * log(M, q, p) for p in pts)
 ```

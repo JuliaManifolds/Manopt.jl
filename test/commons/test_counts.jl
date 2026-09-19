@@ -18,6 +18,7 @@ using LinearAlgebra: Symmetric
         X = [1.0, 1.0, 0.0]
         get_cost(M, c_obj, p)
         @test get_count(c_obj, :Cost) == 1
+        @test c_obj.counts isa Dict{Symbol, Int}
         @test get_count(c_obj, :NonExistent) == -1
         Y = similar(X)
         get_gradient(M, c_obj, p)

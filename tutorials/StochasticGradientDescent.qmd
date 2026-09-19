@@ -1,5 +1,5 @@
 ---
-title: How to run stochastic gradient descent
+title: "How to run stochastic gradient descent"
 author: Ronny Bergmann
 ---
 
@@ -96,7 +96,7 @@ p_opt2 = stochastic_gradient_descent(M, gradf, p0; stepsize = DL)
 
 This result is reasonably close. We can also modify the search direction by using a [`DirectionUpdateRule`](@ref), namely:
 
-On the one hand [`MomentumGradient`](@ref), which keeps track of the iterate and parallel transports the last direction to the current iterate.
+On the one hand [`MomentumGradient`](@ref), which keeps track of the iterate and vector transports the last direction to the current iterate.
 The necessary `vector_transport_method=` keyword is set to a suitable default on every manifold,
 see ``[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)``{=commonmark}. We get
 

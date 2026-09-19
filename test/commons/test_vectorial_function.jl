@@ -139,6 +139,8 @@ using Manopt: get_value, get_value!, get_value_function
         @test a_b == [1.0, -2.0]
     end
     p = [1.0, 2.0, 3.0]
+    # a range of nothing means the range of the function
+    @test get_gradient(M, vgf_fa, p, :, nothing) == get_gradient(M, vgf_fa, p, :)
     c = [0.0, -3.0]
     jc = [0.0, 3.0, 0.0] #see above c1, -c2, 0
     X = [1.0, 0.5, 0.25]

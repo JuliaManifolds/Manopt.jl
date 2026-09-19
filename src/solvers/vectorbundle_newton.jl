@@ -318,7 +318,7 @@ The next iterate is then computed by applying a retraction.
 
 For more details see [WeiglSchiela:2024, WeiglBergmannSchiela:2025](@cite).
 
-# Arguments
+# Input
 
 $(_args(:M))
 * `E`: range vector bundle

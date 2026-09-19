@@ -23,7 +23,7 @@ module QuasiNewtonSuite
     for memory in (4, 20)
         SUITE["riemannian-mean/lbfgs-memory-$(memory)"] = @benchmarkable(
             quasi_Newton($M, $f, $grad_f, q; memory_size = $memory, stopping_criterion = $sc),
-            setup = (q = copy($p0)), evals = 1,
+            setup = (q = copy($M, $p0)), evals = 1,
         )
     end
 

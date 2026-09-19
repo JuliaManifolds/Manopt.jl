@@ -55,16 +55,16 @@ We can also benchmark this as
 @benchmark gradient_descent($M, $f, $grad_f, $p0; stopping_criterion = $sc)
 ```
 
-    BenchmarkTools.Trial: 109 samples with 1 evaluation per sample.
-     Range (min … max):  40.811 ms … 203.364 ms  ┊ GC (min … max):  0.00% … 81.63%
-     Time  (median):     42.866 ms               ┊ GC (median):    13.02%
-     Time  (mean ± σ):   46.251 ms ±  21.471 ms  ┊ GC (mean ± σ):  18.45% ±  9.91%
+    BenchmarkTools.Trial: 162 samples with 1 evaluation per sample.
+     Range (min … max):  26.914 ms … 110.926 ms  ┊ GC (min … max):  0.00% … 74.54%
+     Time  (median):     29.585 ms               ┊ GC (median):    11.33%
+     Time  (mean ± σ):   30.955 ms ±   8.437 ms  ┊ GC (mean ± σ):  13.34% ±  8.38%
 
-      █▁                                                            
-      ██▆▅▄▁▁▁▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▄ ▄
-      40.8 ms       Histogram: log(frequency) by time       200 ms <
+           ▆▃▆▃█▅▄▃                                                 
+      ▃▃▁▇▇████████▇▅▄▃▄▃▃▄▁▁▁▃▁▃▃▃▃▃▁▁▃▃▁▁▁▁▁▁▁▁▃▃▁▁▁▃▁▁▁▁▁▁▁▁▁▁▃ ▃
+      26.9 ms         Histogram: frequency by time         43.7 ms <
 
-     Memory estimate: 129.63 MiB, allocs estimate: 864013.
+     Memory estimate: 67.42 MiB, allocs estimate: 439658.
 
 ## In-place computation of the gradient
 
@@ -113,16 +113,16 @@ We can again benchmark this
 ) setup = (m2 = deepcopy($p0))
 ```
 
-    BenchmarkTools.Trial: 155 samples with 1 evaluation per sample.
-     Range (min … max):  29.994 ms … 71.361 ms  ┊ GC (min … max): 0.00% … 0.00%
-     Time  (median):     30.624 ms              ┊ GC (median):    0.00%
-     Time  (mean ± σ):   32.412 ms ±  6.217 ms  ┊ GC (mean ± σ):  1.83% ± 4.96%
+    BenchmarkTools.Trial: 204 samples with 1 evaluation per sample.
+     Range (min … max):  21.798 ms … 36.789 ms  ┊ GC (min … max): 0.00% … 0.00%
+     Time  (median):     23.300 ms              ┊ GC (median):    0.00%
+     Time  (mean ± σ):   24.531 ms ±  2.866 ms  ┊ GC (mean ± σ):  1.07% ± 1.49%
 
-      █▆▂▁                                                         
-      ████▆▆▄▆▆▄▁▄▁▆▁▄▄▄▁▁▁▁▁▁▁▄▁▁▁▁▆▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▄▁▁▄ ▄
-      30 ms        Histogram: log(frequency) by time      63.9 ms <
+        ▃▇█▆█  ▂                                                   
+      ▄▃██████▇█▆▅▄▆▄▃▅▃▃▃▃▄▄▃▃▄▃▃▃▁▁▁▃▃▁▃▃▅▁▁▃▃▁▁▃▁▃▁▁▁▃▃▃▃▁▁▁▁▃ ▃
+      21.8 ms         Histogram: frequency by time        34.3 ms <
 
-     Memory estimate: 4.45 MiB, allocs estimate: 10071.
+     Memory estimate: 4.41 MiB, allocs estimate: 9593.
 
 which is faster than the first solver-call and, more importantly, allocates far less memory:
 compare both the memory estimate and the number of allocations of the two runs.
@@ -152,15 +152,15 @@ This tutorial is cached. It was last run on the following package versions.
       [8ac3fa9e] LRUCache v1.6.2
       [af67fdf4] ManifoldDiff v0.4.5
       [1cead3c2] Manifolds v0.11.29
-    ⌃ [3362f125] ManifoldsBase v2.5.0
+      [3362f125] ManifoldsBase v2.5.1
       [0fc0a36d] Manopt v0.6.7 `.`
       [91a5bcdd] Plots v1.41.7
       [731186ca] RecursiveArrayTools v4.5.1
-      [37e2e46d] LinearAlgebra v1.12.0
+      [37e2e46d] LinearAlgebra v1.13.0
       [9a3f8284] Random v1.11.0
     Info Packages marked with ⌃ have new versions available and may be upgradable.
 
-This tutorial was last rendered September 3, 2026, 16:10:43.
+This tutorial was last rendered September 19, 2026, 10:16:43.
 
 ```@raw html
 </details>

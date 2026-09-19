@@ -363,10 +363,10 @@ function status_summary(ips::InteriorPointNewtonState; context::Symbol = :defaul
     * retraction method: $(ips.retraction_method)
 
     ## Stepsize
-    $(_in_str(status_summary(ips.stepsize; context = context); indent = 1, headers = 1))
+    $(_in_str(status_summary(ips.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-    $(_in_str(status_summary(ips.stop; context = context); indent = 1, headers = 1))
+    $(_in_str(status_summary(ips.stop; context = context); indent = 0, headers = 1))
     The algorithm converged: $(_converged_str(ips))"""
     return s
 end
@@ -542,19 +542,12 @@ $(_args([:M, :f, :grad_f, :Hess_f, :p]))
 
 or a [`ConstrainedManifoldObjective`](@ref) `cmo` containing `f`, `grad_f`, `Hess_f`, and the constraints
 
-# Keyword arguments
+# Keyword arguments for the constraints
 
-The keyword arguments related to the constraints (`g`, `grad_g`, `Hess_g`, `h`, `grad_h`, `Hess_h`,
-`equality_constraints`, and `inequality_constraints`) are ignored if you
-pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
+These are only used to build the objective, that is if the solver is not called with a
+[`ConstrainedManifoldObjective`](@ref) `cmo`.
 
-$(_kwargs(:callbacks; add_properties = [:process_note]))
-* `centrality_condition=`[`InteriorPointCentralityCondition`](@ref)`(cmo, γ)`: an additional condition when to accept a step size.
-  This can be used to ensure that the resulting iterate is still an interior point if you provide a check `(N,q) -> true/false`,
-  where `N` is the manifold of the `step_problem`.
 * `equality_constraints=nothing`: the number ``n`` of equality constraints.
-* `γ=0.9`: the constant of the default `centrality_condition`.
-$(_kwargs(:evaluation))
 * `g=missing`: the inequality constraints
 * `grad_g=missing`: the gradient of the inequality constraints
 * `grad_h=missing`: the gradient of the equality constraints
@@ -562,6 +555,18 @@ $(_kwargs(:evaluation))
 * `Hess_g=missing`: the Hessian of the inequality constraints
 * `Hess_h=missing`: the Hessian of the equality constraints
 * `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
+
+Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be provided.
+Otherwise the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
+
+# Keyword arguments
+
+$(_kwargs(:callbacks; add_properties = [:process_note]))
+* `centrality_condition=`[`InteriorPointCentralityCondition`](@ref)`(cmo, γ)`: an additional condition when to accept a step size.
+  This can be used to ensure that the resulting iterate is still an interior point if you provide a check `(N,q) -> true/false`,
+  where `N` is the manifold of the `step_problem`.
+* `γ=0.9`: the constant of the default `centrality_condition`.
+$(_kwargs(:evaluation))
 * `λ=zeros(length(h(M, p)))`: the Lagrange multiplier with respect to the equality constraints ``h``
 * `μ=ones(length(g(M, p)))`: the Lagrange multiplier with respect to the inequality constraints ``g``
 $(_kwargs(:retraction_method))
@@ -595,8 +600,7 @@ $(_kwargs(:sub_state; default = "`[`ConjugateResidualState`](@ref)` "))
 As well as internal keywords used to set up these given keywords like `_step_M`, `_step_p`, `_sub_M`, `_sub_p`, and `_sub_X`,
 that should not be changed.
 
-All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
-[`decorate_objective!`](@ref) for objective, respectively.
+$(_note(:OtherKeywords))
 
 !!! note
 
@@ -604,10 +608,7 @@ All other keyword arguments are passed to [`decorate_state!`](@ref) for state de
     disables the check. The keyword `γ` provides its initial value. Pass `missing` to disable the
     check or a `(N,q) -> true/false` to replace it.
 
-# Output
-
-The obtained approximate constrained minimizer ``p^*``.
-To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details, especially the `return_state=` keyword.
+$(_note(:OutputSection))
 
 !!! note
     This solver requires [RecursiveArrayTools.jl](https://github.com/SciML/RecursiveArrayTools.jl) to be loaded as well.

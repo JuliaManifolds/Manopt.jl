@@ -1566,7 +1566,7 @@ function get_linear_operator(
         penalty::Real = neo.objective.penalty,
     )
     d = number_of_coordinates(M, B)
-    A = zeros(number_eltype(p), d, d)
+    A = Matrix{number_eltype(p)}(undef, d, d)
     return get_linear_operator!(M, A, neo, p, B; penalty = penalty)
 end
 

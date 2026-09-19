@@ -24,8 +24,8 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         eo3 = EmbeddedManifoldObjective(o, copy(p), missing)
         eo4 = EmbeddedManifoldObjective(o)
 
-        for eo in [eo1, eo2, eo3, eo4]
-            @testset "$(split(repr(eo), " ")[1])" begin
+        for (i, eo) in enumerate([eo1, eo2, eo3, eo4])
+            @testset "$(nameof(typeof(eo))) $i" begin
                 @test get_cost(M, eo, p) == f(E, p)
                 @test get_gradient(E, o, p) == ∇f(E, p)
                 @test get_gradient(M, eo, p) == grad_f(M, p)
@@ -62,8 +62,8 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         eco2 = EmbeddedManifoldObjective(o2, missing, copy(X))
         eco3 = EmbeddedManifoldObjective(o2, copy(p), missing)
         eco4 = EmbeddedManifoldObjective(o2)
-        for eco in [eco1, eco2, eco3, eco4]
-            @testset "$(split(repr(eco), " ")[1])" begin
+        for (i, eco) in enumerate([eco1, eco2, eco3, eco4])
+            @testset "$(nameof(typeof(eco))) $i" begin
                 @test get_constraints(M, eco, p) == [[f(E, p)], [f(E, p)]]
                 @test get_equality_constraint(M, eco, p, :) == [f(E, p)]
                 @test get_equality_constraint(M, eco, p, 1) == f(E, p)

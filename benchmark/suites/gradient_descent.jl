@@ -21,18 +21,18 @@ module GradientDescentSuite
 
     SUITE["riemannian-mean/allocating"] = @benchmarkable(
         gradient_descent($M, $f, $grad_f, q; stopping_criterion = $sc),
-        setup = (q = copy($p0)), evals = 1,
+        setup = (q = copy($M, $p0)), evals = 1,
     )
     SUITE["riemannian-mean/inplace"] = @benchmarkable(
         gradient_descent!(
             $M, $f, $grad_f!, q;
             evaluation = InplaceEvaluation(), stopping_criterion = $sc,
         ),
-        setup = (q = copy($p0)), evals = 1,
+        setup = (q = copy($M, $p0)), evals = 1,
     )
     SUITE["riemannian-mean/cached"] = @benchmarkable(
         gradient_descent($M, $f, $grad_f, q; stopping_criterion = $sc, cache = :Simple),
-        setup = (q = copy($p0)), evals = 1,
+        setup = (q = copy($M, $p0)), evals = 1,
     )
 
 end

@@ -315,7 +315,7 @@ $_doc_ChambollePock_formula
 
 This can be done inplace of ``p``.
 
- # Input parameters
+# Input
 
 $(_args(:M))
 $(_args(:M; name = "N", M = "N"))
@@ -332,7 +332,7 @@ see the optional keyword `linearized_forward_operator=` for the linearized varia
 
 For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021](@cite).
 
-# Keyword Arguments
+# Keyword arguments
 
 * `acceleration=0.05`: acceleration parameter
 $(_kwargs(:callbacks; add_properties = [:process_note]))
