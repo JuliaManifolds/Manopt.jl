@@ -32,14 +32,8 @@ function _get_sub_state(ams::AbstractManoptSolverState, ::Val{false})
     return error("The state $(typeof(ams)) does not store a sub state.")
 end
 
-"""
-    _set_sub_parameter!(ams::AbstractManoptSolverState, ::Val{has}, ::Val{e}, args...)
-
-The part of the fallback `set_parameter!(ams, Val(e), args...)` that concerns a sub task:
-if the state stores one (`has` is `true`, see [`has_sub_problem`](@ref)), `e = :SubProblem`
-passes `args...` on to `set_parameter!` of the sub problem and `e = :SubState` to the one of
-the sub state; every other combination leaves the state unchanged.
-"""
+# The part of the fallback `set_parameter!` for states that store a sub task (see `has_sub_problem`):
+# pass `:SubProblem` on to the sub problem and `:SubState` to the sub state, do nothing otherwise.
 function _set_sub_parameter!(ams::AbstractManoptSolverState, ::Val{true}, ::Val{:SubProblem}, args...)
     set_parameter!(get_sub_problem(ams), args...)
     return ams
