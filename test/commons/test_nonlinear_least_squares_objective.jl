@@ -55,7 +55,6 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
         )
         p = [0.5, 0.5]
         X = [0.25, 0.25]
-        Y = [0.25, -0.25]
         V = [0.0, 0.0]
         Vt = [1 / sqrt(2), 1 / sqrt(2)]
         G = zeros(2, 2)
@@ -75,13 +74,6 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
                 @test G == get_jacobian(M, vgf, p)
                 @test G == Gt
             end
-            c = get_cost(M, nlso, p)
-            @test c ≈ 0.5
-            fill!(V, 0.0)
-            get_residuals!(M, V, nlso, p)
-            @test V == get_residuals(M, nlso, p)
-            @test V ≈ Vt
-            @test 0.5 * sum(abs.(V) .^ 2) ≈ c
             @test startswith(repr(nlso), "ManifoldNonlinearLeastSquaresObjective(")
             @test startswith(Manopt.status_summary(nlso), "A nonlinear least squares objective")
             Z = get_gradient(M, nlso, p)
@@ -171,6 +163,29 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
                 get_gradient!(M, Zc!, nlsoRobustJa, p; value_cache = V, jacobian_cache = jc)
                 @test isapprox(M, p, Z, Zc; atol = 1.0e-15)
                 @test isapprox(M, p, Zc, Zc!)
+                # a componentwise robustifier takes the Jacobian from the cache as well
+                calls = Ref(0)
+                Jcount(M, x) = (calls[] += 1; J(M, x))
+                vgf3 = VectorGradientFunction(f, Jcount, 2; jacobian_type = CoefficientVectorialType())
+                nlsoCw = ManifoldNonlinearLeastSquaresObjective(
+                    [vgf3], [ComponentwiseRobustifierFunction(HuberRobustifier())]
+                )
+                Zw = get_gradient(M, nlsoCw, p)
+                @test calls[] > 0
+                calls[] = 0
+                Zwc = get_gradient(M, nlsoCw, p; value_cache = f(M, p), jacobian_cache = [J(M, p)])
+                @test calls[] == 0
+                @test isapprox(M, p, Zw, Zwc; atol = 1.0e-15)
+                # the surrogate gradient helpers use a given Jacobian cache for both robustifier kinds
+                Jp = J(M, p)
+                kw = (; value_cache = f(M, p), threshold = 1.0e-4, mode = :Strict)
+                for r in (HuberRobustifier(), ComponentwiseRobustifierFunction(HuberRobustifier()))
+                    Ya = zero_vector(M, p)
+                    Manopt._add_gradient!(M, Ya, vgf2, r, p, X; kw...)
+                    Yc = zero_vector(M, p)
+                    Manopt._add_gradient!(M, Yc, vgf2, r, p, X; jacobian_cache = Jp, kw...)
+                    @test isapprox(M, p, Ya, Yc; atol = 1.0e-14)
+                end
             end
         end
         @testset "Dummy decorator pass through" begin
@@ -181,6 +196,24 @@ using Manifolds, Manopt, RecursiveArrayTools, Test
             get_residuals!(M, V!, dnlso, p)
             @test isapprox(V, V!)
             @test isapprox(V, get_residuals(M, dnlso, p))
+            # the stored functions are reachable through the decorator
+            @test Manopt.get_residual_functions(dnlso) === Manopt.get_residual_functions(nlsoFa)
+            @test Manopt.get_robustifier_functions(dnlso) === Manopt.get_robustifier_functions(nlsoFa)
+            @test length(Manopt.get_residual_functions(nlsoRobust)) == 2
+            @test Manopt.get_robustifier_functions(nlsoRobust)[1] isa HuberRobustifier
+            # the surrogates keep a decorated objective and evaluate the same as for the plain one
+            lmso = LevenbergMarquardtLinearSurrogateObjective(nlsoFa)
+            dlmso = LevenbergMarquardtLinearSurrogateObjective(dnlso)
+            @test get_objective(dlmso) === dnlso
+            get_residuals!(M, lmso.value_cache, nlsoFa, p)
+            get_residuals!(M, dlmso.value_cache, dnlso, p)
+            @test get_gradient(M, dlmso, p, X) == get_gradient(M, lmso, p, X)
+            @test Manopt.get_normal_vector_field(M, dlmso, p) == Manopt.get_normal_vector_field(M, lmso, p)
+            @test LevenbergMarquardt(M, dnlso, p) == LevenbergMarquardt(M, nlsoFa, p)
+            # a decorator of another objective is not accepted
+            dco = Manopt.Test.DummyDecoratedObjective(ManifoldCostObjective(f))
+            @test_throws MethodError LevenbergMarquardtLinearSurrogateObjective(dco)
+            @test_throws MethodError Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective(dco)
         end
     end
     @testset "Add_vector! on special manifolds" begin

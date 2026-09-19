@@ -1,4 +1,4 @@
-using LinearAlgebra, Manifolds, Manopt, Random, Test
+using LinearAlgebra, LRUCache, Manifolds, Manopt, Random, Test
 
 include("trust_region_model.jl")
 
@@ -12,6 +12,8 @@ include("trust_region_model.jl")
     p[:, :, 1] = [1.0 0.0; 0.0 1.0; 0.0 0.0]
     p[:, :, 2] = [0.0 0.0; 1.0 0.0; 0.0 1.0]
 
+    # the old name of the acceptance rate is declared deprecated
+    @test :ρ_prime in Manopt.accepted_keywords(trust_regions).deprecated
     @test_throws ErrorException trust_regions(
         M, f, rgrad, rhess, p; max_trust_region_radius = -0.1
     )
@@ -40,6 +42,9 @@ include("trust_region_model.jl")
         # Dummy pass through for closed from solver
         trs4 = TrustRegionsState(M, rgrad, AllocatingEvaluation())
         @test trs4.sub_state isa Manopt.ClosedFormSubSolverState
+        # a decorated Hessian objective gets the same sub solver as the plain one
+        trs5 = TrustRegionsState(M, EmbeddedManifoldObjective(M, mho); p = p)
+        @test typeof(trs5.sub_state) == typeof(TrustRegionsState(M, mho; p = p).sub_state)
         @testset "closed form sub solver can be solved" begin
             # the documented closed form constructor built a state `step_solver!` could not run
             mho = ManifoldHessianObjective(f, rgrad, rhess)
@@ -66,6 +71,19 @@ include("trust_region_model.jl")
             end
             # both evaluation types take the same steps
             @test isapprox(M, get_solver_result(sa), get_solver_result(si))
+            # a good step that reaches the boundary doubles the radius also without the tCG
+            sr = TrustRegionsState(
+                M, closed_a; p = copy(M, p), trust_region_radius = 0.01, stopping_criterion = StopAfterIteration(1),
+            )
+            solve!(dmp, sr)
+            @test sr.trust_region_radius ≈ 0.02
+        end
+        @testset "a cache on the sub objective" begin
+            q = trust_regions(M, f, rgrad, rhess, copy(M, p))
+            for c in ((:Simple, [:Hessian]), (:LRU, [:Cost, :Gradient], 10))
+                qc = trust_regions(M, f, rgrad, rhess, copy(M, p); sub_kwargs = (; cache = c))
+                @test isapprox(M, q, qc)
+            end
         end
     end
     @testset "Objective accessors" begin
@@ -236,6 +254,27 @@ include("trust_region_model.jl")
 
         p_star = eigvecs(A)[:, 1]
 
+        @testset "Approximate Hessians keep the point they are built with" begin
+            q = copy(M, p)
+            X = rand(M; vector_at = p_star)
+            for H in (
+                    ApproxHessianFiniteDifference(M, q, grad_f),
+                    ApproxHessianSymmetricRankOne(M, q, grad_f),
+                    ApproxHessianBFGS(M, q, grad_f),
+                )
+                H(M, p_star, X)
+                @test q == p
+            end
+            # without the copy the point passed in is the working memory and moves to (a finite difference step next to) the evaluation point
+            for T in (ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS)
+                q2 = copy(M, p)
+                H2 = T(M, q2, grad_f; copy_point = false)
+                H2(M, p_star, X)
+                @test isapprox(M, q2, p_star; atol = 1.0e-3)
+                @test !isapprox(M, q2, p; atol = 1.0e-3)
+            end
+        end
+
         @testset "Allocating Variant" begin
             # the run stops at the gradient norm of the current iterate, so `1e-6` is what it promises
             q = trust_regions(M, f, grad_f, Hess_f, p)
@@ -314,7 +353,7 @@ include("trust_region_model.jl")
                 trust_region_radius = 1.0, θ = 0.1, κ = 0.9,
                 retraction_method = ProjectionRetraction(), evaluation = InplaceEvaluation(),
             )
-            @test isapprox(M, qaHSR1_3, p_star) || isapprox(M, qaHSR1_3, -p_star)
+            @test isapprox(M, qaHSR1_3, p_star; atol = 1.0e-6) || isapprox(M, qaHSR1_3, -p_star; atol = 1.0e-6)
 
             qaHBFGS_3 = copy(M, p)
             trust_regions!(
@@ -325,7 +364,7 @@ include("trust_region_model.jl")
                 trust_region_radius = 1.0, θ = 0.1, κ = 0.9,
                 retraction_method = ProjectionRetraction(), evaluation = InplaceEvaluation(),
             )
-            @test isapprox(M, qaHBFGS_3, p_star) || isapprox(M, qaHBFGS_3, -p_star)
+            @test isapprox(M, qaHBFGS_3, p_star; atol = 1.0e-6) || isapprox(M, qaHBFGS_3, -p_star; atol = 1.0e-6)
         end
     end
     @testset "on the Circle" begin

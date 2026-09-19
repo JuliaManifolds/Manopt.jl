@@ -1,4 +1,3 @@
-
 ---
 title: "How to use callbacks"
 author: Ronny Bergmann
@@ -18,7 +17,7 @@ at specific places, referred to as “hooks” in the following, during the run 
 #| output: false
 using Pkg;
 cd(@__DIR__)
-Pkg.activate(".");
+Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```
 ```{julia}
 using Manopt, Manifolds, Random, LinearAlgebra, ManifoldDiff

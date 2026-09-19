@@ -1,5 +1,5 @@
 @doc """
-    TrustRegionsState <: AbstractSubProblemSolverState
+    TrustRegionsState <: AbstractManoptSolverState
 
 Store the state of the trust-regions solver.
 
@@ -77,7 +77,7 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 mutable struct TrustRegionsState{
         P, T, Pr, St <: AbstractManoptSolverState, C <: AbstractDict{Symbol},
         SC <: StoppingCriterion, RTR <: AbstractRetractionMethod, R <: Real, Proj,
-    } <: AbstractSubProblemSolverState
+    } <: AbstractManoptSolverState
     callbacks::C
     p::P
     X::T
@@ -146,6 +146,7 @@ mutable struct TrustRegionsState{
         return trs
     end
 end
+has_sub_problem(::Type{<:TrustRegionsState}) = true
 TrustRegionsState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Trust region method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function TrustRegionsState(
         M::AbstractManifold, sub_problem::Pr, sub_state::St;
@@ -161,7 +162,7 @@ function TrustRegionsState(
         augmentation_threshold::Real = 0.75, augmentation_factor::Real = 2.0,
         project!::Proj = (copyto!), σ::Real = randomize ? 1.0e-3 : 0.0,
     ) where {
-        P, T, Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,
+        P, T, Pr, St <: AbstractManoptSolverState,
         C <: AbstractDict{Symbol}, SC <: StoppingCriterion, RTR <: AbstractRetractionMethod, Proj,
     }
     R = promote_type(
@@ -199,7 +200,12 @@ function TrustRegionsState(
     return TrustRegionsState(M, sub_problem_, cfs; kwargs...)
 end
 function TrustRegionsState(
-        M::AbstractManifold, mho::AbstractManifoldHessianObjective; p = rand(M), kwargs...
+        M::AbstractManifold,
+        mho::Union{
+            AbstractManifoldHessianObjective,
+            AbstractDecoratedManifoldObjective{<:AbstractManifoldHessianObjective},
+        };
+        p = rand(M), kwargs...,
     )
     TpM = TangentSpace(M, copy(M, p))
     problem = DefaultManoptProblem(TpM, TrustRegionModelObjective(mho))
@@ -241,15 +247,12 @@ function Base.show(io::IO, trs::TrustRegionsState)
 end
 function status_summary(trs::TrustRegionsState; context::Symbol = :default)
     (context === :short) && return repr(trs)
-    i = get_count(trs, :Iterations)
     (context === :inline) && return "A solver state for the trust region solver$(_iteration_suffix(trs))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(trs.stop) ? "Yes" : "No"
     sub = _in_str(status_summary(trs.sub_state; context = context); indent = 1, headers = 1, indent_end = "| ")
     as = _callbacks_summary(trs)
     s = """
     # Solver state for `Manopt.jl`s Trust Region Method
-    $Iter
+    $(_iterations_str(trs))
     ## Parameters
     * acceptance_rate (ρ'):   $(trs.acceptance_rate)$(as)
     * augmentation threshold: $(trs.augmentation_threshold) (factor: $(trs.augmentation_factor))
@@ -262,8 +265,8 @@ function status_summary(trs::TrustRegionsState; context::Symbol = :default)
     $(sub)
 
     ## Stopping criterion
-    $(_in_str(status_summary(trs.stop; context = context); indent = 1, headers = 1))
-    The algorithm converged: $Conv"""
+    $(_in_str(status_summary(trs.stop; context = context); indent = 0, headers = 1))
+    The algorithm converged: $(_converged_str(trs))"""
     return s
 end
 
@@ -448,7 +451,7 @@ function trust_regions!(
         _dmho = decorate_objective!(M, mho; objective_type = objective_type, _p = p),
         sub_kwargs = (;),
         sub_objective = decorate_objective!(
-            M, TrustRegionModelObjective(_dmho); sub_kwargs...
+            TangentSpace(M, p), TrustRegionModelObjective(_dmho); sub_kwargs...
         ),
         sub_problem = DefaultManoptProblem(TangentSpace(M, p), sub_objective),
         sub_stopping_criterion::StoppingCriterion = StopAfterIteration(manifold_dimension(M)) |
@@ -511,7 +514,7 @@ function trust_regions!(
     trs = TrustRegionsState(
         M, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, TrustRegionsState),
-        p = p, X = get_gradient(dmp, p),
+        p = p,
         trust_region_radius = trust_region_radius,
         max_trust_region_radius = max_trust_region_radius,
         acceptance_rate = acceptance_rate,
@@ -529,6 +532,7 @@ function trust_regions!(
     return get_solver_return(get_objective(dmp), dtrs)
 end
 calls_with_kwargs(::typeof(trust_regions!)) = (decorate_objective!, decorate_state!)
+deprecated_keywords(::typeof(trust_regions!)) = Set([:ρ_prime])
 
 function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     M = get_manifold(mp)
@@ -550,7 +554,7 @@ end
 =#
 function _trs_solve_sub!(M, trs::TrustRegionsState, ::AbstractManoptSolverState)
     set_parameter!(trs.sub_problem, Val(:Manifold), Val(:Basepoint), copy(M, trs.p))
-    set_parameter!(trs.sub_state, Val(:Iterate), copy(M, trs.p, trs.Y))
+    set_iterate!(trs.sub_state, get_manifold(trs.sub_problem), copy(M, trs.p, trs.Y))
     set_parameter!(trs.sub_state, Val(:TrustRegionRadius), trs.trust_region_radius)
     solve!(trs.sub_problem, trs.sub_state)
     return copyto!(M, trs.Y, trs.p, get_solver_result(trs.sub_state))
@@ -629,12 +633,15 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     # Update the Hessian approximation, unwrap the original Hessian function
     # and update it if it is an approximate Hessian.
     update_hessian!(M, get_hessian_function(mho, true), trs.p, trs.p_proposal, trs.Y)
+    # use the report of the sub solver if provided
+    exceeded = get_parameter(get_state(trs.sub_state), :TrustRegionExceeded)
+    boundary_reached = isnothing(exceeded) ?
+        (norm(M, trs.p, trs.Y) >= trs.trust_region_radius) : (exceeded === true)
     # Choose the new TR radius based on the model performance.
     # Case (a) performed poorly -> decrease radius
     if ρ < trs.reduction_threshold || !model_decreased || isnan(ρ)
         trs.trust_region_radius *= trs.reduction_factor
-    elseif ρ > trs.augmentation_threshold &&
-            (get_parameter(get_state(trs.sub_state), :TrustRegionExceeded) === true)
+    elseif ρ > trs.augmentation_threshold && boundary_reached
         # (b) performed great and exceed/reach the trust region boundary -> increase radius
         trs.trust_region_radius = min(
             trs.augmentation_factor * trs.trust_region_radius, trs.max_trust_region_radius
@@ -642,7 +649,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     end
     # (c) decreased and performed well enough -> accept step
     if model_decreased && (ρ > trs.acceptance_rate)
-        copyto!(trs.p, trs.p_proposal)
+        copyto!(M, trs.p, trs.p_proposal)
         # If working with approximate Hessian -> update base point there
         update_hessian_basis!(M, get_hessian_function(mho, true), trs.p)
         # and the gradient at the new iterate

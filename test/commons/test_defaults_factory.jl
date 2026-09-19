@@ -61,4 +61,9 @@ FactoryDummyManifoldRule(M::TM; t::R = 1.0) where {TM <: AbstractManifold, R <: 
     )
     obj_m = fdrm(M)
     @test obj_m.M === M
+    # without a manifold a factory that needs one, or a point, reports why
+    @test_throws ArgumentError Manopt.ManifoldDefaultsFactory(FactoryDummyManifoldRule)()
+    @test_throws ArgumentError Manopt.ManifoldDefaultsFactory(
+        FactoryDummyPointRule; requires_manifold = false, requires_point = true
+    )()
 end

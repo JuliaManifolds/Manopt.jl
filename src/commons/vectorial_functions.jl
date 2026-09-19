@@ -101,7 +101,7 @@ function VectorGradientFunction(
 end
 
 @doc """
-    get_value_function(vgf::VectorGradientFunction, recursive=false; evaluation=AllocatingEvaluation())
+    get_value_function(vgf::AbstractVectorFunction, recursive=false; evaluation=AllocatingEvaluation())
 
 Return the function to evaluate (just) the value ``f(p) ∈ ℝ^n``, see [`get_value`](@ref).
 
@@ -111,7 +111,7 @@ For the default `evaluation=`[`AllocatingEvaluation`](@ref)`()` this function ha
 For a value stored as a [`ComponentVectorialType`](@ref) the in-place variant returns the vector of the component functions instead.
 """
 function get_value_function(
-        vgf::VectorGradientFunction, recursive = false;
+        vgf::AbstractVectorFunction, recursive = false;
         evaluation::AbstractEvaluationType = AllocatingEvaluation()
     )
     if evaluation isa AllocatingEvaluation
@@ -300,6 +300,30 @@ function get_gradient!(
     ei = zeros(n); ei[i] = 1
     return get_adjoint_jacobian!(M, X, vgf, p, ei)
 end
+# a range of indices: one adjoint evaluation per index
+function get_gradient(
+        M::AbstractManifold, vgf::VectorDifferentialFunction, p, i = :,
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
+    )
+    range = isnothing(range) ? get_range(vgf.jacobian_type) : range
+    n = _vgf_index_to_length(i, vgf.range_dimension)
+    pM = PowerManifold(M, range, n)
+    X = zero_vector(pM, fill(p, pM))
+    return get_gradient!(M, X, vgf, p, i, range)
+end
+function get_gradient!(
+        M::AbstractManifold, X, vgf::VectorDifferentialFunction, p, i,
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
+    )
+    range = isnothing(range) ? get_range(vgf.jacobian_type) : range
+    n = _vgf_index_to_length(i, vgf.range_dimension)
+    pM = PowerManifold(M, range, n)
+    rep_size = representation_size(M)
+    for (j, k) in zip(_to_iterable_indices(1:(vgf.range_dimension), i), 1:n)
+        get_gradient!(M, _write(pM, rep_size, X, (k,)), vgf, p, j)
+    end
+    return X
+end
 
 # Jacobian in matrix form JF
 # Jacobian as a differential -> build matrix column by column by passing the basis vectors in
@@ -374,11 +398,10 @@ function show(io::IO, vgf::VectorDifferentialFunction)
     print(io, ", "); print(io, vgf.range_dimension)
     print(io, "; ")
     print(io, "function_type = "); print(io, vgf.cost_type)
+    print(io, ", jacobian_type = "); print(io, vgf.jacobian_type)
     if !ismissing(vgf.adjoint_jacobian_type)
         print(io, ", adjoint_jacobian_type = "); print(io, vgf.adjoint_jacobian_type)
     end
-    print(io, ", jacobian_type = ")
-    print(io, vgf.jacobian_type)
     return print(io, ")")
 end
 
@@ -488,8 +511,9 @@ end
 function get_hessian(
         M::AbstractManifold, vhf::VectorHessianFunction, p, X,
         i = :, # as long as the length can be found it should work, see _vgf_index_to_length
-        range::Union{AbstractPowerRepresentation, Nothing} = get_range(vhf.hessian_type),
+        range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     )
+    range = isnothing(range) ? get_range(vhf.hessian_type) : range
     n = _vgf_index_to_length(i, vhf.range_dimension)
     pM = PowerManifold(M, range, n)
     P = fill(p, pM)
@@ -507,8 +531,9 @@ end
 # (a) arbitrary i
 function get_hessian!(
         M::AbstractManifold, Y, vhf::VectorHessianFunction{FT, JT, <:ComponentVectorialType},
-        p, X, i, range::Union{AbstractPowerRepresentation, Nothing} = get_range(vhf.hessian_type),
+        p, X, i, range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     ) where {FT, JT}
+    range = isnothing(range) ? get_range(vhf.hessian_type) : range
     n = _vgf_index_to_length(i, vhf.range_dimension)
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
@@ -522,8 +547,9 @@ end
 # (b) a single function
 function get_hessian!(
         M::AbstractManifold, Y, vhf::VectorHessianFunction{FT, JT, <:FunctionVectorialType},
-        p, X, i::Integer, range::Union{AbstractPowerRepresentation, Nothing} = get_range(vhf.hessian_type),
+        p, X, i::Integer, range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     ) where {FT, JT}
+    range = isnothing(range) ? get_range(vhf.hessian_type) : range
     pM = PowerManifold(M, range, vhf.range_dimension...)
     P = fill(p, pM)
     y = zero_vector(pM, P)
@@ -533,8 +559,9 @@ function get_hessian!(
 end
 function get_hessian!(
         M::AbstractManifold, Y, vhf::VectorHessianFunction{FT, JT, <:FunctionVectorialType},
-        p, X, i, range::Union{AbstractPowerRepresentation, Nothing} = get_range(vhf.hessian_type),
+        p, X, i, range::Union{AbstractPowerRepresentation, Nothing} = nothing,
     ) where {FT, JT}
+    range = isnothing(range) ? get_range(vhf.hessian_type) : range
     #Single access for function is a bit expensive
     n = _vgf_index_to_length(i, vhf.range_dimension)
     pM_out = PowerManifold(M, range, n)
@@ -547,7 +574,7 @@ function get_hessian!(
     return Y
 end
 
-function get_hessian_function(vhf::VectorHessianFunction; evaluation::AbstractEvaluationType = AllocatingEvaluation())
+function get_hessian_function(vhf::VectorHessianFunction, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
     if evaluation isa AllocatingEvaluation
         (vhf.hessians! isa InplaceManifoldFunction) && return vhf.hessians!.f
         (vhf.hessians! isa AbstractVector{<:InplaceManifoldFunction}) && return [h.f for h in vhf.hessians!]
@@ -560,10 +587,11 @@ function status_summary(vhf::VectorHessianFunction; context::Symbol = :default)
     return """
     A function defined on a manifold that maps into a vector space including gradients and Hessians of the component functions.
 
-    * cost:$(_MANOPT_INDENT)$(vhf.value!)$(_MANOPT_INDENT)(represented as $(vhf.cost_type)),
-    * gradient(s) or Jacobian:$(_MANOPT_INDENT)$(vhf.jacobian!)$(_MANOPT_INDENT)(represented as $(vhf.jacobian_type))
-    * Hessian(s):$(_MANOPT_INDENT)$(vhf.hessians!)$(_MANOPT_INDENT)(represented as $(vhf.hessian_type))
-    * dimension:$(_MANOPT_INDENT)$(length(vhf))"""
+    ## Components
+    * cost:                   $(_MANOPT_INDENT)$(vhf.value!)$(_MANOPT_INDENT)(as $(vhf.cost_type)),
+    * gradient(s) or Jacobian:$(_MANOPT_INDENT)$(vhf.jacobian!)$(_MANOPT_INDENT)(as $(vhf.jacobian_type))
+    * Hessian(s):             $(_MANOPT_INDENT)$(vhf.hessians!)$(_MANOPT_INDENT)(as $(vhf.hessian_type))
+    * dimension:              $(_MANOPT_INDENT)$(length(vhf))"""
 end
 function show(io::IO, vhf::VectorHessianFunction)
     print(io, "VectorHessianFunction("); print(io, vhf.value!); print(io, ", ")

@@ -247,6 +247,32 @@ using ManifoldDiff: grad_distance
         @test isapprox(f(M, x_opt3), minimum(eigvals(A)); atol = 2.0 * 1.0e-2)
     end
 
+    @testset "Allocating and in-place gradients agree for every coefficient" begin
+        A = Diagonal([2.0, 1.1, 1.0])
+        M = Sphere(size(A, 1) - 1)
+        f(::Sphere, p) = p' * A * p
+        grad_f(M, p) = project(M, p, 2 * A * p)
+        grad_f!(M, X, p) = project!(M, X, p, 2 * A * p)
+        p0 = [2.0, 0.0, 2.0] / sqrt(8.0)
+        sc = StopAfterIteration(5) # before the Hestenes-Stiefel run stalls
+        for c in [
+                SteepestDescentCoefficient(), ConjugateDescentCoefficient(),
+                DaiYuanCoefficient(), FletcherReevesCoefficient(), HagerZhangCoefficient(),
+                HestenesStiefelCoefficient(), LiuStoreyCoefficient(), PolakRibiereCoefficient(),
+                HybridCoefficient(FletcherReevesCoefficient(), PolakRibiereCoefficient()),
+                ConjugateGradientBealeRestart(HagerZhangCoefficient()),
+            ]
+            q1 = conjugate_gradient_descent(
+                M, f, grad_f, p0; coefficient = c, stopping_criterion = sc
+            )
+            q2 = conjugate_gradient_descent(
+                M, f, grad_f!, p0; coefficient = c, stopping_criterion = sc,
+                evaluation = InplaceEvaluation(),
+            )
+            @test all(isfinite, q1)
+            @test q1 == q2
+        end
+    end
     @testset "CG on complex manifolds" begin
         M = Euclidean(2; field = ℂ)
         A = [2 im; -im 2]
@@ -360,8 +386,10 @@ using ManifoldDiff: grad_distance
             stopping_criterion,
             stepsize = get_stepsize(),
         )
-        # sufficient descent should perform best, descent better than no restart
-        @test e_func(p3) < e_func(p2) && e_func(p2) < e_func(p1)
+        # sufficient descent performs best; the run without restart stalls and its
+        # final value depends on roundoff, so it is not ordered against the second one
+        @test e_func(p3) < e_func(p2)
+        @test e_func(p3) < e_func(p1)
         @test e_func(p3) ≈ 1 atol = 1.0e-3
     end
 
@@ -408,6 +436,35 @@ using ManifoldDiff: grad_distance
         f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
         grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
         @test conjugate_gradient_descent(M, f, grad_f, data[1]) isa PoincareBallPoint
+        # a hybrid rule, plain and inside a restart, builds its storages from the given point
+        hybrid = HybridCoefficient(FletcherReevesCoefficient(), PolakRibiereCoefficient())
+        @test conjugate_gradient_descent(M, f, grad_f, data[1]; coefficient = hybrid) isa PoincareBallPoint
+        @test conjugate_gradient_descent(
+            M, f, grad_f, data[1]; coefficient = ConjugateGradientBealeRestart(hybrid)
+        ) isa PoincareBallPoint
+    end
+
+    @testset "Beale restart updates the storages of a wrapped hybrid rule" begin
+        M = Sphere(2)
+        A = [1.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 5.0]
+        f(M, p) = p' * A * p
+        grad_f(M, p) = project(M, p, 2 * A * p)
+        p0 = [1.0, 1.0, 1.0] ./ sqrt(3)
+        # max(β, min(β)) = β, so the hybrid of one rule must give the plain rule's β
+        βs = map(
+            [
+                ConjugateGradientBealeRestart(DaiYuanCoefficient(); threshold = 100.0),
+                ConjugateGradientBealeRestart(HybridCoefficient(DaiYuanCoefficient(); lower_bound = DaiYuanCoefficient()); threshold = 100.0),
+            ]
+        ) do coefficient
+            s = conjugate_gradient_descent(
+                M, f, grad_f, p0;
+                coefficient = coefficient, stepsize = Manopt.ConstantStepsize(M, 0.05), restart_condition = NeverRestart(),
+                stopping_criterion = StopAfterIteration(5), record = [RecordEntry(0.0, :β)], return_state = true,
+            )
+            get_record(s)
+        end
+        @test βs[1] ≈ βs[2]
     end
 
     @testset "Issue #603: CG with HZ rule on a numerically challenging problem" begin

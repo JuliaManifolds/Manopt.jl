@@ -22,10 +22,10 @@ using Manopt, Manifolds, Test
         f(M, p) = 1 # dummy cost
         mco = ManifoldCostObjective(f)
         dmp = DefaultManoptProblem(Euclidean(3), mco)
-        # has no effect but does not error
-        Manopt.set_parameter!(f, :Dummy, 1)
-        Manopt.set_parameter!(dmp, :Cost, :Dummy, 1)
-        Manopt.set_parameter!(mco, :Cost, :Dummy, 1)
+        # has no effect but does not error and returns the object it was called on
+        @test Manopt.set_parameter!(f, :Dummy, 1) === f
+        @test Manopt.set_parameter!(dmp, :Cost, :Dummy, 1) === dmp
+        @test Manopt.set_parameter!(mco, :Cost, :Dummy, 1) === mco
         # but the objective here does not have a gradient
     end
 end

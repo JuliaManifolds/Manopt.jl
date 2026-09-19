@@ -1,4 +1,4 @@
-using ManifoldsBase, Manopt, Manifolds, Test
+using ManifoldsBase, Manopt, Manifolds, Random, Test
 
 @testset "Initial stepsize" begin
     @testset "Hager-Zhang" begin
@@ -39,6 +39,20 @@ using ManifoldsBase, Manopt, Manifolds, Test
 
         # case I0, explicit guess
         @test hzi_nq(dmp, gds3, 1, NaN, η3) ≈ hzi_nq.constant_guess
+        # alphamax bounds the fallback and the constant guess as well
+        hzi_b = Manopt.HagerZhangInitialGuess{Float64}(; alphamax = 0.1)
+        @test hzi_b(dmp, gds3, 1, NaN, η3) == 0.1
+        hzi_bc = Manopt.HagerZhangInitialGuess{Float64}(; alphamax = 0.1, constant_guess = 12.0)
+        @test hzi_bc(dmp, gds3, 1, NaN, η3) == 0.1
+        # the manifold bound is a length, the guess a factor
+        Ms = Sphere(2)
+        fs(N, q) = 40000 + 10 * q[3]
+        grad_fs(N, q) = project(N, q, [0.0, 0.0, 10.0])
+        dmps = DefaultManoptProblem(Ms, ManifoldGradientObjective(fs, grad_fs))
+        ps = [1.0, 0.0, 0.3] ./ norm([1.0, 0.0, 0.3])
+        ηs = -grad_fs(Ms, ps)
+        gdss = GradientDescentState(Ms; p = ps, X = -ηs)
+        @test hzi(dmps, gdss, 1, NaN, ηs) * norm(Ms, ps, ηs) <= Manopt.max_stepsize(Ms) + 1.0e-12
 
         # case I1
         @test hzi(dmp, gds3, 2, 1.0, η3) ≈ 0.5
@@ -126,10 +140,36 @@ end
     gds3.X = grad_f3(M, gds3.p)
     t3 = s3(dmp3, gds3, 1, -gds3.X)
     @test f3(M, gds3.p .- t3 .* gds3.X) <= f3(M, gds3.p) - 1.0e-4 * t3 * norm(gds3.X)^2
+    # the initial guess is the first trial step: the minimizer along the line is accepted directly
+    s3g = WolfePowellBinaryLinesearch(; initial_guess = Manopt.ConstantInitialGuess(0.005))(M)
+    @test s3g(dmp3, gds3, 1, -gds3.X) == 0.005
+    @test t3 != 0.005 # the default guess of 1.0 bisects to a different step
+    # the maximal step size of the manifold and the passed bound limit the step
+    Ms = Sphere(2)
+    fs(N, q) = 1 - q[1]
+    grad_fs(N, q) = project(N, q, [-1.0, 0.0, 0.0])
+    dmps = DefaultManoptProblem(Ms, ManifoldGradientObjective(fs, grad_fs))
+    ps = [0.3, 0.5, 0.8] ./ norm([0.3, 0.5, 0.8])
+    ηs = -10.0 .* grad_fs(Ms, ps)
+    gdss = GradientDescentState(Ms; p = ps, X = -ηs)
+    s3s = WolfePowellBinaryLinesearch()(Ms)
+    @test s3s(dmps, gdss, 1, ηs) * norm(Ms, ps, ηs) <= Manopt.max_stepsize(Ms) + 1.0e-12
+    @test s3s(dmps, gdss, 1, ηs; stop_when_stepsize_exceeds = 0.01) == 0.01
     s4 = WolfePowellLinesearch()(M)
     @test startswith(repr(s4), "WolfePowellLinesearchStepsize(;")
+    @test isnan(get_initial_stepsize(s4)) # no initial step size is stored
     @test startswith(Manopt.status_summary(s4), "A Wolfe Powell line search")
     @test Manopt.get_message(s4) == ""
+    # the returned step fulfills both Wolfe conditions and is stored
+    α4 = s4(dmp3, gds3, 1, -gds3.X)
+    s4g = WolfePowellLinesearch(; initial_guess = Manopt.ConstantInitialGuess(0.005))(M)
+    @test s4g(dmp3, gds3, 1, -gds3.X) == 0.005
+    @test α4 != 0.005
+    q4 = gds3.p .- α4 .* gds3.X
+    d0 = -norm(gds3.X)^2
+    @test f3(M, q4) <= f3(M, gds3.p) + 1.0e-4 * α4 * d0
+    @test -grad_f3(M, q4)' * gds3.X >= 0.999 * d0
+    @test get_last_stepsize(s4) == α4
     @testset "Armijo setter / getters" begin
         # Check that the passdowns work, though; since the defaults are functions, they return nothing
         @test isnothing(Manopt.get_parameter(s, :IncreaseCondition, :Dummy))
@@ -172,6 +212,18 @@ end
             M, f, p, 1.0e-12, 0, 0.5, -grad_f(M, p); gradient = grad_f(M, p), stop_increasing_at_step = 1, report_messages_in = msgs
         )
         @test msgs[:stop_increasing].at_iteration == 1
+        # the bound also caps the first guess, when no increase happens
+        s6 = Manopt.linesearch_backtrack(
+            M, f, p, 3.0, 1.0e-4, 0.5, -grad_f(M, p); gradient = grad_f(M, p), stop_when_stepsize_exceeds = 0.5,
+            stop_increasing_at_step = 0, report_messages_in = msgs,
+        )
+        @test s6 <= 0.5
+        @test msgs[:stepsize_exceeds].at_iteration == 0
+        # an integer bound is converted by the message
+        s7 = Manopt.linesearch_backtrack(
+            M, f, p, 1.0e-12, 0, 0.5, -grad_f(M, p); gradient = grad_f(M, p), stop_when_stepsize_exceeds = 1, report_messages_in = msgs
+        )
+        @test msgs[:stepsize_exceeds].bound == 1.0
     end
     @testset "Adaptive WN Gradient" begin
         # Build a dummy function and gradient
@@ -182,6 +234,7 @@ end
         mgo = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, mgo)
         s = AdaptiveWNGradient(; gradient_reduction = 0.5, count_threshold = 2)(M)
+        @test_throws MethodError AdaptiveWNGradient(; unknown_keyword = 12)(M)
         @test startswith(Manopt.status_summary(s), "An adaptive WN gradient step size")
         @test startswith(repr(s), "AdaptiveWNGradientStepsize(; ")
         gds = GradientDescentState(M; p = p)
@@ -222,6 +275,11 @@ end
         solve!(mp, gds)
         @test abs_dec_step(mp, gds, 1) ==
             10.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
+        # at iteration 0 the decreasing step reports its initial length
+        dec_step = DecreasingLength(M; length = 2.0)()
+        @test dec_step(mp, gds, 0) == 2.0
+        @test dec_step(mp, gds, 1) == 2.0
+        @test dec_step(mp, gds, 2) == 1.0
         abs_const_step = Manopt.ConstantStepsize(M, 1.0; type = :absolute)
         @test abs_const_step(mp, gds, 1) ==
             1.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
@@ -235,6 +293,10 @@ end
         X = grad_f(M, p)
         # Create stepsize with factory
         bb = BarzilaiBorwein()(M) #
+        # the factory hands the point on, so the buffers take its representation
+        bb32 = Manopt._produce_type(BarzilaiBorwein(), M, Float32[2.0, 2.0])
+        @test eltype(bb32.s) === Float32
+        @test eltype(bb32.y) === Float32
         gds = GradientDescentState(M; p = p, stepsize = bb)
         # Check both modes to use BB
         # (1) vector transport when providing a last stepsize – no history -> max
@@ -242,12 +304,32 @@ end
         # (1) vector transport when providing a last stepsize - we did not actually move - still max
         @test bb(dmp, gds, 1) == bb.max_stepsize
         @test get_last_stepsize(bb) == bb.max_stepsize
+        @test get_initial_stepsize(bb) == bb.max_stepsize
+        # a storage with typed buffers gives the same step as the default one
+        f2(M, q) = q[1]^2 + 4 * q[2]^2
+        grad_f2(M, q) = [2 * q[1], 8 * q[2]]
+        dmp2 = DefaultManoptProblem(M, ManifoldGradientObjective(f2, grad_f2))
+        steps = map(
+            [
+                Manopt.StoreStateAction(M; store_fields = [:Iterate, :Gradient]),
+                Manopt.StoreStateAction(M; store_points = Tuple{:Iterate}, store_vectors = Tuple{:Gradient}, p_init = [2.0, 2.0]),
+            ]
+        ) do storage
+            bb2 = BarzilaiBorwein(; storage = storage)(M)
+            gds2 = GradientDescentState(M; p = [2.0, 2.0], X = grad_f2(M, [2.0, 2.0]), stepsize = bb2)
+            bb2(dmp2, gds2, 1)
+            Manopt.set_iterate!(gds2, M, [1.0, 0.5])
+            gds2.X = grad_f2(M, [1.0, 0.5])
+            bb2(dmp2, gds2, 2)
+        end
+        @test steps[1] ≈ 0.1625
+        @test steps[2] == steps[1]
         # on a curved manifold the first call must not compute with the roundoff of a
         # transport and an inverse retraction of a point to itself
         Ms = Sphere(2)
-        fs(N, q) = q[1]^2 + 2 * q[2]^2 + 5 * q[3]^2
-        grad_fs(N, q) = project(N, q, [2 * q[1], 4 * q[2], 10 * q[3]])
-        dmps = DefaultManoptProblem(Ms, ManifoldGradientObjective(fs, grad_fs))
+        fbb(N, q) = q[1]^2 + 2 * q[2]^2 + 5 * q[3]^2
+        grad_fbb(N, q) = project(N, q, [2 * q[1], 4 * q[2], 10 * q[3]])
+        dmps = DefaultManoptProblem(Ms, ManifoldGradientObjective(fbb, grad_fbb))
         for q in [
                 [-0.4351081605832091, 0.7182816676513397, 0.5429109821231346],
                 [0.36059885545348436, 0.6162424109231599, 0.7001526665129887],
@@ -293,9 +375,11 @@ end
         p = [2.0, 2.0]
         X = grad_f(M, p)
         sgs = SubGradientMethodState(M; p = p)
+        sgs.X = X # the solver stores the subgradient before asking for the step
         ps = Polyak()()
         @test startswith(repr(ps), "Polyak(; γ = ")
         @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
+        @test get_last_stepsize(ps) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
         @test startswith(Manopt.status_summary(ps), "Polyak step size with γ = ")
     end
     @testset "CubicBracketing Stepsize" begin
@@ -310,7 +394,27 @@ end
         @test startswith(repr(clbs), "CubicBracketingLinesearch(;")
         @test startswith(Manopt.status_summary(clbs), "Cubic bracketing stepsize")
         @test clbs(dmp, gs, 1) ≈ 0.5 atol = 4 * 1.0e-8
+        # without iterations the search returns its first trial step, which the initial guess provides
+        clbs0 = CubicBracketingLinesearch(; max_iterations = 0)(M)
+        @test clbs0(dmp, gs, 1) == 1.0
+        clbsg = CubicBracketingLinesearch(; initial_guess = (pr, st, k, l, η) -> 0.25, max_iterations = 0)(M)
+        @test clbsg(dmp, gs, 1) == 0.25
         @test get_last_stepsize(clbs) === clbs.last_stepsize
+        @test get_initial_stepsize(clbs) == clbs.initial_stepsize
+        # a new solver run starts from the initial step size again
+        clbs.last_stepsize = 0.25
+        Manopt.initialize_stepsize!(clbs)
+        @test clbs.last_stepsize == clbs.initial_stepsize
+        # the maximal step size bounds the distance travelled, not the factor
+        Ms = Sphere(2)
+        fcb(N, q) = q[1]^2
+        grad_fcb(N, q) = project(N, q, [2 * q[1], 0.0, 0.0])
+        dmps = DefaultManoptProblem(Ms, ManifoldGradientObjective(fcb, grad_fcb))
+        ps = [1.0, 0.0, 0.0]
+        η = 10.0 .* [0.0, 1.0, 0.0]
+        gss = GradientDescentState(Ms; p = ps, X = -η)
+        ts = CubicBracketingLinesearch()(Ms)(dmps, gss, 1, η)
+        @test ts * norm(Ms, ps, η) <= Manopt.max_stepsize(Ms) + 1.0e-12
 
         #edge cases of interval bracketing
         a, b, τ = 0, 1, 0.25
@@ -485,7 +589,9 @@ end
                 max_bracket_iterations = 1,
             )
             α_b1 = hzls_b1(dmp, gs, 1, η)
-            @test α_b1 > 0
+            # positive slope at the first trial step, so bracketing stops with it
+            @test α_b1 == 0.75
+            @test hzls_b1.last_evaluation_index == 2
         end
         @testset "B2 bracketing test" begin
             M = Euclidean(1)
@@ -504,7 +610,9 @@ end
                 max_bracket_iterations = 2,
             )
             α = hzls_b2(dmp, gs, 1, η)
-            @test α > 0
+            # the step and the number of evaluations this branch produces
+            @test α == 0.015625
+            @test hzls_b2.last_evaluation_index == 6
         end
         @testset "B3 bracketing test" begin
             M = Euclidean(1)
@@ -523,7 +631,9 @@ end
                 max_bracket_iterations = 2,
             )
             α = hzls_b3(dmp, gs, 1, η)
-            @test α > 0
+            # the step and the number of evaluations this branch produces
+            @test α == 2.0
+            @test hzls_b3.last_evaluation_index == 3
         end
         @testset "U1 trigger test" begin
             M = Euclidean(1)
@@ -541,7 +651,9 @@ end
             )
             # We expect U1 to be triggered during the update (secant is exact, slope 0 >= 0)
             α = hzls_u1(dmp, gs, 1, η)
-            @test α > 0
+            # the step and the number of evaluations this branch produces
+            @test α == 1.0
+            @test hzls_u1.last_evaluation_index == 3
         end
         @testset "U2 trigger test" begin
             M = Euclidean(1)
@@ -583,7 +695,9 @@ end
                 M; initial_guess = Manopt.ConstantInitialGuess(1.0), max_function_evaluations = 3
             )
             α = hzls_u2(dmp, gs, 1, η)
-            @test α > 0
+            # the step and the number of evaluations this branch produces
+            @test α == 0.5
+            @test hzls_u2.last_evaluation_index == 3
         end
         @testset "U3 trigger test" begin
             M = Euclidean(1)
@@ -626,7 +740,9 @@ end
                 M; initial_guess = Manopt.ConstantInitialGuess(1.0), max_function_evaluations = 5
             )
             α = hzls_u3(dmp, gs, 1, η)
-            @test α > 0
+            # the step and the number of evaluations this branch produces
+            @test α == 0.125
+            @test hzls_u3.last_evaluation_index == 5
         end
         @testset "U3 (b) trigger test" begin
             M = Euclidean(1)
@@ -794,7 +910,9 @@ end
             )
             # We expect the S2 log
             α = hzls_s2(dmp, gs, 1, η)
-            @test α > 0
+            # the step and the number of evaluations this branch produces
+            @test α ≈ 2.7387570112179483e-6
+            @test hzls_s2.last_evaluation_index == 20
         end
 
         @testset "S3 trigger test" begin
@@ -1037,6 +1155,7 @@ end
                 return project(M, p, -2 * A * p)
             end
 
+            Random.seed!(42)
             p0 = rand(M)
 
             x = gradient_descent(
@@ -1059,6 +1178,7 @@ end
                 return project(M, p, grad_E)
             end
 
+            Random.seed!(42)
             p0 = rand(M)
 
             x = gradient_descent(

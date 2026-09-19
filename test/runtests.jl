@@ -42,12 +42,12 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("commons/test_symmetric_linear_systems.jl")
         include("commons/test_vectorial_function.jl")
     end
-    @testset "Helper Tests        " begin
+    @testset "Helper Tests" begin
         include("helpers/test_checks.jl")
         include("helpers/test_linesearches.jl")
         include("helpers/test_manifold_extra_functions.jl")
     end
-    @testset "Solver Tests        " begin
+    @testset "Solver Tests" begin
         include("solvers/test_adaptive_regularization_with_cubics.jl")
         include("solvers/test_alternating_gradient.jl")
         include("solvers/test_augmented_lagrangian.jl")
@@ -82,5 +82,6 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("solvers/test_vectorbundle_newton.jl")
     end
     include("test_aqua.jl")
+    include("test_jet.jl")
     include("test_deprecated.jl")
 end

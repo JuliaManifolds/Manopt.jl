@@ -153,14 +153,11 @@ function Base.show(io::IO, qns::QuasiNewtonState)
 end
 function status_summary(qns::QuasiNewtonState; context::Symbol = :default)
     (context === :short) && return repr(qns)
-    i = get_count(qns, :Iterations)
     (context === :inline) && return "A solver state for the quasi Newton solver$(_iteration_suffix(qns))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(qns.stop) ? "Yes" : "No"
     as = _callbacks_summary(qns)
     s = """
     # Solver state for `Manopt.jl`s Quasi Newton Method
-    $Iter
+    $(_iterations_str(qns))
     ## Parameters$(as)
     * direction update:        $(status_summary(qns.direction_update; context = :inline))
     * retraction method:       $(qns.retraction_method)
@@ -171,15 +168,13 @@ function status_summary(qns::QuasiNewtonState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(qns.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(qns))"""
     return s
 end
-get_iterate(qns::QuasiNewtonState) = qns.p
 function set_iterate!(qns::QuasiNewtonState, M, p)
     copyto!(M, qns.p, p)
     return qns
 end
-get_gradient(qns::QuasiNewtonState) = qns.X
 function set_gradient!(qns::QuasiNewtonState, M, p, X)
     copyto!(M, qns.X, p, X)
     return qns
@@ -189,8 +184,10 @@ function default_stepsize(M::AbstractManifold, ::Type{QuasiNewtonState}; kwargs.
 end
 _doc_QN_init_scaling = raw"``\frac{s⟨s_k,y_k⟩_{p_k}}{\lVert y_k\rVert_{p_k}^2}``"
 _doc_QN = """
-    quasi_Newton(M, f, grad_f, p; kwargs...)
+    quasi_Newton(M, f, grad_f, p=rand(M); kwargs...)
+    quasi_Newton(M, gradient_objective, p; kwargs...)
     quasi_Newton!(M, f, grad_f, p; kwargs...)
+    quasi_Newton!(M, gradient_objective, p; kwargs...)
 
 Perform a quasi Newton iteration to solve
 
@@ -208,6 +205,8 @@ The ``k``th iteration consists of
 # Input
 
 $(_args([:M, :f, :grad_f, :p]))
+
+$(_note(:GradientObjective))
 
 # Keyword arguments
 
@@ -256,6 +255,8 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(max(100
 $(_kwargs(:vector_transport_method))
 
 $(_note(:OtherKeywords))
+
+$(_note(:TutorialMode))
 
 $(_note(:OutputSection))
 """
@@ -365,7 +366,6 @@ function quasi_Newton!(
     qns = QuasiNewtonState(
         M;
         p = p,
-        X = get_gradient(mp, p),
         callbacks = process_callbacks_arg(callbacks, QuasiNewtonState),
         direction_update = local_dir_upd,
         nondescent_direction_behavior = nondescent_direction_behavior,
@@ -439,7 +439,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     qns.η .*= α
     # β is 0/0 if the step α η vanishes, for α = 0 or at a critical point
     step_vanishes = iszero(α) || iszero(norm(M, qns.p_old, qns.η))
-    β = step_vanishes ? one(α) : locking_condition_scale(M, qns.direction_update, qns.p_old, qns.η, qns.p, qns.vector_transport_method)
+    β = step_vanishes ? one(α) : locking_condition_scale(M, qns.direction_update, qns.p_old, qns.η, qns.p, get_update_vector_transport(qns.direction_update))
     vector_transport_to!(
         M, qns.sk, qns.p_old, qns.η, qns.p, get_update_vector_transport(qns.direction_update),
     )
@@ -710,13 +710,13 @@ function fill_rho_i!(M::AbstractManifold, p, d::QuasiNewtonLimitedMemoryDirectio
         else
             d.message = "The inner products ⟨s_i,y_i⟩ ≈ 0, i=$i, ignoring summand in approximation."
         end
-    elseif d.nonpositive_curvature_behavior === :byrd && v <= d.sy_tol * norm(M, p, d.memory_y[i])^2
+    elseif d.nonpositive_curvature_behavior === :byrd && real(v) <= real(d.sy_tol) * norm(M, p, d.memory_y[i])^2
         d.ρ[i] = zero(eltype(d.ρ))
         if length(d.message) > 0
             d.message = replace(d.message, " i=" => " i=$i,")
             d.message = replace(d.message, "summand from" => "summands from")
         else
-            d.message = "The inner products ⟨s_i,y_i⟩ <= $(d.sy_tol * norm(M, p, d.memory_y[i])^2), i=$i, removing summand from approximation."
+            d.message = "The inner products ⟨s_i,y_i⟩ <= $(real(d.sy_tol) * norm(M, p, d.memory_y[i])^2), i=$i, removing summand from approximation."
         end
     else
         d.ρ[i] = 1 / v

@@ -104,6 +104,7 @@ and `δ` is initialized to a copy of this vector.
 
 The following fields from above are keyword arguments
 
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:X; name = "initial_gradient"))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `coefficient=`[`ConjugateDescentCoefficient`](@ref)`()`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).
@@ -170,7 +171,7 @@ function ConjugateGradientDescentState(
         TRC <: AbstractRestartCondition, TRetr <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod,
         C <: AbstractDict{Symbol},
     }
-    _coefficient = DirectionUpdateRuleStorage(M, _produce_type(coefficient, M); p_init = p, X_init = initial_gradient)
+    _coefficient = DirectionUpdateRuleStorage(M, _produce_type(coefficient, M, p); p_init = p, X_init = initial_gradient)
     return ConjugateGradientDescentState(;
         callbacks = callbacks,
         p = p, p_old = copy(M, p),
@@ -187,9 +188,6 @@ get_callbacks(state::ConjugateGradientDescentState) = state.callbacks
 function get_message(cgs::ConjugateGradientDescentState)
     # for now only step size is equipped with messages
     return get_message(cgs.stepsize)
-end
-function get_gradient(cgs::ConjugateGradientDescentState)
-    return cgs.X
 end
 function Base.show(io::IO, cgs::ConjugateGradientDescentState)
     print(io, "ConjugateGradientDescentState(;")
@@ -490,7 +488,7 @@ update_rule_storage_vectors(::HagerZhangCoefficientRule) = Tuple{:Gradient, :δ}
 # Since the rules are “memoryless” their functor accepts old necessary terms as (mandatory)
 # keywords, i.e. the state has the current values, the keywords are the old ones
 function (hz::HagerZhangCoefficientRule)(
-        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ, kwargs...
     )
     M = get_manifold(amp)
     Xtr = vector_transport_to(
@@ -611,7 +609,7 @@ update_rule_storage_vectors(::HestenesStiefelCoefficientRule) = Tuple{:Gradient,
 # Since the rules are “memoryless” their functor accepts old necessary terms as (mandatory)
 # keywords, i.e. the state has the current values, the keywords are the old ones
 function (hs::HestenesStiefelCoefficientRule)(
-        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ, kwargs...
     )
     M = get_manifold(amp)
     Xtr = vector_transport_to(M, p, X, cgs.p, hs.vector_transport_method)
@@ -737,7 +735,7 @@ update_rule_storage_vectors(::LiuStoreyCoefficientRule) = Tuple{:Gradient, :δ}
 # Since the rules are “memoryless” their functor accepts old necessary terms as (mandatory)
 # keywords, i.e. the state has the current values, the keywords are the old ones
 function (ls::LiuStoreyCoefficientRule)(
-        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ
+        amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i; p, X, δ, kwargs...
     )
     M = get_manifold(amp)
     Xtr = vector_transport_to(M, p, X, cgs.p, ls.vector_transport_method)
@@ -1005,12 +1003,19 @@ mutable struct ConjugateGradientBealeRestartRule{
     vector_transport_method::VT
 end
 function ConjugateGradientBealeRestartRule(
+        M::AbstractManifold, p,
+        direction_update::Union{DirectionUpdateRule, ManifoldDefaultsFactory}; kwargs...
+    )
+    return ConjugateGradientBealeRestartRule(M, direction_update; p = p, kwargs...)
+end
+function ConjugateGradientBealeRestartRule(
         M::AbstractManifold,
         direction_update::Union{DirectionUpdateRule, ManifoldDefaultsFactory};
+        p = rand(M),
         threshold::F = 0.2,
         vector_transport_method::V = default_vector_transport_method(M),
     ) where {V <: AbstractVectorTransportMethod, F <: Real}
-    dir = _produce_type(direction_update, M)
+    dir = _produce_type(direction_update, M, p)
     return ConjugateGradientBealeRestartRule{typeof(dir), V, F}(
         dir, threshold, vector_transport_method
     )
@@ -1036,7 +1041,7 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestartRule})(
     M = get_manifold(amp)
     if k == 0
         # store current values as old and return 0
-        update_storage!(u.storage, amp, cgs)
+        update_storage!(u, amp, cgs)
         return 0.0
     end
     # If a rule does not have these, they should return nothing
@@ -1050,9 +1055,17 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestartRule})(
     Xtr = vector_transport_to(M, p, X, cgs.p, u.coefficient.vector_transport_method)
     num = inner(M, cgs.p, cgs.X, Xtr)
     # update storage only after that in case they share
-    update_storage!(u.storage, amp, cgs)
+    update_storage!(u, amp, cgs)
     return real(num / denom) > u.coefficient.threshold ? zero(β) : β
 end
+function update_storage!(
+        dur::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestartRule}, amp::AbstractManoptProblem, s::AbstractManoptSolverState
+    )
+    update_storage!(dur.coefficient.direction_update, amp, s)
+    return update_storage!(dur.storage, amp, s)
+end
+# a rule that keeps no storages of its own has nothing to update
+update_storage!(::DirectionUpdateRule, ::AbstractManoptProblem, ::AbstractManoptSolverState) = nothing
 function show(io::IO, u::ConjugateGradientBealeRestartRule)
     return print(
         io, "Manopt.ConjugateGradientBealeRestartRule($(repr(u.direction_update)); threshold=$(u.threshold), vector_transport_method=$(u.vector_transport_method))",
@@ -1097,7 +1110,7 @@ $(_note(:ManifoldDefaultsFactory, "ConjugateGradientBealeRestartRule"))
 """
 function ConjugateGradientBealeRestart(args...; kwargs...)
     return ManifoldDefaultsFactory(
-        Manopt.ConjugateGradientBealeRestartRule, args...; kwargs...
+        Manopt.ConjugateGradientBealeRestartRule, args...; requires_point = true, kwargs...
     )
 end
 
@@ -1133,14 +1146,24 @@ struct HybridCoefficientRule{F <: Real} <: DirectionUpdateRule
     lower_bound_scale::F
 end
 function HybridCoefficientRule(
+        M::AbstractManifold, p,
+        coefficients::Union{DirectionUpdateRule, ManifoldDefaultsFactory}...; kwargs...
+    )
+    return HybridCoefficientRule(M, coefficients...; p = p, kwargs...)
+end
+function HybridCoefficientRule(
         M::AbstractManifold,
         coefficients::Union{DirectionUpdateRule, ManifoldDefaultsFactory}...;
+        p = rand(M),
         lower_bound::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = SteepestDescentCoefficient(),
         lower_bound_scale::Real = 1.0
     )
-
-    coefficients_new = [DirectionUpdateRuleStorage(M, _produce_type(c, M)) for c in coefficients]
-    lower_bound_new = DirectionUpdateRuleStorage(M, _produce_type(lower_bound, M))
+    length(coefficients) == 0 && throw(
+        ArgumentError("A `HybridCoefficient` requires at least one coefficient to take the minimum of.")
+    )
+    p_init = maybe_wrap_variable(p)
+    coefficients_new = [DirectionUpdateRuleStorage(M, _produce_type(c, M); p_init = p_init) for c in coefficients]
+    lower_bound_new = DirectionUpdateRuleStorage(M, _produce_type(lower_bound, M); p_init = p_init)
     return Manopt.HybridCoefficientRule(coefficients_new, lower_bound_new, lower_bound_scale)
 end
 
@@ -1158,6 +1181,14 @@ function (u::DirectionUpdateRuleStorage{<:HybridCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
     )
     return u.coefficient(amp, cgs, i)
+end
+function update_storage!(
+        hc::HybridCoefficientRule, amp::AbstractManoptProblem, s::AbstractManoptSolverState
+    )
+    for c in hc.coefficients
+        update_storage!(c, amp, s)
+    end
+    return update_storage!(hc.lower_bound, amp, s)
 end
 function update_storage!(
         dur::DirectionUpdateRuleStorage{<:HybridCoefficientRule},
@@ -1226,7 +1257,7 @@ $(_note(:ManifoldDefaultsFactory, "HybridCoefficientRule"))
 """
 function HybridCoefficient(args...; kwargs...)
     return ManifoldDefaultsFactory(
-        Manopt.HybridCoefficientRule, args...; kwargs...
+        Manopt.HybridCoefficientRule, args...; requires_point = true, kwargs...
     )
 end
 
@@ -1283,6 +1314,9 @@ at the current iterate ``p``.
 """
 struct RestartOnNonSufficientDescent{F <: Real} <: AbstractRestartCondition
     κ::F
+end
+function show(io::IO, corr::RestartOnNonSufficientDescent)
+    return print(io, "RestartOnNonSufficientDescent($(corr.κ))")
 end
 function (corr::RestartOnNonSufficientDescent)(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k

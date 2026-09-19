@@ -82,7 +82,7 @@ Please follow a few internal conventions:
 
 - if possible provide both mathematical formulae and literature references using [DocumenterCitations.jl](https://juliadocs.org/DocumenterCitations.jl/stable/) and BibTeX where possible
 - Always document all input variables, positional arguments with their defaults, and keyword arguments also with their types and default values.
-- if applicable, use [DocumenterInterlinks.jl](https://juliadocs.org/DocumenterInterLinks.jl/stable/) when mentioning functions from other packages in the documentation. If you add a reference to a function from a new package, maybe consider adapting the CSS as well to prefix the links with the package logo.
+- if applicable, use [DocumenterInterLinks.jl](https://juliadocs.org/DocumenterInterLinks.jl/stable/) when mentioning functions from other packages in the documentation. If you add a reference to a function from a new package, maybe consider adapting the CSS as well to prefix the links with the package logo.
 - Write a short entry in the [Changelog.md](https://manoptjl.org/stable/changelog/) to document your changes.
 
 If you implement a new feature, a tutorial how to use it would be appreciated as well. Tutorials are written as [Quarto](https://quarto.org/) documents and stored in the `tutorials/` folder. This is rendered automatically into the documentation page, you just have to add a menu entry within the tutorial sub menu.
@@ -97,7 +97,7 @@ We use [crate-ci/typos](https://github.com/crate-ci/typos) for spell checking, w
 
 We use several continuous integration (CI) jobs on GitHub to ensure both code quality and not to miss small technical details, for example for the already mentioned spell checking or for checking the code formatting.
 
-There are three Tags on GitHub that modify the behaviour of the CI
+There are three labels on GitHub that modify the behavior of the CI
 
 * `benchmark` activates the benchmark CI to avoid regression of the existing code
 * `skip documentation` skips rendering and deployment of the documentation preview

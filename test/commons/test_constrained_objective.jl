@@ -120,6 +120,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
     end
 
     @test Manopt.get_unconstrained_objective(cofa) isa ManifoldFirstOrderObjective
+    # and through a decorator
+    @test Manopt.get_unconstrained_objective(ManifoldCountObjective(M, cofa, [:Cost])) === Manopt.get_unconstrained_objective(cofa)
     cofha = ConstrainedManifoldObjective(
         f, grad_f, g, grad_g, h, grad_h;
         hess_f = hess_f, hess_g = hess_g, hess_h = hess_h,
@@ -149,6 +151,13 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
     )
     @test startswith(Manopt.status_summary(cop), "A constrained optimization problem for Manopt.jl")
     @test startswith(repr(cop), "ConstrainedManoptProblem(")
+    @testset "a range of nothing means the default range" begin
+        copn = ConstrainedManoptProblem(M, cofha; gradient_equality_range = nothing, gradient_inequality_range = nothing)
+        @test get_grad_equality_constraint(copn, p) == get_grad_equality_constraint(cop, p)
+        @test get_grad_inequality_constraint(copn, p, 1:2) == get_grad_inequality_constraint(cop, p, 1:2)
+        ccofha = Manopt.objective_cache_factory(M, cofha, (:LRU, [:GradEqualityConstraints], 5))
+        @test get_grad_equality_constraint(M, ccofha, p, :, nothing) == get_grad_equality_constraint(M, ccofha, p, :)
+    end
     @testset "ConstrainedManoptProblem special cases" begin
         Y = zero_vector(M, p)
         for mcp in [mp, cop]
@@ -184,8 +193,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         @test Manopt.get_hessian_function(cofhm; evaluation = InplaceEvaluation()) == hess_f!
         @test Manopt.get_hessian_function(covha) == hess_f
         @test Manopt.get_hessian_function(covhm; evaluation = InplaceEvaluation()) == hess_f!
-        for coh in [cofha, cofhm, covha, covhm]
-            @testset "Hessian access for $coh" begin
+        for (i, coh) in enumerate([cofha, cofhm, covha, covhm])
+            @testset "Hessian access for $(nameof(typeof(coh))) $i" begin
                 @test get_hessian(M, coh, p, X) == hf
                 Y = zero_vector(M, p)
                 @test get_hessian!(M, Y, coh, p, X) == hf
@@ -271,8 +280,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         @test get_hess_inequality_constraint(M, co2v, p, X, :) == []
     end
     @testset "Gradient access" begin
-        for co in [cofa, cofm, cova, covm, cofha, cofhm, covha, covhm]
-            @testset "Gradients for $co" begin
+        for (i, co) in enumerate([cofa, cofm, cova, covm, cofha, cofhm, covha, covhm])
+            @testset "Gradients for $(nameof(typeof(co))) $i" begin
                 dmp = DefaultManoptProblem(M, co)
                 @test get_equality_constraint(dmp, p, :) == c[2]
                 @test get_equality_constraint(dmp, p, 1) == c[2][1]
@@ -332,6 +341,20 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         # short form:
         @test Manopt.status_summary(df; context = :short) === "(:Feasibility, [\"feasible: \", :Feasible])"
         df(mp, st, 1)
+        @test String(take!(io)) == "feasible: No"
+        # the constraints are only evaluated on calls that print
+        cnt = Ref(0)
+        gc(M, q) = (cnt[] += 1; g(M, q))
+        coc = ConstrainedManifoldObjective(f, grad_f; M = M, g = gc, grad_g = grad_g, h = h, grad_h = grad_h)
+        mpc = DefaultManoptProblem(M, coc)
+        cnt[] = 0 # the constructor evaluated g once
+        dfc = DebugFeasibility(; io = io, at_init = false)
+        dfc(mpc, st, -1)
+        DebugEvery(dfc, 10)(mpc, st, 3)
+        @test cnt[] == 0
+        @test String(take!(io)) == ""
+        dfc(mpc, st, 1)
+        @test cnt[] == 1
         @test String(take!(io)) == "feasible: No"
     end
     @testset "Lagrangians" begin
@@ -434,6 +457,12 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             Zg2 = 2.0 * KKTvfAdJ(N, q, Zg1)
             W = KKTvfNG(N, q)
             @test W == Zg2
+            # the in-place variants agree with the allocating ones
+            Vi = copy(N, q, Zg2)
+            @test KKTvf(N, Vi, q) == Y
+            @test KKTvfJ(N, Vi, q, Y) == Z
+            @test KKTvfAdJ(N, Vi, q, Y) == Z2
+            @test KKTvfNG(N, Vi, q) == W
         end
         @testset "Condensed KKT, Jacobian" begin
             CKKTvf = CondensedKKTVectorField(coh, μ, s, β)
@@ -459,7 +488,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             Yc = zero_vector(Nc, qc)
             Yc[Nc, 1] = [1.0, 3.0, 5.0]
             Yc[Nc, 2] = [7.0]
-            # Compute by hand – somehow the formula is still missing a Y
+            # Compute the docstring formula by hand
             Wc = zero_vector(Nc, qc)
             # (1) Hess L + The g sum + the grad g sum
             Wc[Nc, 1] = hf + sum(hess_g(M, p, Yc[Nc, 1]) .* μ) + sum(hh .* λ)
@@ -499,8 +528,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
         agh = sum((c[2] .* ρ .+ λ) .* gh)
         ag = gf + agg + agh
         X = zero_vector(M, p)
-        for P in [cofa, cofm, cova, covm]
-            @testset "$P" begin
+        for (i, P) in enumerate([cofa, cofm, cova, covm])
+            @testset "$(nameof(typeof(P))) $i" begin
                 ALC = AugmentedLagrangianCost(P, ρ, μ, λ)
                 @test ALC(M, p) ≈ ac
                 gALC = AugmentedLagrangianGrad(P, ρ, μ, λ)
@@ -517,8 +546,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
     @testset "Exact Penalties Cost & Grad" begin
         u = 1.0
         ρ = 0.1
-        for P in [cofa, cofm, cova, covm]
-            @testset "$P" begin
+        for (i, P) in enumerate([cofa, cofm, cova, covm])
+            @testset "$(nameof(typeof(P))) $i" begin
                 EPCe = ExactPenaltyCost(P, ρ, u; smoothing = LogarithmicSumOfExponentials())
                 EPGe = ExactPenaltyGrad(P, ρ, u; smoothing = LogarithmicSumOfExponentials())
                 # LogExp Cost
@@ -531,7 +560,14 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
                     ρ .* (exp.(c[2] ./ u) .- exp.(-c[2] ./ u)) ./
                     (exp.(c[2] ./ u) .+ exp.(-c[2] ./ u))
                 vg2 = sum(vg2f .* gh)
-                @test EPGe(M, p) == gf + vg1 + vg2
+                @test EPGe(M, p) ≈ gf + vg1 + vg2
+                # for a small u the smoothing is close to the exact penalty
+                u_s = 1.0e-6
+                EPCe_s = ExactPenaltyCost(P, ρ, u_s; smoothing = LogarithmicSumOfExponentials())
+                EPGe_s = ExactPenaltyGrad(P, ρ, u_s; smoothing = LogarithmicSumOfExponentials())
+                # g = [0, -3]: only the active constraint contributes, h = [5]: |h|
+                @test EPCe_s(M, p) ≈ f(M, p) + ρ * (u_s * log(2) + 5)
+                @test EPGe_s(M, p) ≈ gf + ρ * 0.5 * gg[1] + ρ * gh[1]
                 # Huber Cost
                 EPCh = ExactPenaltyCost(P, ρ, u; smoothing = LinearQuadraticHuber())
                 EPGh = ExactPenaltyGrad(P, ρ, u; smoothing = LinearQuadraticHuber())
@@ -601,20 +637,20 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, Test, RecursiveArrayTools
             Ye = get_hess_equality_constraint(M, obj, p, X, :)
             @test Ye == Xe
             for i in 1:1 #number of equality constr
-                X = get_hess_equality_constraint(M, ddo, p, X, i)
-                Y = get_hess_equality_constraint(M, obj, p, X, i)
-                @test X == Y
-                X = get_hess_equality_constraint!(M, X, ddo, p, X, i)
-                Y = get_hess_equality_constraint!(M, Y, obj, p, X, i)
-                @test X == Y
+                Xh = get_hess_equality_constraint(M, ddo, p, X, i)
+                Yh = get_hess_equality_constraint(M, obj, p, X, i)
+                @test Xh == Yh
+                get_hess_equality_constraint!(M, Xh, ddo, p, X, i)
+                get_hess_equality_constraint!(M, Yh, obj, p, X, i)
+                @test Xh == Yh
             end
             for j in 1:2 # for every inequality constraint
-                X = get_hess_inequality_constraint(M, ddo, p, X, j)
-                Y = get_hess_inequality_constraint(M, obj, p, X, j)
-                @test X == Y
-                X = get_hess_inequality_constraint!(M, X, ddo, p, X, j)
-                Y = get_hess_inequality_constraint!(M, Y, obj, p, X, j)
-                @test X == Y
+                Xh = get_hess_inequality_constraint(M, ddo, p, X, j)
+                Yh = get_hess_inequality_constraint(M, obj, p, X, j)
+                @test Xh == Yh
+                get_hess_inequality_constraint!(M, Xh, ddo, p, X, j)
+                get_hess_inequality_constraint!(M, Yh, obj, p, X, j)
+                @test Xh == Yh
             end
             Xe = get_hess_inequality_constraint(M, ddo, p, X, :)
             Ye = get_hess_inequality_constraint(M, obj, p, X, :)

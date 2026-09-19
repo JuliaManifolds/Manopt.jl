@@ -16,7 +16,7 @@ $(_kwargs(:inverse_retraction_method; p = ""))
 
     RecordChange(M=DefaultManifold();
         inverse_retraction_method = default_inverse_retraction_method(M),
-        storage                   = StoreStateAction(M; store_points=Tuple{:Iterate})
+        storage                   = StoreStateAction(M; store_fields=[:Iterate])
     )
     RecordChange(p, storage=StoreStateAction([:Iterate]);
         manifold                  = DefaultManifold(1),
@@ -24,8 +24,9 @@ $(_kwargs(:inverse_retraction_method; p = ""))
     )
 
 with the previous fields as keywords. The second form stores `p` as the initial iterate to compare
-the first recorded change against. For the `DefaultManifold` only the field storage is used.
-Providing the actual manifold moves the default storage to the efficient point storage.
+the first recorded change against. The first form uses the field storage shown above for the
+`DefaultManifold` and the more efficient `StoreStateAction(M; store_points=Tuple{:Iterate})`
+for any other manifold.
 """
 mutable struct RecordChange{
         TInvRetr <: AbstractInverseRetractionMethod, TStorage <: StoreStateAction,
@@ -257,16 +258,21 @@ end
 
 record the gradient evaluated at the current iterate
 
-# Constructor
+# Constructors
     RecordGradient(X)
 
 initialize the [`RecordAction`](@ref) to the corresponding type of the tangent vector.
+
+    RecordGradient(T::DataType)
+
+initialize the gradient record array to the data type `T`.
 """
 mutable struct RecordGradient{T} <: RecordAction
     recorded_values::Array{T, 1}
     RecordGradient{T}() where {T} = new(Array{T, 1}())
 end
 RecordGradient(::T) where {T} = RecordGradient{T}()
+RecordGradient(d::DataType) = RecordGradient{d}()
 function (r::RecordGradient{T})(
         ::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     ) where {T}
@@ -445,7 +451,8 @@ function (rsr::RecordStoppingReason)(
         ::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
     )
     s = get_reason(get_stopping_criterion(ams))
-    return (length(s) > 0) && record_or_reset!(rsr, s, k)
+    # record only a nonempty reason, but never skip a reset (k < 0)
+    return ((k < 0) || (length(s) > 0)) && record_or_reset!(rsr, s, k)
 end
 show(io::IO, ::RecordStoppingReason) = print(io, "RecordStoppingReason()")
 function status_summary(::RecordStoppingReason; context::Symbol = :default)
@@ -478,8 +485,8 @@ mutable struct RecordTime <: RecordAction
     end
 end
 function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
-    # At initialization and reset (k <= 0) also reset start
-    (k <= 0) && (r.start = Nanosecond(time_ns()))
+    # a reset (k < 0) restarts the timer, an update call (k = 0) leaves it alone
+    (k < 0) && (r.start = Nanosecond(time_ns()))
     t = Nanosecond(time_ns()) - r.start
     (r.mode == :Iterative) && (r.start = Nanosecond(time_ns()))
     if r.mode == :Total
@@ -492,9 +499,9 @@ function Base.show(io::IO, ri::RecordTime)
     return print(io, "RecordTime(; mode=:$(ri.mode))")
 end
 function status_summary(ri::RecordTime; context::Symbol = :default)
-    (context == :short) && return (ri.mode === :Iterative ? ":IterativeTime" : ":Time")
+    (context === :short) && return (ri.mode === :Iterative ? ":IterativeTime" : ":Time")
     # Inline and Default:
-    return "A RecordAction for recording times" * (ri.mode == :Iterative ? " iteratively" : ".")
+    return "A RecordAction for recording times" * (ri.mode === :Iterative ? " iteratively." : ".")
 end
 
 #
@@ -561,11 +568,11 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any, 1})
     ae = length(e) > 0 ? last(e) : 0
     # Run through all (updated) pairs
     for d in b
-        dbg = RecordGroupFactory(s, d.second)
-        (:WhenActive in a) && (dbg = RecordWhenActive(dbg))
+        record = RecordGroupFactory(s, d.second)
+        any(x -> x === :WhenActive, a) && (record = RecordWhenActive(record))
         # Add RecordEvery to all but Start and Stop
-        (!(d.first in [:Start, :Stop]) && (ae > 0)) && (dbg = RecordEvery(dbg, ae))
-        dictionary[d.first] = dbg
+        (!(d.first === :Start || d.first === :Stop) && (ae > 0)) && (record = RecordEvery(record, ae))
+        dictionary[d.first] = record
     end
     return dictionary
 end
@@ -601,9 +608,11 @@ function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any, 1})
         end
     end
     (length(group) == 0) && return RecordGroup()
-    (length(group) > 1) && (record = RecordGroup(group))
-    (length(group) == 1) &&
-        (record = first(group) isa RecordAction ? first(group) : first(group).first)
+    record = if length(group) > 1
+        RecordGroup(group)
+    else
+        first(group) isa RecordAction ? first(group) : first(group).first
+    end
     # filter integer numbers
     e = filter(x -> isa(x, Int), a)
     if length(e) > 0

@@ -9,6 +9,9 @@ end
 function Manopt._maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{ArrayPowerRepresentation}, e::AllocatingEvaluation)
     return Manopt.maybe_wrap_function(Jf, p, e; result = :Matrix)
 end
+function Manopt._maybe_wrap_vector_Hessian_function(Hf, p, ::FunctionVectorialType{ArrayPowerRepresentation}, e::AllocatingEvaluation)
+    return Manopt.maybe_wrap_function(Hf, p, e; result = :Matrix)
+end
 
 """
     default_point_distance(::Euclidean, p)
@@ -86,6 +89,7 @@ The injectivity radius of `SymmetricPositiveDefinite` is infinite, but we return
 logarithm of the maximum floating-point number to avoid numerical issues.
 """
 max_stepsize(::SymmetricPositiveDefinite, p) = log(floatmax(eltype(p)))
+max_stepsize(::SymmetricPositiveDefinite) = log(floatmax())
 
 """
     max_stepsize(M::Hyperrectangle, p)

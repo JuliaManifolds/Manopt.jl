@@ -47,8 +47,8 @@ function get_parameter(pgnc::ProximalGradientNonsmoothCost, ::Val{:proximity_poi
     return pgnc.proximity_point
 end
 
-function (pgnc::ProximalGradientNonsmoothCost)(M::AbstractManifold, p)
-    return pgnc.cost(M, p) + 1 / (2 * pgnc.λ) * distance(M, p, pgnc.proximity_point)^2
+function (pgnc::ProximalGradientNonsmoothCost)(M::AbstractManifold, q)
+    return pgnc.cost(M, q) + 1 / (2 * pgnc.λ) * distance(M, q, pgnc.proximity_point)^2
 end
 
 @doc """
@@ -92,8 +92,8 @@ function get_parameter(pgns::ProximalGradientNonsmoothSubgradient, ::Val{:proxim
     return pgns.proximity_point
 end
 # Default, compute the subgradient of the proximal map given the subgradient of the nonsmooth part X
-function (pgng::ProximalGradientNonsmoothSubgradient)(M::AbstractManifold, p)
-    return pgng.X(M, p) - 1 / pgng.λ * log(M, p, pgng.proximity_point)
+function (pgng::ProximalGradientNonsmoothSubgradient)(M::AbstractManifold, q)
+    return pgng.X(M, q) - 1 / pgng.λ * log(M, q, pgng.proximity_point)
 end
 
 #
@@ -183,6 +183,7 @@ mutable struct ProximalGradientMethodState{
         )
     end
 end
+has_sub_problem(::Type{<:ProximalGradientMethodState}) = true
 ProximalGradientMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Proximal Gradient Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function ProximalGradientMethodState(
         M::AbstractManifold;
@@ -237,15 +238,12 @@ function Base.show(io::IO, pgms::ProximalGradientMethodState)
     return print(io, ")")
 end
 function status_summary(pgms::ProximalGradientMethodState; context::Symbol = :default)
-    i = get_count(pgms, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(pgms.stop) ? "Yes" : "No"
     (context === :short) && return repr(pgms)
     (context === :inline) && return "A solver state for the proximal gradient method$(_iteration_suffix(pgms))"
     as = _callbacks_summary(pgms)
     s = """
     # Solver state for `Manopt.jl`s Proximal Gradient Method
-    $Iter
+    $(_iterations_str(pgms))
     ## Parameters$(as)
     * retraction_method:              $(pgms.retraction_method)
     * stepsize:                       $(typeof(pgms.stepsize))
@@ -253,7 +251,7 @@ function status_summary(pgms::ProximalGradientMethodState; context::Symbol = :de
 
     ## Stopping criterion
     $(_in_str(status_summary(pgms.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(pgms))"""
     return s
 end
 
@@ -521,10 +519,10 @@ $(_args(:M))
 
 # Keyword arguments
 
-* `β = k -> (k-1)/(k+2)` - acceleration parameter function `k -> β_k`
-* `inverse_retraction_method` - method for inverse retraction
-* `p` - initial point
-* `X` - initial tangent vector
+* `β=k -> (k-1)/(k+2)`: the acceleration parameter function `k -> β_k`
+$(_kwargs(:inverse_retraction_method))
+* `p=rand(M)`: the last iterate, which the acceleration step inverse retracts to
+$(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct ProximalGradientMethodAcceleration{P, T, F, ITR <: AbstractInverseRetractionMethod}
     β::F
@@ -555,6 +553,8 @@ function (pga::ProximalGradientMethodAcceleration)(
     )
     # compute the step
     M = get_manifold(amp)
+    # in the first iteration there is no previous iterate to accelerate from
+    (k == 1) && copyto!(M, pga.p, pgms.p)
     # inverse retract and store in X
     inverse_retract!(M, pga.X, pgms.p, pga.p, pga.inverse_retraction_method)
     # retract with step and store in a

@@ -1,5 +1,11 @@
 using LinearAlgebra, Manifolds, Manopt, Random, Test
 
+# a callable struct as closed form sub problem
+struct CallableSubProblem{F}
+    f::F
+end
+(c::CallableSubProblem)(args...) = c.f(args...)
+
 # a step size that records the direction it is handed, to check that one is passed at all
 struct RecordingStepsize <: Manopt.Stepsize
     directions::Vector{Any}
@@ -80,11 +86,19 @@ import Manifolds: inner
         @test dcps.p == p1
         set_gradient!(dcps, M, p1, X1)
         @test dcps.X == X1
+        # the step size is initialized with the solver
+        awn = AdaptiveWNGradient()(M)
+        awn.count = 7
+        dcps_s = DifferenceOfConvexProximalState(M, dcppa_sub_problem, dcppa_sub_state; stepsize = awn)
+        Manopt.initialize_solver!(dcppa_sub_problem, dcps_s)
+        @test awn.count == 0
         # Dummy closed form sub
         dcpsc = DifferenceOfConvexProximalState(M, f; evaluation = AllocatingEvaluation())
         @test dcpsc.sub_state isa Manopt.ClosedFormSubSolverState
 
         dc_cost_a = ManifoldDifferenceOfConvexObjective(f, grad_h)
+        # without a gradient the decorated accessor is missing as well
+        @test ismissing(Manopt.get_gradient_function(Manopt.decorate_objective!(M, dc_cost_a; count = [:Cost])))
         @test_throws ErrorException difference_of_convex_algorithm(M, dc_cost_a, p1; grad_g = grad_g)
         @test_throws ErrorException difference_of_convex_algorithm(M, dc_cost_a, p1; g = g)
         dc_cost_i = ManifoldDifferenceOfConvexObjective(
@@ -117,6 +131,11 @@ import Manifolds: inner
             M, f, g, grad_h!, p0; grad_g = (grad_g!), evaluation = InplaceEvaluation()
         )
         p2 = difference_of_convex_algorithm(M, f, g, grad_h, p0; grad_g = grad_g)
+        # decorated objectives without a gradient run as well
+        p2e = difference_of_convex_algorithm(M, f, g, grad_h, p0; grad_g = grad_g, objective_type = :Euclidean)
+        @test isapprox(M, p2e, p2; atol = 1.0e-8)
+        p2c = difference_of_convex_algorithm(M, f, g, grad_h, p0; grad_g = grad_g, count = [:Cost])
+        @test isapprox(M, p2c, p2; atol = 1.0e-8)
         s1 = difference_of_convex_algorithm(
             M, f, g, grad_h, p0; grad_g = grad_g, gradient = grad_f, return_state = true
         )
@@ -132,6 +151,17 @@ import Manifolds: inner
         @test isapprox(f(M, p1), 0.0; atol = 1.0e-16)
         # not provided `grad_g` or problem missing
         @test_throws ErrorException difference_of_convex_algorithm(M, f, g, grad_h, p0; sub_problem = missing)
+        # a sub problem alone is enough, the default sub state is built for it
+        X_sp = grad_h(M, p0)
+        sub_objective_sp = ManifoldGradientObjective(
+            LinearizedDCCost(g, copy(M, p0), X_sp), LinearizedDCGrad(grad_g, copy(M, p0), X_sp)
+        )
+        p_sp = difference_of_convex_algorithm(
+            M, f, g, grad_h, p0;
+            sub_problem = DefaultManoptProblem(M, sub_objective_sp), stopping_criterion = StopAfterIteration(5),
+        )
+        @test is_point(M, p_sp; error = :error)
+        @test f(M, p_sp) < f(M, p0)
         @test_throws ErrorException difference_of_convex_algorithm(M, f, g, grad_h, p0; sub_hess = missing)
         @test_throws ErrorException difference_of_convex_algorithm(M, f, g, grad_h, p0)
 
@@ -139,6 +169,17 @@ import Manifolds: inner
             M, grad_h!, p0; g = g, grad_g = (grad_g!), evaluation = InplaceEvaluation()
         )
         p5 = difference_of_convex_proximal_point(M, grad_h, p0; g = g, grad_g = grad_g)
+        # a callable struct is accepted as closed form proximal map
+        prox_g_c(M, λ, p) = p
+        @test difference_of_convex_proximal_point(M, grad_h, p0; prox_g = CallableSubProblem(prox_g_c), stopping_criterion = StopAfterIteration(2)) == difference_of_convex_proximal_point(M, grad_h, p0; prox_g = prox_g_c, stopping_criterion = StopAfterIteration(2))
+        # the proximal parameter can be recorded and printed
+        io_λ = IOBuffer()
+        s_λ = difference_of_convex_proximal_point(
+            M, grad_h, p0; g = g, grad_g = grad_g, λ = k -> 0.5, stopping_criterion = StopAfterIteration(3),
+            record = [:ProximalParameter], debug = [DebugProximalParameter(; io = io_λ)], return_state = true,
+        )
+        @test get_record(s_λ) == [0.5, 0.5, 0.5]
+        @test String(take!(io_λ)) == "λ:0.5"^4 # once at the start and once per iteration
         # the solver hands the direction it steps along to the step size
         rs = RecordingStepsize(Any[])
         difference_of_convex_proximal_point(
@@ -205,6 +246,21 @@ import Manifolds: inner
             M, grad_h, p0; grad_g = grad_g
         )
     end
+    @testset "gradient keyword with an objective" begin
+        # the objective carries no gradient, so no gradient norm criterion is used and the run goes on
+        M2 = Euclidean(2)
+        a = [1.0, 0.0]
+        g2(M, p) = norm(p)^4 / 4
+        grad_g2(M, p) = norm(p)^2 * p
+        h2(M, p) = norm(p - a)^2
+        grad_h2(M, p) = 2 * (p - a)
+        f2(M, p) = g2(M, p) - h2(M, p)
+        grad_f2(M, p) = grad_g2(M, p) - grad_h2(M, p)
+        mdco2 = ManifoldDifferenceOfConvexObjective(f2, grad_h2)
+        q = difference_of_convex_algorithm(M2, mdco2, a; g = g2, grad_g = grad_g2, gradient = grad_f2)
+        @test norm(grad_f2(M2, q)) < 1.0e-6
+        @test isapprox(q, [-1.7692923540193184, 0.0]; atol = 1.0e-6)
+    end
     @testset "Running the closed form solution solvers" begin
         # make them a bit by providing sub solvers as functions
         function dca_sub(M, p, X)
@@ -216,6 +272,8 @@ import Manifolds: inner
             return q
         end
         p11 = difference_of_convex_algorithm(M, f, g, grad_h, p0; sub_problem = dca_sub)
+        # a callable struct is accepted as closed form sub problem
+        @test difference_of_convex_algorithm(M, f, g, grad_h, p0; sub_problem = CallableSubProblem(dca_sub)) == p11
         function dca_sub!(M, q, p, X)
             copyto!(M, q, p)
             lin_s = LinearizedDCCost(g, copy(M, p), copy(M, p, X))

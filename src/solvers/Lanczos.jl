@@ -104,24 +104,21 @@ end
 function status_summary(ls::LanczosState; context::Symbol = :default)
     (context === :short) && return repr(ls)
     (context === :inline) && return "A solver state for the Lanczos sub solver$(_iteration_suffix(ls))"
-    i = get_count(ls, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(ls.stop) ? "Yes" : "No"
     as = _callbacks_summary(ls)
     vectors = length(ls.Lanczos_vectors)
     return """
     # Solver state for `Manopt.jl`s Lanczos Iteration
-    $Iter
+    $(_iterations_str(ls))
     ## Parameters$(as)
     * σ                         : $(ls.σ)
     * # of Lanczos vectors used : $(vectors)
 
     ## Stopping criteria
     (a) For the Lanczos Iteration
-    $(status_summary(ls.stop))
+    $(status_summary(ls.stop; context = context))
     (b) For the Newton sub solver
-    $(status_summary(ls.stop_newton))
-    The algorithm converged: $Conv"""
+    $(status_summary(ls.stop_newton; context = context))
+    The algorithm converged: $(_converged_str(ls))"""
 end
 
 #
@@ -215,7 +212,7 @@ end
 #
 # Solve Lanczos sub problem
 #
-function min_cubic_Newton!(mp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosState, k)
+function min_cubic_Newton!(mp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosState, k::Int)
     TpM = get_manifold(mp)
     p = TpM.point
     M = base_manifold(TpM)
@@ -285,7 +282,7 @@ $_math_sc_firstorder
 
 # Fields
 
-* `θ`:      the factor ``θ`` in the second condition
+* `θ`:      the factor ``θ`` in the condition above
 $(_fields(:at_iteration))
 
 # Constructor
@@ -324,7 +321,7 @@ function (c::StopWhenFirstOrderProgress)(
 end
 function get_reason(c::StopWhenFirstOrderProgress)
     if c.at_iteration > 0
-        return "The algorithm has reduced the model grad norm by a factor $(c.θ).\n"
+        return "The model gradient norm dropped below $(c.θ) times the squared norm of the iterate.\n"
     end
     if c.at_iteration == 0 # gradient 0
         return "The gradient of the model is zero.\n"
@@ -351,7 +348,7 @@ function (c::StopWhenFirstOrderProgress)(
 end
 function status_summary(c::StopWhenFirstOrderProgress; context::Symbol = :default)
     (context == :short) && return repr(c)
-    has_stopped = (c.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     _is_inline(context) && return "First order progress with θ=$(c.θ):$(_MANOPT_INDENT)$s"
     return "A stopping criterion to stop when the Lanczos model has found a certain first order progress with θ=$(c.θ):$(_MANOPT_INDENT)$s"
@@ -409,7 +406,7 @@ function get_reason(c::StopWhenAllLanczosVectorsUsed)
 end
 function status_summary(c::StopWhenAllLanczosVectorsUsed; context::Symbol = :default)
     (context === :short) && return repr(c)
-    has_stopped = (c.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return (context === :inline ? "All $(c.maxLanczosVectors) Lanczos vectors used:$(_MANOPT_INDENT)" : "Stop when all $(c.maxLanczosVectors) Lanczos vectors are used\n$(_MANOPT_INDENT)") * s
 end

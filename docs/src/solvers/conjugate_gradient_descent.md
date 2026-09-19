@@ -15,7 +15,8 @@ See [`ConjugateGradientDescentState`](@ref).
 
 ## [Available coefficients](@id cg-coeffs)
 
-The update rules act as [`DirectionUpdateRule`](@ref), which internally always first evaluate the gradient itself.
+The update rules act as [`DirectionUpdateRule`](@ref)s, that is functors `(problem, state, k) -> β_k`.
+They reuse the gradient the solver evaluated for the current iterate together with the values stored from the previous one.
 
 ```@autodocs
 Modules = [Manopt]

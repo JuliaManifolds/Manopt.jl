@@ -71,6 +71,13 @@ using Test, Manopt, ManifoldsBase, Manifolds
 
     @test Manopt.extract_type_from_namedtuple(typeof((; a = 10, b = 'a')), Val(:c)) === Any
 
+    @testset "update with a dictionary keeps the tracked keys" begin
+        a_d = Manopt.StoreStateAction([:Iterate, :Gradient])
+        Manopt.update_storage!(a_d, Dict{Symbol, Any}(:Iterate => [1.0, 2.0]))
+        @test a_d.keys == [:Iterate, :Gradient]
+        Manopt.update_storage!(a_d, Dict{Symbol, Any}(:Foo => 1))
+        @test a_d.keys == [:Iterate, :Gradient, :Foo]
+    end
     @testset "StorageRef for numbers" begin
         # Since we wrap now earlier, these might indeed no longer be actually used
         M = ManifoldsBase.DefaultManifold()

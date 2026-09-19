@@ -33,6 +33,10 @@ using ManifoldDiff:
     DΛ!(M, Y, m, X) = differential_forward_logs!(M, Y, m, X)
     adjoint_DΛ(N, m, n, X) = adjoint_differential_forward_logs(M, m, X)
     adjoint_DΛ!(N, Y, m, n, X) = adjoint_differential_forward_logs!(M, Y, m, X)
+    # the adjoint identity on a curved manifold, at a point whose entries differ
+    V = log(M, data, reverse(data))
+    W = DΛ(M, data, V)
+    @test inner(N, data, DΛ(M, data, V), W) ≈ inner(M, data, V, adjoint_DΛ(N, data, data, W))
 
     function Dprox_F(M, λ, p, X)
         return differential_shortest_geodesic_startpoint(M, p, data, λ / (α + λ), X)

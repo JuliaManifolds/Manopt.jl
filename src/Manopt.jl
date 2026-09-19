@@ -23,23 +23,18 @@ using Glossaries
 using LinearAlgebra:
     Adjoint, Diagonal, I, Eigen, LinearAlgebra, PosDefException, Symmetric,
     cholesky, cond, dot,
-    eigen, eigen!, eigmin, eigvals,
+    eigen, eigmin, eigvals,
     ldiv!, mul!, opnorm, tril
 using ManifoldDiff:
     adjoint_differential_log_argument, adjoint_differential_log_argument!,
-    differential_exp_argument, differential_exp_argument!,
-    differential_exp_basepoint, differential_exp_basepoint!,
-    differential_log_argument, differential_log_argument!,
-    differential_log_basepoint, differential_log_basepoint!,
-    differential_shortest_geodesic_endpoint, differential_shortest_geodesic_endpoint!,
+    differential_exp_argument, differential_exp_basepoint, differential_log_argument,
+    differential_log_basepoint, differential_shortest_geodesic_endpoint,
     differential_shortest_geodesic_startpoint, differential_shortest_geodesic_startpoint!,
-    jacobi_field, jacobi_field!,
     riemannian_gradient, riemannian_gradient!,
     riemannian_Hessian, riemannian_Hessian!
 using ManifoldsBase
 using ManifoldsBase:
     AbstractBasis,
-    AbstractDecoratorManifold,
     AbstractInverseRetractionMethod,
     AbstractManifold, AbstractPowerManifold,
     AbstractPowerRepresentation,
@@ -62,9 +57,9 @@ using ManifoldsBase:
     copy, copyto!,
     default_inverse_retraction_method, default_retraction_method, default_vector_transport_method,
     distance,
-    embed, embed_project, embed_project!,
+    embed, embed_project!,
     exp, exp!, geodesic,
-    get_basis, get_component, get_coordinates, get_coordinates!, get_embedding, get_iterator,
+    get_basis, get_coordinates, get_coordinates!, get_embedding, get_iterator,
     get_vector, get_vector!, get_vectors,
     has_components,
     injectivity_radius, inner, inverse_retract, inverse_retract!, is_flat, is_point, is_vector,
@@ -72,9 +67,9 @@ using ManifoldsBase:
     manifold_dimension, mid_point, mid_point!,
     norm, number_eltype, number_of_coordinates,
     power_dimensions, project, project!,
-    rand!, riemann_tensor, riemann_tensor!, representation_size, requires_caching, retract, retract!,
-    sectional_curvature, set_component!,
-    shortest_geodesic, shortest_geodesic!, submanifold_component, submanifold_components,
+    rand!, representation_size, retract, retract!,
+    sectional_curvature,
+    shortest_geodesic, submanifold_component, submanifold_components,
     vector_transport_to, vector_transport_to!,
     zero_vector, zero_vector!,
     ×, ℂ, ℝ
@@ -284,7 +279,7 @@ export AbstractDecoratedManifoldObjective,
     SimpleManifoldCachedObjective,
     ManifoldCachedObjective
 # Functions
-export AbstractVectorFunction, VectorDifferentialFunction
+export AbstractVectorFunction, AbstractFirstOrderVectorFunction, VectorDifferentialFunction
 export AbstractVectorGradientFunction, VectorGradientFunction, VectorHessianFunction
 # Robustifiers
 export AbstractRobustifierFunction, SoftL1Robustifier,

@@ -1,4 +1,4 @@
-using Manopt, Test
+using Manifolds, Manopt, Test
 
 @testset "Keywords and their errors" begin
     @testset "Constructor" begin
@@ -27,6 +27,20 @@ using Manopt, Test
         # `p` is the start point, `decorate_objective!` must not make it an accepted keyword
         @test :p ∉ Manopt.accepted_keywords(gradient_descent).accepted
         @test :p ∉ Manopt.accepted_keywords(trust_regions).accepted
+    end
+    @testset "a solver reports an unknown keyword" begin
+        Mk = Sphere(2)
+        fk(M, p) = p[1]
+        grad_fk(M, p) = zero_vector(M, p)
+        # the default `:KeywordsErrorMode` is "warn", so both entries report the keyword
+        @test_logs (:warn,) (:warn,) gradient_descent(
+            Mk, fk, grad_fk, [1.0, 0.0, 0.0];
+            stopping_criterion = StopAfterIteration(1), no_such_keyword = 1,
+        )
+        # in `:error` mode the documented error is raised instead
+        @test_throws Manopt.ManoptKeywordError Manopt.keywords_accepted(
+            gradient_descent, :error; no_such_keyword = 1
+        )
     end
     @testset "check errors" begin
         @test Manopt.keywords_accepted(show, :error, Manopt.Keywords(Set([:a])))
@@ -86,5 +100,19 @@ using Manopt, Test
         @test contains(str, "* a")
         @test contains(str, "* b")
         @test contains(str, "f does not accept any keywords.") # From Hint
+    end
+    @testset "Keywords inside a factory are reported by the solver" begin
+        wrong = HagerZhangCoefficient(; typo = 1)
+        right = HagerZhangCoefficient(; denom_threshold = 0.1)
+        @test_logs (:warn, r"passed to the keyword `coefficient=`") Manopt.keywords_accepted(
+            conjugate_gradient_descent, :warn; coefficient = wrong,
+        )
+        @test !Manopt.keywords_accepted(conjugate_gradient_descent, :none; coefficient = wrong)
+        @test_throws Manopt.ManoptKeywordError Manopt.keywords_accepted(
+            conjugate_gradient_descent, :error; coefficient = wrong,
+        )
+        # a factory with accepted keywords and a value that is not a factory pass
+        @test Manopt.keywords_accepted(conjugate_gradient_descent, :error; coefficient = right)
+        @test Manopt.factory_keywords_accepted(conjugate_gradient_descent, :error, :stopping_criterion, StopAfterIteration(1))
     end
 end

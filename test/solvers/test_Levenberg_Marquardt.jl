@@ -52,6 +52,20 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             stopping_criterion = StopAfterIteration(5),
         )
         @test get_count(o1c, :Cost) > 0
+        # an already decorated objective is accepted, kept, and gives the same result as the plain one
+        nlso1 = ManifoldNonlinearLeastSquaresObjective(
+            F1, JF1, m; function_type = FunctionVectorialType(), jacobian_type = FunctionVectorialType()
+        )
+        r1c = LevenbergMarquardt(M1, ManifoldCountObjective(M1, nlso1, [:Cost]), p1)
+        @test r1c == LevenbergMarquardt(M1, nlso1, p1)
+        r1cu = LevenbergMarquardt(M1, ManifoldCountObjective(M1, nlso1, [:Cost]), p1; use_unified_basis = true)
+        @test r1cu == LevenbergMarquardt(M1, nlso1, p1; use_unified_basis = true)
+        # penalty, threshold and the residual cache may have different number types
+        r1f = LevenbergMarquardt(M1, nlso1, Float32[0.0, 0.0])
+        @test eltype(r1f) == Float32
+        @test isapprox(M1, r1f, r1a1; atol = 1.0e-3)
+        r1fu = LevenbergMarquardt(M1, nlso1, Float32[0.0, 0.0]; use_unified_basis = true)
+        @test isapprox(M1, r1fu, r1a1; atol = 1.0e-3)
         # We can even leave out m
         r1a2 = LevenbergMarquardt(
             M1, F1, JF1, p1;
@@ -250,7 +264,7 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
 
             # Coordinate linear-system solution coefficients map back to the right tangent vector.
             dmp = DefaultManoptProblem(TpM1, slco)
-            cnss = Manopt.solve!(dmp, CoordinatesNormalSystemState(M1, p1; basis = B1))
+            cnss = Manopt.solve!(dmp, CoordinatesNormalSystemState(M1; p = p1, basis = B1))
             X_sub = get_vector(M1, p1, cnss.c, B1)
             @test isapprox(M1, p1, get_solver_result(dmp, cnss), X_sub; atol = 1.0e-12, rtol = 1.0e-12)
         end
@@ -342,9 +356,9 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
                 dmp_so = DefaultManoptProblem(TpM1, slso)
                 dmp_so_normal = DefaultManoptProblem(TpM1, slso_normal)
                 dmp_co = DefaultManoptProblem(TpM1, slco)
-                cnss_so = Manopt.solve!(dmp_so, CoordinatesNormalSystemState(M1, p1; basis = B2))
-                cnss_so_normal = Manopt.solve!(dmp_so_normal, CoordinatesNormalSystemState(M1, p1; basis = B2))
-                cnss_co = Manopt.solve!(dmp_co, CoordinatesNormalSystemState(M1, p1; basis = B2))
+                cnss_so = Manopt.solve!(dmp_so, CoordinatesNormalSystemState(M1; p = p1, basis = B2))
+                cnss_so_normal = Manopt.solve!(dmp_so_normal, CoordinatesNormalSystemState(M1; p = p1, basis = B2))
+                cnss_co = Manopt.solve!(dmp_co, CoordinatesNormalSystemState(M1; p = p1, basis = B2))
                 @test isapprox(cnss_so.c, cnss_co.c; atol = 1.0e-12, rtol = 1.0e-12)
                 @test !isapprox(cnss_so_normal.c, cnss_co.c; atol = 1.0e-12, rtol = 1.0e-12)
                 @test isapprox(
@@ -478,6 +492,8 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
             pa = LevenbergMarquardt(Ml, fl, jac_l, pl0, length(xs); jacobian_tangent_basis = Bl)
             pi_ = LevenbergMarquardt!(Ml, fl, jac_l, copy(pl0), length(xs); jacobian_tangent_basis = Bl)
             @test isapprox(pa, pi_; atol = 1.0e-8)
+            pu = LevenbergMarquardt(Ml, fl, jac_l, pl0, length(xs); jacobian_tangent_basis = Bl, use_unified_basis = true)
+            @test isapprox(pu, pa; atol = 1.0e-8)
         end
     end
     @testset "Jacobian cache shapes" begin
@@ -519,6 +535,33 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         )
         @test !isempty(hits) # the branch under test was actually taken
         @test s.damping_term == 5.0e-6 # without the clamp this would be 1.0e-5
+    end
+    @testset "a surrogate built on its own receives residuals and Jacobians" begin
+        Me = Euclidean(2)
+        ts = [0.0, 1.0, 2.0]
+        ys = [0.5, 2.5, 4.7]
+        Fr(M, p) = [p[1] + p[2] * t - y for (t, y) in zip(ts, ys)]
+        Jr(M, p) = [ones(3) ts]
+        vgf = VectorGradientFunction(Fr, Jr, 3; jacobian_type = CoefficientVectorialType())
+        nlso = ManifoldNonlinearLeastSquaresObjective(vgf)
+        q = LevenbergMarquardt(Me, vgf, [0.0, 0.0])
+        # state and default surrogate hold separate arrays
+        sd = get_state(LevenbergMarquardt(Me, vgf, [0.0, 0.0]; return_state = true), true)
+        sur_d = Manopt.get_objective(Manopt.get_objective(sd.sub_problem))
+        @test sur_d.value_cache !== sd.residual_values
+        @test sur_d.value_cache ≈ sd.residual_values atol = 1.0e-6
+        sur = Manopt.LevenbergMarquardtLinearSurrogateObjective(nlso; penalty = 0.1)
+        q1 = LevenbergMarquardt(Me, vgf, [0.0, 0.0]; sub_objective = Manopt.NormalEquationsObjective(sur))
+        @test q1 == q
+        @test sur.value_cache ≈ Fr(Me, q) atol = 1.0e-6
+        surc = Manopt.LevenbergMarquardtLinearSurrogateCoordinatesObjective(
+            nlso; penalty = 0.1, jacobian_cache = [zeros(3, 2)],
+        )
+        q2 = LevenbergMarquardt(
+            Me, vgf, [0.0, 0.0]; use_unified_basis = true, sub_objective = Manopt.NormalEquationsObjective(surc),
+        )
+        @test q2 == LevenbergMarquardt(Me, vgf, [0.0, 0.0]; use_unified_basis = true)
+        @test surc.jacobian_cache[1] == Jr(Me, q2)
     end
     @testset "errors" begin
         sub_fake_f = (args...) -> 0

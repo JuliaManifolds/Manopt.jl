@@ -71,6 +71,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         DebugEvery(a1, 10, true)(mp, st, 10)
         @test String(take!(io)) == "|"
         @test DebugEvery(a1, 10, true)(mp, st, -1) == nothing
+        @test_throws DomainError DebugEvery(a1, 0)
         # Debug Cost
         @test DebugCost(; format = "A %f").format == "A %f"
         DebugCost(; long = false, io = io)(mp, st, 0)
@@ -147,6 +148,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
             format = "Last: %1.1f",
             io,
         )
+        a3(mp, st, -1) # an update-only call before anything is stored, as the `:Stop` entry receives it
+        @test String(take!(io)) == ""
         a3(mp, st, 0) # init
         @test String(take!(io)) == ""
         a4(mp, st, 0) # init
@@ -270,6 +273,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test_logs (:warn,) (:warn,) w1(mp, st, 0)
         w2 = DebugWarnIfCostNotFinite(:Always)
         @test_logs (:warn,) w2(mp, st, 0)
+        @test_logs w2(mp, st, -1) # an update-only call does not warn
 
         st.X = grad_f(M, p)
         w3 = DebugWarnIfFieldNotFinite(:X)
@@ -300,8 +304,15 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
 
         w9 = DebugWarnIfCostIncreases()
         @test startswith(repr(w9), "DebugWarnIfCostIncreases(")
+        # a deactivated action prints its status, so the printed call rebuilds an inactive one
+        w9.status = :No
+        @test repr(w9) == "DebugWarnIfCostIncreases(:No; tol=1.0e-13)"
+        @test repr(DebugWarnIfStepsizeCollapsed(1.0, :No)) == "DebugWarnIfStepsizeCollapsed(1.0, :No)"
         @test startswith(Manopt.status_summary(w9), "A DebugAction warning if the cost increases")
 
+        # both spellings of the proximal parameter build the same action
+        @test DebugFactory([:ProximalParameter])[:Iteration] isa DebugProximalParameter
+        @test DebugFactory([(:ProximalParameter, "λ: %f")])[:Iteration] isa DebugProximalParameter
         df1 = DebugFactory([:WarnCost])
         @test isa(df1[:Iteration], DebugWarnIfCostNotFinite)
         df2 = DebugFactory([:WarnGradient])
@@ -489,7 +500,6 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
     end
     # Deprecated – remove on next breaking release
     @testset "decorate_state! and callbacks" begin
-        # Wrap this in a function so the callback uses right scope for n
         M = ManifoldsBase.DefaultManifold(2)
         p = [4.0, 2.0]
         st = GradientDescentState(
@@ -500,12 +510,17 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         n = 0
         cb() = (n += 1)
-        @test_logs (:warn,) (decorate_state!(st; callback = cb))
+        dst = @test_logs (:warn,) decorate_state!(st; callback = cb)
+        solve!(mp, dst)
+        @test n > 0
         @test_logs (:warn,) (decorate_state!(st; callback = cb, debug = DebugDivider("")))
         @test_logs (:warn,) (decorate_state!(st; callback = cb, debug = [:Cost]))
         @test_logs (:warn,) (:warn,) (decorate_state!(st; callback = cb, debug = Dict{Symbol, DebugAction}()))
+        n = 0
         cb2(p, s, k) = ((k > 1) && (n += 1))
-        @test_logs (:warn,) dst2 = decorate_state!(st; debug = cb2)
+        dst2 = @test_logs (:warn,) decorate_state!(st; debug = cb2)
+        solve!(mp, dst2)
+        @test n > 0
         dbc = Manopt.DebugCallback(() -> nothing; simple = true)
         @test startswith(repr(dbc), "DebugCallback(")
         @test startswith(Manopt.status_summary(dbc; context = :short), "#")

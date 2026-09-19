@@ -17,6 +17,7 @@ $(_fields(:stepsize))
 * `order`: stores the current permutation
 $(_fields(:retraction_method))
 $(_fields(:X; add_properties = [:as_Gradient]))
+* `k`: an internal counter for the current position within `order`
 
 # Constructor
 
@@ -84,6 +85,10 @@ function StochasticGradientDescentState(
     )
 end
 get_callbacks(sgds::StochasticGradientDescentState) = sgds.callbacks
+function set_iterate!(sgds::StochasticGradientDescentState, M, p)
+    copyto!(M, sgds.p, p)
+    return sgds
+end
 additional_callbacks(::Type{<:StochasticGradientDescentState}) = [:Direction]
 function Base.show(io::IO, sgds::StochasticGradientDescentState)
     print(io, "StochasticGradientDescentState(; ")
@@ -100,14 +105,11 @@ function Base.show(io::IO, sgds::StochasticGradientDescentState)
 end
 function status_summary(sgds::StochasticGradientDescentState; context::Symbol = :default)
     (context === :short) && return repr(sgds)
-    i = get_count(sgds, :Iterations)
     (context === :inline) && return "A solver state for the stochastic gradient descent algorithm$(_iteration_suffix(sgds))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(sgds.stop) ? "Yes" : "No"
     as = _callbacks_summary(sgds)
     s = """
     # Solver state for `Manopt.jl`s Stochastic Gradient Descent
-    $Iter
+    $(_iterations_str(sgds))
     ## Parameters$(as)
     * direction: $(status_summary(sgds.direction; context = :inline))
     * order: $(sgds.order_type)
@@ -118,7 +120,7 @@ function status_summary(sgds::StochasticGradientDescentState; context::Symbol = 
 
     ## Stopping criterion
     $(_in_str(status_summary(sgds.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(sgds))"""
     return s
 end
 """
@@ -196,7 +198,7 @@ end
 
 _doc_SGD = """
     stochastic_gradient_descent(M, grad_f, p=rand(M); kwargs...)
-    stochastic_gradient_descent(M, msgo; kwargs...)
+    stochastic_gradient_descent(M, msgo, p=rand(M); kwargs...)
     stochastic_gradient_descent!(M, grad_f, p; kwargs...)
     stochastic_gradient_descent!(M, msgo, p; kwargs...)
 
@@ -223,6 +225,8 @@ $(_kwargs(:evaluation))
   start of every epoch (`:FixedRandom`), the sequence as given in `order` (`:Linear`), or the default `:Random` one,
   which chooses a random gradient in every step.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(10000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
+  Since the state stores the gradient of a single summand, [`StopWhenGradientNormLess`](@ref)
+  evaluates the full gradient here only every `n` iterations, `n` the number of gradients, that is once per epoch.
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`StochasticGradientDescentState`](@ref)`)"))
 * `order=collect(1:n)`: the initial permutation, where `n` is the number of gradients in `grad_f`.
 $(_kwargs(:retraction_method))
@@ -307,4 +311,19 @@ function step_solver!(mp::AbstractManoptProblem, s::StochasticGradientDescentSta
     retract!(get_manifold(mp), s.p, s.p, -step * s.X, s.retraction_method)
     s.k = ((s.k) % length(s.order)) + 1
     return s
+end
+function (sc::StopWhenGradientNormLess)(mp::AbstractManoptProblem, s::StochasticGradientDescentState, k::Int)
+    if k <= 0 # reset on nonpositive k
+        sc.at_iteration = -1
+        return false
+    end
+    (s.k != 1) && return false # epoch not complete
+    M = get_manifold(mp)
+    r = (has_components(M) && !ismissing(sc.outer_norm)) ? (sc.outer_norm,) : ()
+    sc.last_change = sc.norm(M, get_iterate(s), get_gradient(mp, get_iterate(s)), r...)
+    if sc.last_change < sc.threshold
+        sc.at_iteration = k
+        return true
+    end
+    return false
 end

@@ -37,6 +37,8 @@ end
         # the generic cost-and-differential fallback for any first order objective
         @test Manopt.get_cost_and_differential(M, mho, p, X) == (f(M, p), 0)
         @test Manopt.get_cost_and_differential(mp, p, X) == (f(M, p), 0)
+        # the generic differential function for any first order objective
+        @test Manopt.get_differential_function(mho)(M, p, X) == 0
         # Hessian
         @test get_hessian(mp, p, X) == 0.5 * X
         get_hessian!(mp, Y, p, X)
@@ -123,6 +125,7 @@ end
         n = 3
         k = 2
         M = FixedRankMatrices(m, n, k)
+        Random.seed!(42)
         L = randn(m, k)
         R = randn(n, k)
         A = L * R'
@@ -134,7 +137,6 @@ end
         # Project converts the Gradient in the Embedding to an fixed rank matrices vector
         grad_f2(M, p) = project(M, p, P .* embed(M, p) - PA)
         grad_f2!(M, X, p) = project!(M, X, p, P .* embed(M, p) - PA)
-        Random.seed!(42)
         p0 = rand(M)
         q1 = trust_regions(M, f2, grad_f2, p0)
         q2 = trust_regions(M, f2, grad_f2!, p0; evaluation = InplaceEvaluation())

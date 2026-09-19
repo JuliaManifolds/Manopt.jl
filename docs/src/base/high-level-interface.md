@@ -17,7 +17,9 @@ By default these return the last iterate the solver computed.
 
 These interfaces are also unified to accept
 
+* a `cache=` keyword to cache values the [objective](objective.md) computes, see [`objective_cache_factory`](@ref)
 * a `callbacks=` keyword to attach [callback](state/callback.md) functions at specific points during a solver run
+* a `count=` keyword to count the calls to the [objective](objective.md), see [`ManifoldCountObjective`](@ref)
 * a `debug=` keyword to add [debug output](state/debug.md)
 * an `evaluation=` keyword to specify whether, for example, the gradient can be computed in-place, see the [function](function.md) section
 * a `record=` keyword to [record elements](state/record.md)

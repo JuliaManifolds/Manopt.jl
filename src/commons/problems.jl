@@ -94,12 +94,12 @@ function get_grad_equality_constraint(
 end
 function get_grad_equality_constraint(cmp::ConstrainedManoptProblem, p, j = :)
     return get_grad_equality_constraint(
-        get_manifold(cmp), get_objective(cmp), p, j, cmp.grad_equality_range
+        get_manifold(cmp), get_objective(cmp), p, j, get_range(cmp.grad_equality_range)
     )
 end
 function get_grad_equality_constraint!(cmp::ConstrainedManoptProblem, X, p, j = :)
     return get_grad_equality_constraint!(
-        get_manifold(cmp), X, get_objective(cmp), p, j, cmp.grad_equality_range
+        get_manifold(cmp), X, get_objective(cmp), p, j, get_range(cmp.grad_equality_range)
     )
 end
 function get_grad_inequality_constraint(
@@ -109,7 +109,7 @@ function get_grad_inequality_constraint(
 end
 function get_grad_inequality_constraint(cmp::ConstrainedManoptProblem, p, j = :)
     return get_grad_inequality_constraint(
-        get_manifold(cmp), get_objective(cmp), p, j, cmp.grad_inequality_range
+        get_manifold(cmp), get_objective(cmp), p, j, get_range(cmp.grad_inequality_range)
     )
 end
 function get_grad_inequality_constraint!(
@@ -122,7 +122,7 @@ function get_grad_inequality_constraint!(
 end
 function get_grad_inequality_constraint!(cmp::ConstrainedManoptProblem, X, p, j = :)
     return get_grad_inequality_constraint!(
-        get_manifold(cmp), X, get_objective(cmp), p, j, cmp.grad_inequality_range
+        get_manifold(cmp), X, get_objective(cmp), p, j, get_range(cmp.grad_inequality_range)
     )
 end
 function get_hess_equality_constraint!(
@@ -135,7 +135,7 @@ function get_hess_equality_constraint!(
 end
 function get_hess_equality_constraint!(cmp::ConstrainedManoptProblem, Y, p, X, j = :)
     return get_hess_equality_constraint!(
-        get_manifold(cmp), Y, get_objective(cmp), p, X, j, cmp.hess_equality_range
+        get_manifold(cmp), Y, get_objective(cmp), p, X, j, get_range(cmp.hess_equality_range)
     )
 end
 function get_hess_equality_constraint(
@@ -148,7 +148,7 @@ function get_hess_equality_constraint(
 end
 function get_hess_equality_constraint(cmp::ConstrainedManoptProblem, p, X, j = :)
     return get_hess_equality_constraint(
-        get_manifold(cmp), get_objective(cmp), p, X, j, cmp.hess_equality_range
+        get_manifold(cmp), get_objective(cmp), p, X, j, get_range(cmp.hess_equality_range)
     )
 end
 function get_hess_inequality_constraint(
@@ -161,7 +161,7 @@ function get_hess_inequality_constraint(
 end
 function get_hess_inequality_constraint(cmp::ConstrainedManoptProblem, p, X, j = :)
     return get_hess_inequality_constraint(
-        get_manifold(cmp), get_objective(cmp), p, X, j, cmp.hess_inequality_range
+        get_manifold(cmp), get_objective(cmp), p, X, j, get_range(cmp.hess_inequality_range)
     )
 end
 function get_hess_inequality_constraint!(
@@ -174,7 +174,7 @@ function get_hess_inequality_constraint!(
 end
 function get_hess_inequality_constraint!(cmp::ConstrainedManoptProblem, Y, p, X, j = :)
     return get_hess_inequality_constraint!(
-        get_manifold(cmp), Y, get_objective(cmp), p, X, j, cmp.hess_inequality_range
+        get_manifold(cmp), Y, get_objective(cmp), p, X, j, get_range(cmp.hess_inequality_range)
     )
 end
 
@@ -235,7 +235,7 @@ function status_summary(dmp::DefaultManoptProblem; context::Symbol = :default)
     An optimization problem for Manopt.jl
 
     ## Manifold
-    $(_MANOPT_INDENT)$(replace(repr(dmp.manifold), "\n#" => "\n$(_MANOPT_INDENT)##", "\n" => "\n$(_MANOPT_INDENT)"))
+    $(_in_str(repr(dmp.manifold); indent = 1))
 
     ## Objective
     $(_in_str(status_summary(dmp.objective, context = context); indent = 1))"""
@@ -276,11 +276,11 @@ function adjoint_linearized_operator!(tmp::TwoManifoldProblem, X, m, n, Y)
 end
 
 @doc """
-    dual_residual(tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old)
+    dual_residual(tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old; variant)
 
 Compute the dual residual at iteration ``k`` given the necessary values ``p_{k-1},
 X_{k-1}``, and ``n_{k-1}`` from the previous iteration. The formula is slightly different depending
-on the `apds.variant` used:
+on the `variant`, which defaults to the one of the state `apds` if it has one and to `:linearized` otherwise:
 
 For the `:linearized` it reads
 ```math
@@ -303,13 +303,13 @@ $(
 )
 ```
 
-where in both cases ``V_{⋅←⋅}`` is the vector transport used in the [`ChambollePockState`](@ref).
+where in both cases ``V_{⋅←⋅}`` is the vector transport stored in the state `apds`.
 """
 function dual_residual(
-        tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old
+        tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old; kwargs...
     )
     return dual_residual(
-        get_manifold(tmp, 1), get_manifold(tmp, 2), get_objective(tmp), apds, p_old, X_old, n_old,
+        get_manifold(tmp, 1), get_manifold(tmp, 2), get_objective(tmp), apds, p_old, X_old, n_old; kwargs...
     )
 end
 

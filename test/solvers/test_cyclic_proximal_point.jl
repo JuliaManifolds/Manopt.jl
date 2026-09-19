@@ -12,17 +12,17 @@ using ManifoldDiff: prox_distance, prox_distance!
             (N, λ, p) -> Manopt.Test.prox_Total_Variation(N, 0.5 * λ, p),
         )
         q2 = cyclic_proximal_point(
-            N, f, proxes, q; λ = i -> π / (2 * i), stopping_criterion = StopAfterIteration(100)
+            N, f, proxes, q; λ = k -> π / (2 * k), stopping_criterion = StopAfterIteration(100)
         )
         @test f(N, q) > f(N, q2)
         q3 = copy(N, q)
         cyclic_proximal_point!(
-            N, f, proxes, q3; λ = i -> π / (2 * i), stopping_criterion = StopAfterIteration(100)
+            N, f, proxes, q3; λ = k -> π / (2 * k), stopping_criterion = StopAfterIteration(100)
         )
         @test isapprox(N, q2, q3)
         mpo = ManifoldProximalMapObjective(f, proxes, [1, 2])
-        p = DefaultManoptProblem(N, mpo)
-        @test_throws ErrorException get_proximal_map(p, 1.0, f, 3)
+        dmp = DefaultManoptProblem(N, mpo)
+        @test_throws ErrorException get_proximal_map(dmp, 1.0, q, 3)
         @test_throws ErrorException ManifoldProximalMapObjective(f, proxes, [1, 2, 2])
     end
     @testset "Random order reshuffles" begin
@@ -71,11 +71,11 @@ using ManifoldDiff: prox_distance, prox_distance!
             (N, λ, p) -> Manopt.Test.prox_Total_Variation(N, 0.5 * λ, p),
         )
         s1 = cyclic_proximal_point(
-            N, f, proxes, q; λ = i -> π / (2 * i), stopping_criterion = StopAfterIteration(100)
+            N, f, proxes, q; λ = k -> π / (2 * k), stopping_criterion = StopAfterIteration(100)
         )
         r = cyclic_proximal_point(
             N, f, proxes!, q;
-            λ = i -> π / (2 * i),
+            λ = k -> π / (2 * k),
             stopping_criterion = StopAfterIteration(100),
             evaluation = InplaceEvaluation(),
             return_state = true,
@@ -90,7 +90,7 @@ using ManifoldDiff: prox_distance, prox_distance!
         @testset "Caching" begin
             r2 = cyclic_proximal_point(
                 N, f, proxes!, q;
-                λ = i -> π / (2 * i),
+                λ = k -> π / (2 * k),
                 cache = (:LRU, [:Cost, :ProximalMap], 50),
                 stopping_criterion = StopAfterIteration(100),
                 evaluation = InplaceEvaluation(),
@@ -103,7 +103,7 @@ using ManifoldDiff: prox_distance, prox_distance!
             sk_record = Tuple{Symbol, Int}[]
             cb(symbol, problem, state, k) = append!(sk_record, [(symbol, k)])
             s1 = cyclic_proximal_point(
-                N, f, proxes, q; λ = i -> π / (2 * i),
+                N, f, proxes, q; λ = k -> π / (2 * k),
                 callbacks = cb, stopping_criterion = StopAfterIteration(1)
             )
             @test sk_record == [
@@ -165,7 +165,7 @@ using ManifoldDiff: prox_distance, prox_distance!
             (M, λ, p) -> Manopt.Test.prox_Total_Variation(M, 0.5 * λ, p),
         )
         s = CyclicProximalPointState(
-            M; p = p, stopping_criterion = StopAfterIteration(1), λ = i -> i
+            M; p = p, stopping_criterion = StopAfterIteration(1), λ = k -> k
         )
         mpo = ManifoldProximalMapObjective(f, proxes, [1, 2])
         dmp = DefaultManoptProblem(M, mpo)

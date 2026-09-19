@@ -43,6 +43,9 @@ using Manopt, Manifolds, Test
             sgrad_f2!; evaluation = InplaceEvaluation()
         )
         dmp2i = DefaultManoptProblem(M, msgo2i)
+        # without a cost both cost accessors raise a clear error
+        @test_throws ErrorException get_cost(M, msgo1, p)
+        @test_throws ErrorException get_cost(M, msgo1, p, 1)
         @test get_gradient(dmp1, p, 1) == zeros(3)
         @test get_gradient(dmp1, p) == zeros(3)
         @test get_gradient(dmp2, p, 1) == zeros(3)
@@ -76,8 +79,8 @@ using Manopt, Manifolds, Test
         @test Z == Z5
         X = zero_vector(M, p)
         # summation not easy to implement
-        @test_throws MethodError get_gradient!(dmp1i, X, p)
-        @test_throws MethodError get_gradients(dmp1i, p)
+        @test_throws ErrorException get_gradient!(dmp1i, X, p)
+        @test_throws ErrorException get_gradients(dmp1i, p)
         @test_throws MethodError get_gradient!(dmp1i, Z4, p, 1)
         @test_throws DomainError StochasticGradientDescentState(M; order_type = :WrongSymbol)
         sgds = StochasticGradientDescentState(
@@ -113,6 +116,14 @@ using Manopt, Manifolds, Test
         @test is_point(M, q2, true)
         q3 = stochastic_gradient_descent(M, sgrad_f1, p; order_type = :Random)
         @test is_point(M, q3, true)
+        # start at a data point whose summand is drawn first: its gradient vanishes, the full one does not
+        s4 = stochastic_gradient_descent(
+            M, sgrad_f1, pts[2];
+            order_type = :Linear, order = [2, 1, 3, 4, 5], stepsize = DecreasingLength(M; length = 1.0),
+            return_state = true,
+        )
+        @test get_count(s4, :Iterations) == 5
+        @test isapprox(M, get_solver_result(s4), p; atol = 1.0e-12)
         q4 = copy(M, p)
         stochastic_gradient_descent!(M, sgrad_f1, q4; order_type = :Random)
         @test is_point(M, q4, true)
@@ -134,6 +145,15 @@ using Manopt, Manifolds, Test
         stochastic_gradient_descent!(M, msgo2, q2)
         @test is_point(M, q1, true)
         @test is_point(M, q2, true)
+        # an in-place gradient gives the same run as the allocating one
+        sc = StopAfterIteration(50)
+        q3 = copy(M, p)
+        stochastic_gradient_descent!(
+            M, sgrad_f2!, q3;
+            evaluation = InplaceEvaluation(), order_type = :Linear, stopping_criterion = sc,
+        )
+        q3a = stochastic_gradient_descent(M, sgrad_f2, p; order_type = :Linear, stopping_criterion = sc)
+        @test isapprox(M, q3, q3a)
     end
     @testset "Circle example" begin
         Mc = Circle()

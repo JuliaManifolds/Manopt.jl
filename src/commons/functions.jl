@@ -11,20 +11,24 @@ maybe_wrap_variable(v) = v
 
 function maybe_unwrap_variable end
 """
-    maybe_unwrap_variable(p::P, q::P)
-    maybe_unwrap_variable(p::P, q::Vector{P})
+    maybe_unwrap_variable(p::P, q)
+    maybe_unwrap_variable(::Type{P}, q)
 
 Undo the wrapping performed by [`maybe_wrap_variable`](@ref).
 
-Given the original input variable `p` and the possibly wrapped variable `q`, return the unwrapped variable,
-i.e. if `q` is a 1-element vector of same element-type `P` as the type of `p`,
-return this one element.
+Given the original input variable `p`, or just its type `P`, and the possibly wrapped variable `q`,
+return the unwrapped variable, that is the single element of `q` if `q` is a 0-dimensional array
+of element type `P` or a 1-element vector of element type `P`, and `q` itself otherwise.
 """
 maybe_unwrap_variable(::P, q) where {P} = q #Default, e.g. also for states: do not unwrap
 maybe_unwrap_variable(p::P, q::Vector{P}) where {P} = maybe_unwrap_variable(typeof(p), q)
 maybe_unwrap_variable(::Type{P}, q::Vector{P}) where {P} = length(q) == 1 ? q[] : q
 maybe_unwrap_variable(::P, q::Array{P, 0}) where {P} = q[]
 maybe_unwrap_variable(::Type{P}, q::Array{P, 0}) where {P} = q[]
+# a solver called with `return_objective = true` returns `(objective, result)`
+function maybe_unwrap_variable(p, t::Tuple{<:AbstractManifoldObjective, Any})
+    return (t[1], maybe_unwrap_variable(p, t[2]))
+end
 
 """
     MutableManifoldFunction{result, P, F} <: AbstractDecoratedManifoldFunction{F}
@@ -100,6 +104,8 @@ provided return value differs per type, the following cases for results are avai
 * `:TangentVectors` use an elementwise `copyto!` for tangent vectors
 * `:Number` assume the result to be a 0-dimensional array.
 * `:NumberAndTangentVector` for the combination `(c, X)` of a number and a tangent vector – return `c` and handle `X` with the `copyto!` for a tangent vector
+* `:TangentVectorAndNumber` for the combination `(X, d)` of a tangent vector and a number – handle `X` with the `copyto!` for a tangent vector and return `d`
+* `:NumberTangentVectorNumber` for the combination `(c, X, d)` – handle `X` with the `copyto!` for a tangent vector and return `c` and `d`
 * `:MaybeResizeVector` for a vector to return, make sure the size is adapted if needed. This is useful e.g. for return values of sub solvers that might vary in length
 * `:Default` (also all other symbols) just use a plain `copyto!`
 
@@ -136,6 +142,9 @@ function (imf::InplaceManifoldFunction{result})(M, v, args...) where {result}
     (result === :Number) && return (v[] = imf.f(M, args...))
     # for example (c, X) = costgrad(M, p)
     (result === :NumberAndTangentVector) && return ((c, X) = imf.f(M, args...); copyto!(M, v, X); (c, v))
+    # for example (X, d) = graddiff(M, p, Y) and (c, X, d) = costgraddiff(M, p, Y)
+    (result === :TangentVectorAndNumber) && return ((X, d) = imf.f(M, args...); copyto!(M, v, args[imf.point_index], X); (v, d))
+    (result === :NumberTangentVectorNumber) && return ((c, X, d) = imf.f(M, args...); copyto!(M, v, args[imf.point_index], X); (c, v, d))
     # For cases like in ProxBundle where the subsolver can return different sizes, we have to use assign
     if (result === :MaybeResizeVector)
         # For a few in-place assignments, we maybe want to grow/shrink the result vector
@@ -216,10 +225,15 @@ $(_fields([:retraction_method, :vector_transport_method]))
 
     ApproxHessianFiniteDifference(M, p, grad_f; kwargs...)
 
+## Input
+
+$(_args([:M, :p, :grad_f]))
+
 ## Keyword arguments
 
 * `steplength=2^-14`: step length ``c`` to approximate the gradient evaluations
 * `tangent_vector=zero_vector(M, p)`: memory used to initialize the internal temporary gradient storages
+* `copy_point=true`: store a copy of `p` as the internal working point; with `false` the point `p` itself is used and overwritten during the evaluations
 $(_kwargs(:evaluation))
 $(_kwargs([:retraction_method, :vector_transport_method]))
 
@@ -240,11 +254,12 @@ function ApproxHessianFiniteDifference(
         retraction_method::RTR = default_retraction_method(M, typeof(p)),
         vector_transport_method::VTR = default_vector_transport_method(M, typeof(p)),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        copy_point::Bool = true,
     ) where {
         mT <: AbstractManifold, P, G, R <: Real,
         RTR <: AbstractRetractionMethod, VTR <: AbstractVectorTransportMethod,
     }
-    p_ = maybe_wrap_variable(p)
+    p_ = copy_point ? copy(M, maybe_wrap_variable(p)) : maybe_wrap_variable(p)
     X = copy(M, p_, tangent_vector)
     Y = copy(M, p_, tangent_vector)
     grad_f_ = maybe_wrap_function(grad_f, p, evaluation, result = :TangentVector)
@@ -291,12 +306,17 @@ $(_fields(:vector_transport_method))
 
     ApproxHessianSymmetricRankOne(M, p, grad_f; kwargs...)
 
+## Input
+
+$(_args([:M, :p, :grad_f]))
+
 ## Keyword arguments
 
 $(_kwargs(:evaluation))
 * `initial_operator=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`: the matrix representation of the initial approximating operator.
 * `basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: an orthonormal basis in the tangent space of the initial iterate `p`.
 * `nu=-1.0`: the value ``ν`` above; a negative value disables the safeguard on the denominator.
+* `copy_point=true`: store a copy of `p` as the internal working point; with `false` the point `p` itself is used and overwritten during the evaluations
 $(_kwargs(:vector_transport_method))
 """
 mutable struct ApproxHessianSymmetricRankOne{P, G, T, B <: AbstractBasis{ℝ}, VTR, R <: Real} <: AbstractApproximateHessianFunction
@@ -315,10 +335,11 @@ function ApproxHessianSymmetricRankOne(
         nu::R = -1.0,
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        copy_point::Bool = true,
     ) where {
         mT <: AbstractManifold, P, G, B <: AbstractBasis{ℝ}, R <: Real, VTM <: AbstractVectorTransportMethod,
     }
-    p_ = maybe_wrap_variable(p)
+    p_ = copy_point ? copy(M, maybe_wrap_variable(p)) : maybe_wrap_variable(p)
     X = zero_vector(M, p_)
     grad_f_ = maybe_wrap_function(grad_f, p, evaluation; result = :TangentVector)
     # Fill X with current gradient
@@ -388,12 +409,17 @@ $(_fields(:vector_transport_method))
 # Constructor
     ApproxHessianBFGS(M, p, grad_f; kwargs...)
 
+## Input
+
+$(_args([:M, :p, :grad_f]))
+
 ## Keyword arguments
 
 $(_kwargs(:evaluation))
 * `initial_operator=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`: the matrix representation of the initial approximating operator.
 * `basis=`[`default_basis`](@extref `ManifoldsBase.default_basis-Union{Tuple{T}, Tuple{AbstractManifold, Type{T}}} where T`)`(M, typeof(p))`: an orthonormal basis in the tangent space of the initial iterate `p`.
 * `scale=true`: the value to store in the `scale` field above.
+* `copy_point=true`: store a copy of `p` as the internal working point; with `false` the point `p` itself is used and overwritten during the evaluations
 $(_kwargs(:vector_transport_method))
 """
 mutable struct ApproxHessianBFGS{
@@ -416,8 +442,9 @@ function ApproxHessianBFGS(
         scale::Bool = true,
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        copy_point::Bool = true,
     ) where {mT <: AbstractManifold, P, G, B <: AbstractBasis{ℝ}, VTM <: AbstractVectorTransportMethod}
-    p_ = maybe_wrap_variable(p)
+    p_ = copy_point ? copy(M, maybe_wrap_variable(p)) : maybe_wrap_variable(p)
     X = zero_vector(M, p_)
     grad_f_ = maybe_wrap_function(grad_f, p, evaluation; result = :TangentVector)
     grad_f_(M, X, p)

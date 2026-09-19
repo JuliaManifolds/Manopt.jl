@@ -98,6 +98,12 @@ Manopt.construct_primal_dual_residual_covariant_derivative_matrix
 [`DebugDualResidual`](@ref), [`DebugPrimalChange`](@ref), [`DebugPrimalIterate`](@ref), [`DebugPrimalResidual`](@ref),
 [`DebugPrimalDualResidual`](@ref)
 
+## Solver specific recording actions
+
+[`RecordDualBaseIterate`](@ref), [`RecordDualBaseChange`](@ref), [`RecordPrimalBaseIterate`](@ref),
+[`RecordPrimalBaseChange`](@ref), [`RecordDualChange`](@ref), [`RecordDualIterate`](@ref),
+[`RecordPrimalChange`](@ref), [`RecordPrimalIterate`](@ref)
+
 ## [Technical details](@id sec-ssn-technical-details)
 
 The [`primal_dual_semismooth_Newton`](@ref) solver requires the following functions of a manifold to be available for both the manifolds ``\mathcal M`` and ``\mathcal N``

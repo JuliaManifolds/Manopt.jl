@@ -207,7 +207,7 @@ end
 
         for T in [
                     InverseDFP(), DFP(), Broyden(0.5), InverseBroyden(0.5),
-                    Broyden(0.5, :Davidon), Broyden(0.5, :InverseDavidon), InverseBFGS(), BFGS(),
+                    Broyden(0.5, :Davidon), InverseBroyden(0.5, :InverseDavidon), InverseBFGS(), BFGS(),
                 ],
                 c in [true, false]
             x_direction = quasi_Newton(
@@ -279,6 +279,9 @@ end
     end
 
     @testset "update rules" begin
+        # the stabilization parameter takes any real number
+        @test SR1(1).r === 1.0
+        @test InverseSR1(1 // 2).r === 0.5
         n = 4
         A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
         A = (A + A') / 2
@@ -576,5 +579,61 @@ end
             )
             @test isapprox(N, q, c)
         end
+    end
+    @testset "initial_scale acts once on the matrix update" begin
+        N = Euclidean(3)
+        p = zeros(3)
+        d = QuasiNewtonMatrixDirectionUpdate(N, InverseBFGS(); initial_scale = 2.0)
+        Manopt.initialize_update!(d)
+        @test d.matrix == [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
+        # after the first update the secant equation holds and the scale enters linearly
+        fq(M, q) = 0.5 * sum(abs2, q)
+        grad_fq(M, q) = q
+        dmp = DefaultManoptProblem(N, ManifoldGradientObjective(fq, grad_fq))
+        qns = QuasiNewtonState(N; p = [1.0, 0.0, 0.0], direction_update = d)
+        qns.sk .= [1.0, 0.0, 0.0]
+        qns.yk .= [2.0, 0.0, 0.0]
+        Manopt.update_hessian!(d, dmp, qns, p, 1)
+        # scale ⟨s,y⟩/‖y‖² = 2 * 2/4 = 1 on the complement, s/y = 1/2 along s
+        @test d.matrix ≈ [0.5 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
+    end
+    @testset "One gradient evaluation at the start" begin
+        Ne = Euclidean(2)
+        fe(M, q) = sum(abs2, q)
+        grad_fe(M, q) = 2q
+        r = quasi_Newton(Ne, fe, grad_fe, [1.0, 1.0]; count = [:Gradient], return_objective = true, stopping_criterion = StopAfterIteration(0))
+        @test get_count(r[1], :Gradient) == 1
+    end
+    @testset "Byrd's rule on a complex manifold" begin
+        Mc = Euclidean(2; field = ℂ)
+        Ac = [2 im; -im 2]
+        fc(::Euclidean, q) = real(q' * Ac * q)
+        grad_fc(::Euclidean, q) = 2 * Ac * q
+        pc = ComplexF64[2.0, 1 + im]
+        sc = StopAfterIteration(3)
+        qi = quasi_Newton(Mc, fc, grad_fc, pc; nonpositive_curvature_behavior = :ignore, stopping_criterion = sc)
+        qb = quasi_Newton(Mc, fc, grad_fc, pc; nonpositive_curvature_behavior = :byrd, stopping_criterion = sc)
+        @test isapprox(Mc, qi, qb)
+    end
+    @testset "The locking condition uses the transport of the direction update" begin
+        S = Sphere(2)
+        fs2(M, q) = q[3]
+        grad_fs2(M, q) = project(M, q, [0.0, 0.0, 1.0])
+        dmp = DefaultManoptProblem(S, ManifoldGradientObjective(fs2, grad_fs2))
+        p = [1.0, 0.0, 0.0]
+        d = QuasiNewtonLimitedMemoryDirectionUpdate(
+            S, p, InverseBFGS(), 2; vector_transport_method = ProjectionTransport()
+        )
+        qns = QuasiNewtonState(
+            S; p = copy(p), direction_update = d, vector_transport_method = ParallelTransport(),
+            stepsize = Manopt.ConstantStepsize(S, π / 4),
+        )
+        initialize_solver!(dmp, qns)
+        step_solver!(dmp, qns, 1)
+        # a step of length π/4 projected to the new tangent space shrinks by cos(π/4)
+        @test norm(S, qns.p, qns.sk) ≈ (π / 4) * cos(π / 4)
+        # y_k = X/β - X_old with β = 1/cos(π/4) for the projection, β = 1 for the parallel transport
+        β = (π / 4) / norm(S, qns.p, qns.sk)
+        @test isapprox(S, qns.p, qns.yk, qns.X ./ β .- qns.X_old)
     end
 end

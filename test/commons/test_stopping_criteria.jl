@@ -36,7 +36,7 @@ end
         @test !s3(p, s, 1)
         @test length(get_reason(s3)) == 0
         s.p = 0.3
-
+        @test !s3(p, s, -1) # a reset call does not fire
         @test s3(p, s, 2)
         @test length(get_reason(s3)) > 0
         # repack
@@ -48,6 +48,10 @@ end
         # any/all over an empty set of criteria: identities false/true
         @test !StopWhenAny()(p, s, 1)
         @test StopWhenAll()(p, s, 1)
+        # all criteria fulfilled already at the start
+        s0 = StopAfterIteration(0) & StopAfterIteration(0)
+        @test s0(p, s, 0)
+        @test s0.at_iteration == 0
 
         sn2 = StopAfterIteration(10) | s3
         @test get_stopping_criteria(sn)[1].max_iterations ==
@@ -91,6 +95,7 @@ end
         @test s(p, o, 2) == true
         @test length(get_reason(s)) > 0
         @test_throws ErrorException StopAfter(Second(-1))
+        @test_throws ArgumentError StopAfter(Month(1))
         @test_throws ErrorException Manopt.set_parameter!(s, :MaxTime, Second(-1))
         Manopt.set_parameter!(s, :MaxTime, Second(2))
         @test s.threshold == Second(2)
@@ -128,6 +133,10 @@ end
         @test typeof(e) === typeof((a | b) | c)
         Manopt.set_parameter!(e, :MinGradNorm, 1.0e-9)
         @test e.criteria[3].threshold == 1.0e-9
+        # the gradient mapping criterion takes the same parameter
+        gm = StopWhenGradientMappingNormLess(1.0e-6)
+        Manopt.set_parameter!(gm, :MinGradNorm, 1.0e-3)
+        @test gm.threshold == 1.0e-3
         @test length((e | e).criteria) == 6
     end
 
@@ -256,13 +265,7 @@ end
     @testset "Subgradient Norm Stopping Criterion" begin
         M = Euclidean(2)
         p = [1.0, 2.0]
-        f(M, q) = distance(M, q, p)
-        function ∂f(M, q)
-            if distance(M, p, q) == 0
-                return zero_vector(M, q)
-            end
-            return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
-        end
+        f, ∂f, _ = Manopt.Test.distance_task(M, p)
         mso = ManifoldSubgradientObjective(f, ∂f)
         mp = DefaultManoptProblem(M, mso)
         c2 = StopWhenSubgradientNormLess(1.0e-6)
@@ -357,6 +360,10 @@ end
         @test startswith(repr(sc), "StopWhenRepeated(")
         @test startswith(Manopt.status_summary(sc), "A stopping criterion to stop when the inner criterion has indicated to stop 3 consecutive times")
         @test startswith(Manopt.status_summary(sc; context = :short), "StopWhenRepeated(StopAfterIteration(2))×3")
+        # parameters reach the wrapped criterion
+        scp = StopWhenRepeated(StopAfterIteration(2), 3)
+        Manopt.set_parameter!(scp, :MaxIteration, 5)
+        @test scp.stopping_criterion.max_iterations == 5
         # an inactive wrapper has not converged, even if the inner criterion fired before
         Me = Euclidean(2)
         ste = GradientDescentState(Me; p = [0.0, 0.0], X = [0.0, 0.0])
@@ -409,9 +416,13 @@ end
         sc7 = s ≞ 10
         @test !sc7.comp(12)
         @test sc7.comp(20)
+        # parameters reach the wrapped criterion
+        scp = StopAfterIteration(2) ⩼ 5
+        Manopt.set_parameter!(scp, :MaxIteration, 5)
+        @test scp.stopping_criterion.max_iterations == 5
 
         # test that it does not hit at 5
-        @test !sc(mp, st, 5) # still count 0
+        @test !sc(mp, st, 5) # not checked yet, since comp = >(5)
         @test sc(mp, st, 6) # triggers
         @test length(get_reason(sc)) > 0
         sc(mp, st, 0) # reset
@@ -540,6 +551,14 @@ end
             sc(mp, st, 1)
             @test sc.criteria[2].last_change ≈ distance(M, [1.0, 2.0], [0.5, 1.0])
         end
+        # at initialization every criterion is evaluated exactly once
+        cmo = ManifoldCountObjective(M, ManifoldGradientObjective((M, x) -> sum(x .^ 2), (M, x) -> 2x), [:Cost])
+        mpc = DefaultManoptProblem(M, cmo)
+        for sc in [StopWhenCostNaN() | StopWhenCostLess(0.0), StopWhenCostNaN() & StopWhenCostLess(0.0)]
+            reset_counters!(cmo)
+            sc(mpc, st, 0)
+            @test get_count(cmo, :Cost) == 2
+        end
         # Criteria eligible for short-circuiting are skipped once the result is fixed.
         for sc in [
                 StopAfterIteration(100) & StopAfterIteration(1),
@@ -602,5 +621,20 @@ end
         @test @inferred Manopt.evaluate_any_criteria(
             any_criteria.criteria, cost_problem, nelder_mead_state, 1
         )
+    end
+    @testset "Negative k resets" begin
+        M = Euclidean(2)
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective((M, p) -> sum(p .^ 2), (M, p) -> 2 .* p))
+        st = GradientDescentState(M; p = [0.0, 0.0])
+        still_active = Symbol[]
+        for sc in (
+                StopWhenGradientNormLess(1.0), StopAfterIteration(1), StopWhenCostLess(1.0), StopWhenCostNaN(),
+                StopWhenIterateNaN(), StopWhenStepsizeLess(1.0), StopWhenChangeLess(M, 1.0), StopWhenGradientChangeLess(M, 1.0),
+            )
+            sc.at_iteration = 1 # as if it had fired
+            sc(mp, st, -1)
+            (sc.at_iteration != -1) && push!(still_active, nameof(typeof(sc)))
+        end
+        @test still_active == Symbol[]
     end
 end

@@ -39,7 +39,7 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 mutable struct VectorBundleNewtonState{
         P, T, Pr, St, C <: AbstractDict{Symbol},
         TStop <: StoppingCriterion, TStep <: Stepsize, TRTM <: AbstractRetractionMethod,
-    } <: AbstractGradientSolverState
+    } <: AbstractManoptSolverState
     callbacks::C
     p::P
     p_trial::P
@@ -56,6 +56,7 @@ mutable struct VectorBundleNewtonState{
         return new{P, T, Pr, St, C, TStop, TStep, TRTM}(callbacks, p, p_trial, retraction_method, stepsize, stopping_criterion, sub_problem, sub_state, X)
     end
 end
+has_sub_problem(::Type{<:VectorBundleNewtonState}) = true
 
 function VectorBundleNewtonState(
         M::AbstractManifold, E::AbstractManifold, p::P, sub_problem::Pr, sub_state::St;
@@ -74,6 +75,11 @@ function VectorBundleNewtonState(
     )
 end
 additional_callbacks(::Type{<:VectorBundleNewtonState}) = [:BeforeSubsolver, :Stepsize, :Subsolver]
+get_iterate(vbns::VectorBundleNewtonState) = vbns.p
+function set_iterate!(vbns::VectorBundleNewtonState, M::AbstractManifold, p)
+    copyto!(M, vbns.p, p)
+    return vbns
+end
 get_callbacks(vbns::VectorBundleNewtonState) = vbns.callbacks
 
 function Base.show(io::IO, vbns::VectorBundleNewtonState)
@@ -123,7 +129,7 @@ The `outer_norm` has no effect on manifolds that do not consist of components.
         α=1.0, θ=1.3, θ_des=0.5, θ_acc=1.1*θ_des, outer_norm::Union{Missing,Real}=missing
     )
 
-Initializes all fields, where none of them is mandatory. The length is set to ``1.0``.
+Initializes all fields, where none of them is mandatory. The `last_stepsize` is set to ``1.0``.
 
 Since the computation of the convergence monitor ``θ`` requires simplified Newton directions a method for computing them has to be provided.
 This should be implemented as a method of the Newton equation functor that takes `(M, VB, p, p_trial)` as parameters and returns a representation of the (transported) ``F(p_{$(_tex(:rm, "trial"))})``.
@@ -202,6 +208,7 @@ function (acs::AffineCovariantStepsize)(
         denom = norm(M, ams.p, ams.X, add_arg...)
         θ_new = nom / denom
 
+        (θ_new <= acs.θ_acc) && break
         α_new = min(1.0, ((α_new * acs.θ_des) / θ_new))
     end
     NE.b .= b
@@ -218,14 +225,11 @@ default_stepsize(M::AbstractManifold, ::Type{VectorBundleNewtonState}) = Constan
 
 function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :default)
     (context === :short) && return repr(vbns)
-    i = get_count(vbns, :Iterations)
     (context === :inline) && return "A solver state for the vector bundle Newton solver$(_iteration_suffix(vbns))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(vbns.stop) ? "Yes" : "No"
     as = _callbacks_summary(vbns)
     s = """
     # Solver state for `Manopt.jl`s Vector bundle Newton method
-    $Iter
+    $(_iterations_str(vbns))
     ## Parameters$(as)
     * retraction method: $(vbns.retraction_method)
 
@@ -234,7 +238,7 @@ function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :defaul
 
     ## Stopping criterion
     $(_in_str(status_summary(vbns.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(vbns))"""
     return s
 end
 
@@ -314,7 +318,7 @@ The next iterate is then computed by applying a retraction.
 
 For more details see [WeiglSchiela:2024, WeiglBergmannSchiela:2025](@cite).
 
-# Arguments
+# Input
 
 $(_args(:M))
 * `E`: range vector bundle
@@ -332,6 +336,10 @@ $(_kwargs(:sub_problem; default = "nothing")) That is, you have to provide a met
   `(problem::`[`VectorBundleManoptProblem`](@ref)`, state::VectorBundleNewtonState) -> X` or `(problem, X, state) -> X` to compute the Newton direction.
 $(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)` "))
 $(_kwargs(:X; add_properties = [:as_Memory]))
+
+$(_note(:OtherKeywords))
+
+$(_note(:OutputSection))
 """
 
 @doc "$(doc_vector_bundle_newton)"
@@ -376,6 +384,7 @@ end
 calls_with_kwargs(::typeof(vectorbundle_newton!)) = (decorate_state!,)
 
 function initialize_solver!(::VectorBundleManoptProblem, s::VectorBundleNewtonState)
+    initialize_stepsize!(s.stepsize)
     return s
 end
 

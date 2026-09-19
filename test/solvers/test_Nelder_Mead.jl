@@ -26,6 +26,9 @@ Random.seed!(29)
             )
             x = get_solver_result(rst)
             rec = get_record(rst)
+            # initialization returns the state
+            s_init = NelderMeadState(M)
+            @test Manopt.initialize_solver!(DefaultManoptProblem(M, ManifoldCostObjective(Rosenbrock)), s_init) === s_init
             nonincreasing = [rec[i] >= rec[i + 1] for i in 1:(length(rec) - 1)]
             @test any(map(!, nonincreasing)) == false
 
@@ -80,9 +83,27 @@ Random.seed!(29)
         M = Circle()
         data = [-π / 2, π / 4, 0.0, π / 4]
         p_star = sum(data) / length(data)
-        @test NelderMeadSimplex(Circle(), 0.0).pts isa Vector{Float64}
+        # a simplex from numbers remembers the number type and stores the points wrapped
+        @test NelderMeadSimplex(Circle(), 0.0) isa NelderMeadSimplex{Float64}
+        @test NelderMeadSimplex(Circle(), 0.0).pts isa Vector{Array{Float64, 0}}
         f(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p)) .^ 2)
         @test isapprox(M, NelderMead(M, f, NelderMeadSimplex(M, 0.0)), p_star; atol = 1.0e-7)
+        # with an objective built for numbers and in place, the simplex holds the minimizer afterwards
+        @test isapprox(M, NelderMead(M, ManifoldCostObjective(f; p = 0.0), NelderMeadSimplex([-3.0, -2.75]))[], p_star; atol = 1.0e-7)
+        population0 = NelderMeadSimplex([-3.0, -2.75])
+        q0 = NelderMead!(M, f, population0)
+        @test isapprox(M, q0, p_star; atol = 1.0e-7)
+        @test population0.pts[argmin(f.(Ref(M), getindex.(population0.pts)))][] == q0
+        # a function written for wrapped points with a simplex of wrapped points is not wrapped again
+        f0(M, p) = f(M, p[])
+        population1 = NelderMeadSimplex([fill(-3.0), fill(-2.75)])
+        @test population1 isa NelderMeadSimplex{Array{Float64, 0}}
+        q1 = NelderMead(M, f0, population1)
+        @test q1 isa Array{Float64, 0}
+        @test isapprox(M, q1[], p_star; atol = 1.0e-7)
+        q1i = NelderMead!(M, f0, population1)
+        @test isapprox(M, q1i[], p_star; atol = 1.0e-7)
+        @test population1.pts[argmin(f0.(Ref(M), population1.pts))] == q1i
         #vector p-cost
         f2(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p[])) .^ 2)
         q = NelderMead(M, f)

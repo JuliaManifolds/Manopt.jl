@@ -1,3 +1,22 @@
+"""
+    LevenbergMarquardtBoxSubsolver <: AbstractManoptSolverState
+
+Wrap the sub solver state of a [`LevenbergMarquardt`](@ref) run on a manifold with box
+constraints, where the sub solver result is trimmed to the box by a generalized Cauchy
+direction search.
+
+# Fields
+
+* `internal_state`: the state of the sub solver that is wrapped
+* `last_gcd_result`, `last_gcd_stepsize`: the status and the maximal step size returned by
+  the last generalized Cauchy direction search, see [`find_generalized_cauchy_direction!`](@ref)
+
+# Constructor
+
+    LevenbergMarquardtBoxSubsolver(M::AbstractManifold, sub_state, p)
+
+Wrap `sub_state`, where `p` determines the number type of the stored step size.
+"""
 mutable struct LevenbergMarquardtBoxSubsolver{TSt <: AbstractManoptSolverState, F <: Real} <: AbstractManoptSolverState
     internal_state::TSt
     last_gcd_result::Symbol
@@ -7,6 +26,20 @@ function LevenbergMarquardtBoxSubsolver(::AbstractManifold, sub_state_::Abstract
     return LevenbergMarquardtBoxSubsolver{typeof(sub_state_), number_eltype(p)}(
         sub_state_, :not_searched, NaN,
     )
+end
+function Base.show(io::IO, lmbs::LevenbergMarquardtBoxSubsolver)
+    print(io, "LevenbergMarquardtBoxSubsolver(", lmbs.internal_state, "; ")
+    print(io, "last_gcd_result = :", lmbs.last_gcd_result)
+    return print(io, ", last_gcd_stepsize = ", lmbs.last_gcd_stepsize, ")")
+end
+function status_summary(lmbs::LevenbergMarquardtBoxSubsolver; context::Symbol = :default)
+    _is_inline(context) && return repr(lmbs)
+    return """
+    # Solver state for a box constrained Levenberg-Marquardt subproblem
+    * last generalized Cauchy direction: :$(lmbs.last_gcd_result) (step size: $(lmbs.last_gcd_stepsize))
+
+    ## Inner solver state
+    $(_in_str(status_summary(lmbs.internal_state; context = context); indent = 1, headers = 1, indent_end = "| "))"""
 end
 """
     hessian_value(ha::LevenbergMarquardtBoxSubsolver, M, p, X::UnitVector, Y)
@@ -42,7 +75,8 @@ solved using a linear system in coordinates of the tangent space at the current 
 
 # Constructor
     CoordinatesNormalSystemState(
-        M::AbstractManifold, p = rand(M);
+        M::AbstractManifold;
+        p = rand(M),
         linsolve = default_lm_lin_solve!,
         basis = DefaultOrthonormalBasis(),
         A = nothing
@@ -60,8 +94,8 @@ mutable struct CoordinatesNormalSystemState{F, TA <: AbstractMatrix, TB <: Abstr
     linsolve!::F
 end
 function CoordinatesNormalSystemState(
-        M::AbstractManifold, p = rand(M);
-        linsolve::F = default_lm_lin_solve!, basis::B = DefaultOrthonormalBasis(), A = nothing
+        M::AbstractManifold;
+        p = rand(M), linsolve::F = default_lm_lin_solve!, basis::B = DefaultOrthonormalBasis(), A = nothing
     ) where {F, B <: AbstractBasis}
     n = number_of_coordinates(M, basis)
     c = zeros(number_eltype(p), n)

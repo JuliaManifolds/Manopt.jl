@@ -1,4 +1,4 @@
-using Manifolds, Manopt, Test, Random
+using Manifolds, Manopt, Test, Random, ManifoldDiff
 using Manopt: get_cost_function, get_gradient_function, get_differential_function
 using LinearAlgebra: Symmetric
 
@@ -18,6 +18,7 @@ using LinearAlgebra: Symmetric
         X = [1.0, 1.0, 0.0]
         get_cost(M, c_obj, p)
         @test get_count(c_obj, :Cost) == 1
+        @test c_obj.counts isa Dict{Symbol, Int}
         @test get_count(c_obj, :NonExistent) == -1
         Y = similar(X)
         get_gradient(M, c_obj, p)
@@ -34,6 +35,10 @@ using LinearAlgebra: Symmetric
         @test get_count(c_obj, :Gradient) == 4
         @test get_differential(M, c_obj, p, X) == get_differential(M, obj, p, X)
         @test get_count(c_obj, :Differential) == 1
+        # the combined accessor counts both
+        @test Manopt.get_cost_and_differential(M, c_obj, p, X) == Manopt.get_cost_and_differential(M, obj, p, X)
+        @test get_count(c_obj, :Cost) == 4
+        @test get_count(c_obj, :Differential) == 2
         # also decorated objects can be wrapped to be counted
         ro = Manopt.Test.DummyDecoratedObjective(obj)
         c_obj2 = ManifoldCountObjective(M, ro, [:Gradient])
@@ -73,6 +78,28 @@ using LinearAlgebra: Symmetric
         reset_counters!(rc_obj) # also works on decorated counters
         @test_throws ErrorException reset_counters!(obj) # errors on non-counter ones
     end
+    @testset "Counting a single proximal map" begin
+        M = Hyperbolic(2)
+        p = [0.0, 0.0, 1.0]
+        p0 = [1.0, 0.0, √2]
+        g(M, q) = distance(M, q, p)^2
+        grad_g(M, q) = -2 * log(M, q, p)
+        h(M, q) = distance(M, q, p)
+        prox_h(M, λ, q) = ManifoldDiff.prox_distance(M, λ, p, q, 1)
+        f(M, q) = g(M, q) + h(M, q)
+        ob = ManifoldProximalGradientObjective(f, g, grad_g, prox_h)
+        c_ob = ManifoldCountObjective(M, ob, [:ProximalMap]; p = p0)
+        @test get_count(c_ob, :ProximalMap) == 0
+        get_proximal_map(M, c_ob, 1.0, p0)
+        @test get_count(c_ob, :ProximalMap) == 1
+        # and through the solver
+        c_ob2, q = proximal_gradient_method(
+            M, f, g, grad_g, p0;
+            prox_nonsmooth = prox_h, count = [:ProximalMap],
+            stopping_criterion = StopAfterIteration(3), return_objective = true,
+        )
+        @test get_count(c_ob2, :ProximalMap) == 6
+    end
     @testset "Function passthrough" begin
         Random.seed!(42)
         n = 4
@@ -84,6 +111,15 @@ using LinearAlgebra: Symmetric
         grad_f(M, p) = A * p - (p' * A * p) * p
         Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
         obj = ManifoldHessianObjective(f, grad_f, Hess_f)
+        # the subgradient function of a counting objective counts
+        sgo = ManifoldSubgradientObjective(f, grad_f)
+        sgc = ManifoldCountObjective(M, sgo, [:SubGradient])
+        @test Manopt.get_subgradient_function(sgc)(M, p) == grad_f(M, p)
+        @test get_count(sgc, :SubGradient) == 1
+        @test Manopt.get_subgradient_function(sgc, true) === grad_f
+        Xs = zero_vector(M, p)
+        @test Manopt.get_subgradient_function(sgc; evaluation = InplaceEvaluation())(M, Xs, p) == grad_f(M, p)
+        @test get_count(sgc, :SubGradient) == 2
         c_obj = ManifoldCountObjective(M, obj, [:Cost, :Gradient, :Hessian])
         # undecorated / recursive cost -> exactly f
         @test Manopt.get_cost_function(obj) === Manopt.get_cost_function(c_obj, true)

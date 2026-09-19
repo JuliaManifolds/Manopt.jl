@@ -20,6 +20,8 @@ individual one that provides these values.
 """
 abstract type DirectionUpdateRule end
 
+status_summary(dur::DirectionUpdateRule; context::Symbol = :default) = repr(dur)
+
 """
     AbstractGradientGroupDirectionRule <: DirectionUpdateRule
 
@@ -157,7 +159,11 @@ Return the function to evaluate (just) the differential ``Df(p)[X]`` as a functi
 For a decorated objective, the `recursive` positional parameter determines whether to
 directly call this function on the next decorator or whether to get the “most inner” objective.
 """
-get_differential_function(::AbstractManifoldFirstOrderObjective, recursive::Bool = false)
+function get_differential_function(
+        objective::AbstractManifoldFirstOrderObjective, recursive::Bool = false
+    )
+    return (M, p, X; kwargs...) -> get_differential(M, objective, p, X; kwargs...)
+end
 
 function get_differential_function(
         objective::AbstractDecoratedManifoldObjective, recursive = false
@@ -180,11 +186,11 @@ function get_gradient(M::AbstractManifold, objective::AbstractManifoldFirstOrder
 end
 
 ### Decorator
-function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
-    return get_gradient(M, get_objective(admo, false), p)
+function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p; kwargs...)
+    return get_gradient(M, get_objective(admo, false), p; kwargs...)
 end
-function get_gradient!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p)
-    return get_gradient!(M, X, get_objective(admo, false), p)
+function get_gradient!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p; kwargs...)
+    return get_gradient!(M, X, get_objective(admo, false), p; kwargs...)
 end
 
 function get_gradient_function end
@@ -202,6 +208,9 @@ somewhere, one still wants for example the cached one or the one that still coun
 
 Use `evaluation=`[`InplaceEvaluation`](@ref)`()` and `recursive=true` to get access to the internally stored actual function.
 Note that this actual function might still be wrapped in an [`InplaceManifoldFunction`](@ref).
+
+For an objective whose gradient is optional, for example the [`ManifoldDifferenceOfConvexObjective`](@ref),
+`missing` is returned when no gradient was provided, also when the objective is decorated.
 """
 get_gradient_function(::AbstractManifoldFirstOrderObjective, recursive = false; evaluation::AbstractEvaluationType = AllocatingEvaluation())
 

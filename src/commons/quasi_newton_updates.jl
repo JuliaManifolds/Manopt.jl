@@ -24,7 +24,7 @@ initialize_update!(s::AbstractQuasiNewtonDirectionUpdate) = s
 Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s.
 
 For a [`QuasiNewtonMatrixDirectionUpdate`](@ref) there are several different updates to the matrix,
-while for the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) the default and most prominent one is [`InverseBFGS`](@ref).
+while the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) implements [`InverseBFGS`](@ref) only.
 """
 abstract type AbstractQuasiNewtonUpdateRule end
 
@@ -166,13 +166,13 @@ This method can be stabilized by only performing the update if the absolute valu
 for some ``r>0``. For more details, see Section 6.2 in [NocedalWright:2006](@cite).
 
 # Constructor
-    SR1(r::Float64=-1.0)
+    SR1(r::Real=-1.0)
 
 Generate the `SR1` update.
 """
 struct SR1 <: AbstractQuasiNewtonUpdateRule
     r::Float64
-    SR1(r::Float64 = -1.0) = new(r)
+    SR1(r::Real = -1.0) = new(r)
 end
 
 @doc """
@@ -208,13 +208,13 @@ This method can be stabilized by only performing the update if the absolute valu
 for some ``r>0``. For more details, see Section 6.2 in [NocedalWright:2006](@cite).
 
 # Constructor
-    InverseSR1(r::Float64=-1.0)
+    InverseSR1(r::Real=-1.0)
 
 Generate the `InverseSR1`.
 """
 struct InverseSR1 <: AbstractQuasiNewtonUpdateRule
     r::Float64
-    InverseSR1(r::Float64 = -1.0) = new(r)
+    InverseSR1(r::Real = -1.0) = new(r)
 end
 
 @doc """
@@ -328,8 +328,12 @@ $(_tex(:hat, "η_k")) = - B_k $(_tex(:widehat, "$(_tex(:grad))f(p_k)")),
 """
     QuasiNewtonPreconditioner{F}
 
-A preconditioner for the quasi-Newton direction updates: it is applied to the gradient before the
-quasi-Newton operator is applied (or the linear system is solved), see [`quasi_Newton`](@ref).
+A preconditioner for the quasi-Newton direction updates, see [`quasi_Newton`](@ref).
+
+For a [`QuasiNewtonMatrixDirectionUpdate`](@ref) it is applied to the gradient before the matrix is
+applied (or the linear system is solved).
+For a [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) it takes the place of the initial operator
+inside the two-loop recursion.
 
 # Fields
 
@@ -510,7 +514,7 @@ function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     return r
 end
 function initialize_update!(d::QuasiNewtonMatrixDirectionUpdate)
-    copyto!(d.matrix, isnothing(d.initial_scale) ? I : d.initial_scale * I)
+    copyto!(d.matrix, I)
     return d
 end
 """
@@ -601,16 +605,14 @@ function is always included and the old, probably no longer relevant, informatio
 $(_fields(:vector_transport_method))
 * `message`:                 a string containing a potential warning that might have appeared
 * `project!`:                a function to stabilize the update by projecting on the tangent space
-* `nonpositive_curvature_behavior`: how non-positive-definite pairs (s, y) are detected and handled in vector transport.
-                             Allowed values are:
-                                - `:ignore` (default): pairs whose inner product is zero are
-                                  omitted from the current Hessian approximation but are
-                                  retained in memory for further iterations. This may lead
-                                  to non-positive-definite Hessians and non-descent directions
-                                  being selected and thus needs to be handled elsewhere.
-                                - `:byrd`: pairs such that `inner(M, p, X_s, Y_s) <= sy_tol * norm(M, p, Y_s)^2`
-                                  are removed from memory (see [ByrdLuNocedalZhu:1995](@cite),
-                                  Eq. (3.9) and its discussion).
+* `nonpositive_curvature_behavior`: how non-positive-definite pairs (s, y) are detected and
+  handled in vector transport. Allowed values are:
+  * `:ignore` (default): pairs whose inner product is zero are omitted from the current Hessian
+    approximation but are retained in memory for further iterations. This may lead to
+    non-positive-definite Hessians and non-descent directions being selected and thus needs to be
+    handled elsewhere.
+  * `:byrd`: pairs such that `inner(M, p, X_s, Y_s) <= sy_tol * norm(M, p, Y_s)^2` are removed
+    from memory (see [ByrdLuNocedalZhu:1995](@cite), Eq. (3.9) and its discussion).
 * `sy_tol`:                  tolerance for detecting non-positive-definite pairs (X_s, Y_s).
                              The pairs may lose positive-definiteness after vector transport.
 
@@ -622,7 +624,7 @@ $(_fields(:vector_transport_method))
         update::AbstractQuasiNewtonUpdateRule,
         memory_size::Int;
         initial_vector=zero_vector(M, p),
-        initial_scale::Real=1.0,
+        initial_scale=1.0,
         project!=copyto!,
         vector_transport_method=default_vector_transport_method(M, typeof(p)),
         nonpositive_curvature_behavior::Symbol=:ignore,
@@ -646,8 +648,8 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     } <: AbstractQuasiNewtonDirectionUpdate
     memory_s::CircularBuffer{T}
     memory_y::CircularBuffer{T}
-    ξ::Vector{F}
-    ρ::Vector{F}
+    ξ::V
+    ρ::V
     initial_scale::G
     project!::Proj
     vector_transport_method::VT
@@ -1597,8 +1599,8 @@ the result of the search, and `max_stepsize` is the maximum stepsize that can be
 the direction `d_out`.
 
 The `status` can be one of the following:
-* `:found_limited` if the point was found and we can perform a step of length at most 1
-  in direction `d_out` afterwards,
+* `:found_limited` if the point was found and a step of length at most the returned
+  `max_stepsize`, which is at least 1, can be performed in direction `d_out` afterwards,
 * `:found_unlimited` if the point was found and we can perform a step of length at most
   `max_stepsize(M, p)` in direction `d_out` afterwards,
 * `:not_found` if the search cannot be performed in direction `d`.

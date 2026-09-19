@@ -90,6 +90,45 @@ function mean_task(M::AbstractManifold, data::AbstractVector)
     return f, grad_f
 end
 
+"""
+    project_C, project_C! = ball_projection(M::AbstractManifold, c, r)
+
+Return the projection onto the geodesic ball of radius `r` around `c` on `M`,
+allocating and in place.
+"""
+function ball_projection(M::AbstractManifold, c, r)
+    function project_C(M, p)
+        X = log(M, c, p)
+        n = norm(M, c, X)
+        return (n > r) ? exp(M, c, (r / n) * X) : copy(M, p)
+    end
+    function project_C!(M, q, p; X = zero_vector(M, c))
+        n = norm(M, c, log!(M, X, c, p))
+        (n > r) ? exp!(M, q, c, (r / n) * X) : copyto!(M, q, p)
+        return q
+    end
+    return project_C, project_C!
+end
+
+"""
+    f, ∂f, ∂f! = distance_task(M::AbstractManifold, q)
+
+Return the distance to `q` on `M` and a subgradient of it, allocating and in place.
+"""
+function distance_task(M::AbstractManifold, q)
+    f(M, p) = distance(M, p, q)
+    function ∂f(M, p)
+        (distance(M, q, p) == 0) && return zero_vector(M, p)
+        return -log(M, p, q) / max(10 * eps(Float64), distance(M, q, p))
+    end
+    function ∂f!(M, X, p)
+        (distance(M, q, p) == 0) && return zero_vector!(M, X, p)
+        log!(M, X, p, q)
+        return X .*= -1 / max(10 * eps(Float64), distance(M, q, p))
+    end
+    return f, ∂f, ∂f!
+end
+
 #
 #
 # From ManoptExamples – to avoid a circular dependency
@@ -121,7 +160,7 @@ function adjoint_differential_forward_logs!(
                 )
                 Y[M, J...] =
                     Y[M, J...] + ManifoldDiff.adjoint_differential_log_argument(
-                    M.manifold, p[M, J...], p[M, I...], X[N, I..., k]
+                    M.manifold, p[M, I...], p[M, J...], X[N, I..., k]
                 )
             end
         end # directions
@@ -130,9 +169,7 @@ function adjoint_differential_forward_logs!(
 end
 function differential_forward_logs(M::PowerManifold, p, X)
     power_size = power_dimensions(M)
-    R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
-    maxInd = last(R).I
     d2 = (d > 1) ? ones(Int, d + 1) + (d - 1) * (1:(d + 1) .== d + 1) : 1
     if d > 1
         N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size..., d)
@@ -351,21 +388,19 @@ end
 function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p::Int, q::Int, α = 1.0)
     return project_collaborative_TV!(N, Θ, λ, x, Ξ, Float64(p), Float64(q), α)
 end
+function _prox_Total_Variation_t(M::AbstractManifold, λ::Number, x::Tuple, p::Int)
+    p == 1 && return min(0.5, λ / distance(M, x[1], x[2]))
+    p == 2 && return λ / (1 + 2 * λ)
+    return throw(
+        ErrorException(
+            "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
+        ),
+    )
+end
 function prox_Total_Variation(
         M::AbstractManifold, λ::Number, x::Tuple{T, T}, p::Int = 1
     ) where {T}
-    d = distance(M, x[1], x[2])
-    if p == 1
-        t = min(0.5, λ / d)
-    elseif p == 2
-        t = λ / (1 + 2 * λ)
-    else
-        throw(
-            ErrorException(
-                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
-            ),
-        )
-    end
+    t = _prox_Total_Variation_t(M, λ, x, p)
     return (
         ManifoldsBase.exp_fused(M, x[1], log(M, x[1], x[2]), t),
         ManifoldsBase.exp_fused(M, x[2], log(M, x[2], x[1]), t),
@@ -374,18 +409,7 @@ end
 function prox_Total_Variation(
         M::PowerManifold, λ::Number, x::Tuple{T, T}, p::Int = 1
     ) where {T}
-    d = distance(M, x[1], x[2])
-    if p == 1
-        t = min(0.5, λ / d)
-    elseif p == 2
-        t = λ / (1 + 2 * λ)
-    else
-        throw(
-            ErrorException(
-                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
-            ),
-        )
-    end
+    t = _prox_Total_Variation_t(M, λ, x, p)
     return (
         ManifoldsBase.exp_fused(M, x[1], log(M, x[1], x[2]), t),
         ManifoldsBase.exp_fused(M, x[2], log(M, x[2], x[1]), t),
@@ -395,18 +419,7 @@ end
 function prox_Total_Variation!(
         M::AbstractManifold, y, λ::Number, x::Tuple{T, T}, p::Int = 1
     ) where {T}
-    d = distance(M, x[1], x[2])
-    if p == 1
-        t = min(0.5, λ / d)
-    elseif p == 2
-        t = λ / (1 + 2 * λ)
-    else
-        throw(
-            ErrorException(
-                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
-            ),
-        )
-    end
+    t = _prox_Total_Variation_t(M, λ, x, p)
     X1 = log(M, x[1], x[2])
     X2 = log(M, x[2], x[1])
     ManifoldsBase.exp_fused!(M, y[1], x[1], X1, t)
@@ -416,18 +429,7 @@ end
 function prox_Total_Variation!(
         M::PowerManifold, y, λ::Number, x::Tuple{T, T}, p::Int = 1
     ) where {T}
-    d = distance(M, x[1], x[2])
-    if p == 1
-        t = min(0.5, λ / d)
-    elseif p == 2
-        t = λ / (1 + 2 * λ)
-    else
-        throw(
-            ErrorException(
-                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
-            ),
-        )
-    end
+    t = _prox_Total_Variation_t(M, λ, x, p)
     X1 = log(M, x[1], x[2])
     X2 = log(M, x[2], x[1])
     ManifoldsBase.exp_fused!(M, y[1], x[1], X1, t)
@@ -503,12 +505,12 @@ end
 #
 #
 # Further example functions - Chambolle-Pock
-function differential_project_collaborative_TV(N::PowerManifold, p, ξ, η, p1 = 2.0, p2 = 1.0)
+function differential_project_collaborative_TV(N::PowerManifold, p, ξ, η, p1 = Inf, p2 = Inf)
     ζ = zero_vector(N, p)
     return differential_project_collaborative_TV!(N, ζ, p, ξ, η, p1, p2)
 end
 function differential_project_collaborative_TV!(
-        N::PowerManifold, ζ, p, ξ, η, p1 = 2.0, p2 = 1.0
+        N::PowerManifold, ζ, p, ξ, η, p1 = Inf, p2 = Inf
     )
     ζ = zero_vector!(N, ζ, p)
     pdims = power_dimensions(N)

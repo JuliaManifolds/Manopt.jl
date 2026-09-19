@@ -29,22 +29,7 @@ using Manifolds, Manopt, Random, Test
         X .*= -1 / length(pts)
         return X
     end
-    function project_C(M, p)
-        X = log(M, c, p)
-        n = norm(M, c, X)
-        q = (n > r) ? exp(M, c, (r / n) * X) : copy(M, p)
-        return q
-    end
-    function project_C!(M, q, p; X = zero_vector(M, c))
-        log!(M, X, c, p)
-        n = norm(M, c, X)
-        if (n > r)
-            exp!(M, q, c, (r / n) * X)
-        else
-            copyto!(M, q, p)
-        end
-        return q
-    end
+    project_C, project_C! = Manopt.Test.ball_projection(M, c, r)
     @testset "A manifold with numbers as points" begin
         Mc = Circle()
         fc(N, q) = (q - 0.3)^2
@@ -63,6 +48,25 @@ using Manifolds, Manopt, Random, Test
         stopping_criterion = StopAfterIteration(150) | StopWhenProjectedGradientStationary(M, 1.0e-7),
     )
     @test isapprox(M, mean_pg_1, mean_pg_2)
+    # the exported step size constructors are accepted for both step sizes
+    sc_f = StopAfterIteration(20)
+    mean_pg_f = projected_gradient_method(
+        M, f, grad_f, project_C, c; stopping_criterion = sc_f,
+        stepsize = ConstantLength(1.0), backtrack = ArmijoLinesearch(; stop_increasing_at_step = 0),
+    )
+    mean_pg_s = projected_gradient_method(
+        M, f, grad_f, project_C, c; stopping_criterion = StopAfterIteration(20),
+        stepsize = Manopt.ConstantStepsize(M, 1.0),
+        backtrack = Manopt.ArmijoLinesearchStepsize(M; stop_increasing_at_step = 0),
+    )
+    @test mean_pg_f == mean_pg_s
+    # a decorated objective reaches the projection as well
+    mean_pg_c = projected_gradient_method(
+        M, f, grad_f, project_C, c;
+        stopping_criterion = StopAfterIteration(150) | StopWhenProjectedGradientStationary(M, 1.0e-7),
+        count = [:Cost],
+    )
+    @test isapprox(M, mean_pg_c, mean_pg_1)
     # the result has to be feasible, that is inside the ball of radius `r` around `c`
     @test distance(M, c, mean_pg_1) <= r + 1.0e-12
     mean_pg_3 = copy(M, c)
@@ -78,6 +82,10 @@ using Manifolds, Manopt, Random, Test
         "# Solver state for `Manopt.jl`s Projected Gradient Method\n"
     )
     @test startswith(repr(st), "ProjectedGradientMethodState(; ")
+    # the default backtracking of the state keeps the step at most one, as the solver does
+    @test ProjectedGradientMethodState(M).backtrack.stop_increasing_at_step == 0
+    # a call without the manifold is rejected at the entry point
+    @test_throws MethodError projected_gradient_method(f, grad_f, project_C, c)
     stop_when_stationary = st.stop.criteria[2]
     @test Manopt.indicates_convergence(stop_when_stationary)
     @test repr(stop_when_stationary) == "StopWhenProjectedGradientStationary($(stop_when_stationary.threshold))"

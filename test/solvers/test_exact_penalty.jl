@@ -14,6 +14,15 @@ using LinearAlgebra: I, tr
     grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
     p0 = project(M, [ones(2)..., zeros(d - 3)..., 0.1])
     sol_lse = exact_penalty_method(M, f, grad_f, p0; g = g, grad_g = grad_g)
+    # a decorated objective and mixed number types for ρ and u
+    dco = Manopt.decorate_objective!(
+        M, ConstrainedManifoldObjective(f, grad_f; g = g, grad_g = grad_g, M = M);
+        count = [:Cost],
+    )
+    sol_dec = exact_penalty_method(M, dco, p0)
+    @test get_count(dco, :Cost) > 0
+    @test sol_dec == sol_lse
+    @test exact_penalty_method(M, f, grad_f, p0; g = g, grad_g = grad_g, ρ = 1, u = 1.0e-1) == sol_lse
     sol_lse2 = exact_penalty_method(M, f, grad_f; g = g, grad_g = grad_g)
     sol_lqh = exact_penalty_method(
         M, f, grad_f, p0; g = g, grad_g = grad_g, smoothing = LinearQuadraticHuber()

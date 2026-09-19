@@ -143,14 +143,11 @@ function Base.show(io::IO, agds::AlternatingGradientDescentState)
 end
 function status_summary(agds::AlternatingGradientDescentState; context::Symbol = :default)
     (context === :short) && return repr(agds)
-    i = get_count(agds, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(agds.stop) ? "Yes" : "No"
     (context === :inline) && return "A solver state for the alternating gradient descent solver$(_iteration_suffix(agds))"
     as = _callbacks_summary(agds)
     s = """
     # Solver state for `Manopt.jl`s Alternating Gradient Descent Solver
-    $Iter
+    $(_iterations_str(agds))
     ## Parameters$(as)
     * order type: :$(agds.order_type)
     * retraction method: $(agds.retraction_method)
@@ -161,7 +158,7 @@ function status_summary(agds::AlternatingGradientDescentState; context::Symbol =
 
     ## Stopping criterion
     $(_in_str(status_summary(agds.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(agds))"""
     return s
 end
 function get_message(agds::AlternatingGradientDescentState)
@@ -169,14 +166,16 @@ function get_message(agds::AlternatingGradientDescentState)
     return get_message(agds.stepsize)
 end
 get_callbacks(agds::AlternatingGradientDescentState) = agds.callbacks
+function set_iterate!(agds::AlternatingGradientDescentState, M, p)
+    copyto!(M, agds.p, p)
+    return agds
+end
 additional_callbacks(::Type{<:AlternatingGradientDescentState}) = [:Stepsize]
 
 function (ag::AlternatingGradientRule)(
         amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, k
     )
     M = get_manifold(amp)
-    # at begin of inner iterations reset internal vector to zero
-    (k == 1) && zero_vector!(M, ag.X, agds.p)
     # update order(k)th component in-place
     get_gradient!(amp, ag.X[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
     return agds.stepsize(amp, agds, k; gradient = ag.X), ag.X # return current full gradient
@@ -214,6 +213,7 @@ function (a::ArmijoLinesearchStepsize)(
     else
         copyto!(M[j], X[M, j], agds.p[M, j], gradient[M, j])
     end
+    l = norm(M, agds.p, X)
     a.last_stepsize = linesearch_backtrack!(
         M,
         a.candidate_point,
@@ -225,6 +225,12 @@ function (a::ArmijoLinesearchStepsize)(
         -X;
         gradient = X,
         retraction_method = a.retraction_method,
+        stop_when_stepsize_less = a.stop_when_stepsize_less / l,
+        stop_when_stepsize_exceeds = a.stop_when_stepsize_exceeds / l,
+        stop_increasing_at_step = a.stop_increasing_at_step,
+        stop_decreasing_at_step = a.stop_decreasing_at_step,
+        additional_decrease_condition = a.additional_decrease_condition,
+        additional_increase_condition = a.additional_increase_condition,
         report_messages_in = a.messages,
     )
     return a.last_stepsize
@@ -272,13 +278,13 @@ $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`AlternatingGr
 * `order=collect(1:n)`: the initial permutation, where `n` is the number of gradients in `grad_f`.
 $(_kwargs(:retraction_method))
 
-# Output
+$(_note(:OtherKeywords))
 
-usually the obtained (approximate) minimizer, see [`get_solver_return`](@ref) for details
+$(_note(:OutputSection))
 
 !!! note
 
-    The input of each of the (component) gradients is still the whole vector `X`,
+    The input of each of the (component) gradients is still the whole point `p`,
     just that all other than the `i`th input component are assumed to be fixed and just
     the `i`th component's gradient is computed / returned.
 """

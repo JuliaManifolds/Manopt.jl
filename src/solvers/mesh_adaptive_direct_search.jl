@@ -385,7 +385,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 
 # Constructor
 
-    MeshAdaptiveDirectSearchState(M::AbstractManifold, p=rand(M); kwargs...)
+    MeshAdaptiveDirectSearchState(M::AbstractManifold; p=rand(M), kwargs...)
 
 ## Keyword arguments
 
@@ -420,8 +420,9 @@ mutable struct MeshAdaptiveDirectSearchState{
     end
 end
 function MeshAdaptiveDirectSearchState(
-        M::AbstractManifold, p::P = rand(M);
+        M::AbstractManifold;
         callbacks::C = Dict{Symbol, Function}(),
+        p::P = rand(M),
         max_stepsize::Real = isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M),
         mesh_basis::B = default_basis(M, typeof(p)),
         poll_size::Real = manifold_dimension(M),
@@ -451,6 +452,10 @@ function MeshAdaptiveDirectSearchState(
 end
 get_iterate(mads::MeshAdaptiveDirectSearchState) = mads.p
 get_callbacks(mads::MeshAdaptiveDirectSearchState) = mads.callbacks
+function set_iterate!(mads::MeshAdaptiveDirectSearchState, M, p)
+    copyto!(M, mads.p, p)
+    return mads
+end
 additional_callbacks(::Type{<:MeshAdaptiveDirectSearchState}) = [:Search, :Poll]
 function Base.show(io::IO, mads::MeshAdaptiveDirectSearchState)
     print(io, "MeshAdaptiveDirectSearchState(; callbacks = ", mads.callbacks, ", max_stepsize = ", mads.max_stepsize)
@@ -460,14 +465,11 @@ function Base.show(io::IO, mads::MeshAdaptiveDirectSearchState)
 end
 function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :default)
     (context === :short) && return repr(mads)
-    i = get_count(mads, :Iterations)
     (context === :inline) && return "A solver state for the mesh adaptive direct search solver$(_iteration_suffix(mads))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(mads.stop) ? "Yes" : "No"
     as = _callbacks_summary(mads)
     s = """
     # Solver state for `Manopt.jl`s mesh adaptive direct search
-    $Iter
+    $(_iterations_str(mads))
     ## Parameters$(as)
     * mesh_size: $(mads.mesh_size)
     * scale_mesh: $(mads.scale_mesh)
@@ -478,7 +480,7 @@ function status_summary(mads::MeshAdaptiveDirectSearchState; context::Symbol = :
 
     ## Stopping criterion
     $(_in_str(status_summary(mads.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv
+    The algorithm converged: $(_converged_str(mads))
     """
     return s
 end
@@ -527,7 +529,7 @@ function get_reason(c::StopWhenPollSizeLess)
     return ""
 end
 function status_summary(c::StopWhenPollSizeLess; context::Symbol = :default)
-    has_stopped = (c.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "Poll step size s < $(c.threshold):$(_MANOPT_INDENT)" : "Stop when the poll step size is less than the threshold $(c.threshold)\n$(_MANOPT_INDENT)") * s
 end
@@ -583,8 +585,10 @@ $(_note(:OutputSection))
 mesh_adaptive_direct_search(M::AbstractManifold, args...; kwargs...)
 
 function mesh_adaptive_direct_search(M::AbstractManifold, f, p = rand(M); kwargs...)
-    mco = ManifoldCostObjective(f)
-    return mesh_adaptive_direct_search(M, mco, p; kwargs...)
+    p_ = maybe_wrap_variable(p)
+    mco = ManifoldCostObjective(f; p = p)
+    rs = mesh_adaptive_direct_search(M, mco, p_; kwargs...)
+    return maybe_unwrap_variable(p, rs)
 end
 function mesh_adaptive_direct_search(
         M::AbstractManifold, mco::AbstractManifoldCostObjective, p = rand(M); kwargs...
@@ -628,7 +632,7 @@ function mesh_adaptive_direct_search!(
     dmco = decorate_objective!(M, mco; kwargs...)
     dmp = DefaultManoptProblem(M, dmco)
     madss = MeshAdaptiveDirectSearchState(
-        M, p;
+        M; p = p,
         callbacks = process_callbacks_arg(callbacks, MeshAdaptiveDirectSearchState),
         max_stepsize = max_stepsize,
         mesh_basis = mesh_basis,
@@ -693,7 +697,7 @@ function step_solver!(amp::AbstractManoptProblem, madss::MeshAdaptiveDirectSearc
     if !(is_successful(madss.poll)) && !(is_successful(madss.search))
         madss.mesh_size /= 4
     elseif madss.mesh_size < 0.25 # else
-        madss.mesh_size *= 4  # Coarsen the mesh but not beyond 1
+        madss.mesh_size *= 4  # Coarsen the mesh but not beyond 1/4
     end
     # Update poll size parameter
     madss.poll_size = n * sqrt(madss.mesh_size)

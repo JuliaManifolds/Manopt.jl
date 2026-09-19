@@ -126,8 +126,14 @@ function get_message(s::AbstractManoptSolverState)
     return _get_message(s, dispatch_state_decorator(s))
 end
 _get_message(s::AbstractManoptSolverState, ::Val{true}) = get_message(s.state)
-# Introduce a default that there is no message
-_get_message(s::AbstractManoptSolverState, ::Val{false}) = ""
+# Introduce a default that collects the messages of the parts that can issue one
+function _get_message(s::AbstractManoptSolverState, ::Val{false})
+    msgs = String[]
+    for fn in (:stepsize, :backtrack, :sub_state)
+        hasfield(typeof(s), fn) && push!(msgs, get_message(getfield(s, fn)))
+    end
+    return join(filter(!isempty, msgs), "\n")
+end
 
 """
     get_solver_return(s::AbstractManoptSolverState)
@@ -273,6 +279,11 @@ function _iteration_suffix(ams::AbstractManoptSolverState)
     (k > 0) || return ""
     return (has_converged(ams) ? " (converged" : " (stopped") * " after $k iterations)"
 end
+function _iterations_str(ams::AbstractManoptSolverState)
+    k = get_count(ams, :Iterations)
+    return (k > 0) ? "After $k iterations\n" : ""
+end
+_converged_str(ams::AbstractManoptSolverState) = has_converged(ams) ? "Yes" : "No"
 
 @doc """
     set_gradient!(state::AbstractGradientSolverState, M, p, X)
@@ -328,9 +339,9 @@ By default, this function just does nothing.
 """
 set_parameter!(ams::AbstractManoptSolverState, e::Symbol, args...)
 
-# Default: do nothing
-function set_parameter!(ams::AbstractManoptSolverState, ::Val, args...)
-    return ams
+# Default: pass `:SubProblem` and `:SubState` on to a stored sub task, do nothing otherwise
+function set_parameter!(ams::AbstractManoptSolverState, v::Val, args...)
+    return _set_sub_parameter!(ams, Val(has_sub_problem(typeof(ams))), v, args...)
 end
 
 @doc """
@@ -363,9 +374,10 @@ abstract type AbstractPrimalDualSolverState <: AbstractManoptSolverState end
 
 function dual_residual(
         M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective,
-        apds::AbstractPrimalDualSolverState, p_old, X_old, n_old,
+        apds::AbstractPrimalDualSolverState, p_old, X_old, n_old;
+        variant::Symbol = hasproperty(apds, :variant) ? apds.variant : :linearized,
     )
-    if apds.variant === :linearized
+    if variant === :linearized
         return norm(
             N,
             apds.n,
@@ -381,7 +393,7 @@ function dual_residual(
                 apds.n,
             ),
         )
-    elseif apds.variant === :exact
+    elseif variant === :exact
         return norm(
             N,
             apds.n,
@@ -407,7 +419,7 @@ function dual_residual(
     else
         throw(
             DomainError(
-                apds.variant, "Unknown Chambolle-Pock variant, allowed are `:exact` or `:linearized`.",
+                variant, "Unknown variant for a $(nameof(typeof(apds))), allowed are `:exact` or `:linearized`.",
             ),
         )
     end

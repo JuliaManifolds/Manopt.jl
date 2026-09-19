@@ -9,14 +9,11 @@ function default_stepsize(
 end
 function status_summary(cgds::ConjugateGradientDescentState; context::Symbol = :default)
     (context === :short) && (return repr(cgds))
-    i = get_count(cgds, :Iterations)
     (context === :inline) && return "A solver state for the conjugate gradient descent solver$(_iteration_suffix(cgds))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(cgds.stop) ? "Yes" : "No"
     as = _callbacks_summary(cgds)
     return """
     # Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver
-    $Iter
+    $(_iterations_str(cgds))
     ## Parameters$(as)
     * conjugate gradient coefficient:$(_MANOPT_INDENT)$(cgds.coefficient) (last β=$(cgds.β))
     * restart condition:             $(_MANOPT_INDENT)$(cgds.restart_condition)
@@ -28,7 +25,7 @@ function status_summary(cgds::ConjugateGradientDescentState; context::Symbol = :
 
     ## Stopping criterion
     $(_in_str(status_summary(cgds.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(cgds))"""
 end
 
 _doc_CG_formula = raw"""
@@ -64,7 +61,8 @@ Available update rules are [`SteepestDescentCoefficient`](@ref), which yields a 
 [`ConjugateDescentCoefficient`](@ref) (the default), [`DaiYuanCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
 [`HagerZhangCoefficient`](@ref), [`HestenesStiefelCoefficient`](@ref),
 [`LiuStoreyCoefficient`](@ref), and [`PolakRibiereCoefficient`](@ref).
-These can all be combined with a [`ConjugateGradientBealeRestartRule`](@ref) rule.
+A [`HybridCoefficient`](@ref) combines several of these into one coefficient,
+and all of them can be wrapped in a [`ConjugateGradientBealeRestart`](@ref).
 
 They all compute ``β_k`` such that this algorithm updates the search direction as
 

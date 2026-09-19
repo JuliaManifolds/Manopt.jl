@@ -85,12 +85,56 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint, prox_distance
     )
     @test isapprox(M, y3c, x3)
     @test x_hat ≈ x3 atol = 2 * 1.0e-7
+    @testset "Primal dual debug and record actions" begin
+        rec = [
+            RecordDualBaseChange(), RecordDualBaseIterate(n), RecordDualChange(), RecordDualIterate(ξ0),
+            RecordPrimalBaseChange(), RecordPrimalBaseIterate(m), RecordPrimalChange(), RecordPrimalIterate(x0),
+        ]
+        io = IOBuffer()
+        dbg = [
+            DebugDualBaseChange(; io = io), DebugDualBaseIterate(; io = io), DebugDualChange(; io = io),
+            DebugDualIterate(; io = io), DebugDualResidual(; io = io), DebugPrimalBaseChange(; io = io),
+            DebugPrimalBaseIterate(; io = io), DebugPrimalChange(; io = io), DebugPrimalIterate(; io = io),
+            DebugPrimalResidual(; io = io), DebugPrimalDualResidual(; io = io),
+        ]
+        sr = primal_dual_semismooth_Newton(
+            M, N, f, x0, ξ0, m, n, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ;
+            primal_stepsize = σ, dual_stepsize = τ, stopping_criterion = StopAfterIteration(3),
+            record = rec, debug = dbg, return_state = true,
+        )
+        r = get_record(sr)
+        @test length(r) == 3
+        # the base points stay fixed, so their changes vanish
+        @test all(t -> t[1] == 0.0 && t[5] == 0.0, r)
+        @test all(t -> t[2] == n && t[6] == m, r)
+        out = String(take!(io))
+        @test occursin("Dual Residual: ", out)
+        @test occursin("Primal Residual: ", out)
+        @test occursin("PD Residual: ", out)
+        # the dual methods are stored and the residual follows the linearized variant
+        pdsns = get_state(sr, true)
+        @test pdsns.vector_transport_method_dual == default_vector_transport_method(N, typeof(n))
+        @test pdsns.inverse_retraction_method_dual == default_inverse_retraction_method(N, typeof(n))
+        pdmsno = PrimalDualManifoldSemismoothNewtonObjective(f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ)
+        tmp = TwoManifoldProblem(M, N, pdmsno)
+        dr = dual_residual(tmp, pdsns, pdsns.p, pdsns.X, pdsns.n)
+        @test dr == dual_residual(tmp, pdsns, pdsns.p, pdsns.X, pdsns.n; variant = :linearized)
+        @test dr ≈ 0.0 atol = 1.0e-14
+        err = try
+            dual_residual(tmp, pdsns, pdsns.p, pdsns.X, pdsns.n; variant = :none)
+        catch e
+            e
+        end
+        @test err isa DomainError
+        @test occursin("PrimalDualSemismoothNewtonState", err.msg)
+    end
     @testset "Objective Decorator passthrough" begin
         # PDNSSN additional tests
         pdmsno = PrimalDualManifoldSemismoothNewtonObjective(
             f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ
         )
         ro = Manopt.Test.DummyDecoratedObjective(pdmsno)
+        @test get_cost(M, pdmsno, x0) == f(M, x0)
         X = zero_vector(M, x0)
         Y = get_differential_primal_prox(M, pdmsno, 0.1, x0, X)
         Y2 = get_differential_primal_prox(M, ro, 0.1, x0, X)

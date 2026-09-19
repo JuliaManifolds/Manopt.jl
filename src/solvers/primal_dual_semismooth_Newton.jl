@@ -16,7 +16,9 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 
 # Constructor
 
-    PrimalDualManifoldSemismoothNewtonObjective(cost, prox_F, diff_prox_F, prox_G_dual, diff_prox_G_dual, linearized_forward_operator, adjoint_linearized_operator; Λ=missing, evaluation=AllocatingEvaluation())
+    PrimalDualManifoldSemismoothNewtonObjective(cost, prox_F, diff_prox_F, prox_G_dual, diff_prox_G_dual, linearized_forward_operator, adjoint_linearized_operator; Λ=missing, p=missing, evaluation=AllocatingEvaluation())
+
+A point `p=` wraps the cost for points that are numbers.
 """
 mutable struct PrimalDualManifoldSemismoothNewtonObjective{
         TC, PF, DPF, PG, DPG, LFO, TALO, L,
@@ -33,13 +35,13 @@ end
 function PrimalDualManifoldSemismoothNewtonObjective(
         cost::C, prox_F::PF, diff_prox_F::DPF, prox_G_dual::PG, diff_prox_G_dual::DPG,
         linearized_forward_operator::LFO, adjoint_linearized_operator::AL;
-        Λ::L = missing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        Λ::L = missing, p = missing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     ) where {C, PF, DPF, PG, DPG, LFO, AL, L}
-    cost_ = maybe_wrap_function(cost, evaluation; result = :Number)
+    cost_ = maybe_wrap_function(cost, p; result = :Number)
     prox_F_ = maybe_wrap_function(prox_F, evaluation)
     diff_prox_F_ = maybe_wrap_function(diff_prox_F, evaluation)
-    prox_G_dual_ = maybe_wrap_function(prox_G_dual, evaluation)
-    diff_prox_G_dual_ = maybe_wrap_function(diff_prox_G_dual, evaluation)
+    prox_G_dual_ = maybe_wrap_function(prox_G_dual, evaluation; result = :TangentVector)
+    diff_prox_G_dual_ = maybe_wrap_function(diff_prox_G_dual, evaluation; result = :TangentVector)
     linearized_forward_operator_ = maybe_wrap_function(linearized_forward_operator, evaluation; result = :SecondManifoldPoint)
     adjoint_linearized_operator_ = maybe_wrap_function(adjoint_linearized_operator, evaluation)
     Λ_ = ismissing(Λ) ? missing : maybe_wrap_function(Λ, evaluation; result = :SecondManifoldPoint)
@@ -56,6 +58,7 @@ end
 $(_fields(:callbacks; add_properties = [:as_dict]))
 * `dual_stepsize::Float64`:    proximal parameter of the dual prox
 $(_fields(:inverse_retraction_method))
+$(_fields(:inverse_retraction_method; name = "inverse_retraction_method_dual", M = "N", p = "n"))
 $(_fields(:p; name = "m"))
 $(_fields(:p; type = "Q", name = "n", M = "N"))
 $(_fields(:p; add_properties = [:as_Iterate]))
@@ -66,6 +69,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 * `update_dual_base`:          function to update the dual base
 * `update_primal_base`:        function to update the primal base
 $(_fields(:vector_transport_method))
+$(_fields(:vector_transport_method; name = "vector_transport_method_dual", M = "N"))
 $(_fields(:X; M = "N", p = "n"))
 
 The functions `update_primal_base` and `update_dual_base` are called with an
@@ -85,6 +89,7 @@ Generate a state for the [`primal_dual_semismooth_Newton`](@ref).
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `dual_stepsize=1/sqrt(8)`
 $(Manopt._kwargs([:inverse_retraction_method]))
+$(_kwargs(:inverse_retraction_method; name = "inverse_retraction_method_dual", M = "N", p = "n"))
 * `m=`$(Manopt._link(:rand))
 * `n=`$(Manopt._link(:rand; M = "N"))
 * `p=`$(Manopt._link(:rand))
@@ -95,25 +100,29 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)"))
 * `update_dual_base=missing`: function `(amp, ams, k) -> n` to update the dual base point; `missing` keeps `n` fixed
 * `update_primal_base=missing`: function `(amp, ams, k) -> m` to update the primal base point; `missing` keeps `m` fixed
 $(_kwargs(:vector_transport_method))
+$(_kwargs(:vector_transport_method; name = "vector_transport_method_dual", M = "N", p = "n"))
 * `X=`$(Manopt._link(:zero_vector; M = "N", p = "n"))
 """
 mutable struct PrimalDualSemismoothNewtonState{
-        P, Q, T, C <: AbstractDict{Symbol}, RM <: AbstractRetractionMethod,
-        IRM <: AbstractInverseRetractionMethod, VTM <: AbstractVectorTransportMethod,
+        P, Q, T, C <: AbstractDict{Symbol}, SC <: StoppingCriterion, RM <: AbstractRetractionMethod,
+        IRM <: AbstractInverseRetractionMethod, IRM_Dual <: AbstractInverseRetractionMethod,
+        VTM <: AbstractVectorTransportMethod, VTM_Dual <: AbstractVectorTransportMethod,
     } <: AbstractPrimalDualSolverState
     callbacks::C
     dual_stepsize::Float64
     inverse_retraction_method::IRM
+    inverse_retraction_method_dual::IRM_Dual
     m::P
     n::Q
     p::P
     primal_stepsize::Float64
     regularization_parameter::Float64
     retraction_method::RM
-    stop::StoppingCriterion
+    stop::SC
     update_dual_base::Union{Function, Missing}
     update_primal_base::Union{Function, Missing}
     vector_transport_method::VTM
+    vector_transport_method_dual::VTM_Dual
     X::T
     function PrimalDualSemismoothNewtonState(
             M::AbstractManifold, N::AbstractManifold;
@@ -122,24 +131,27 @@ mutable struct PrimalDualSemismoothNewtonState{
             m::P = rand(M), n::Q = rand(N), p::P = rand(M),
             primal_stepsize::Float64 = 1 / sqrt(8),
             regularization_parameter::Float64 = 1.0e-5,
-            stopping_criterion::StoppingCriterion = StopAfterIteration(50),
+            stopping_criterion::SC = StopAfterIteration(50),
             update_dual_base::Union{Function, Missing} = missing,
             update_primal_base::Union{Function, Missing} = missing,
             # the following defaults depend on `p`, so they have to be keyword arguments
             # listed after `p` is bound above
             inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
+            inverse_retraction_method_dual::IRM_Dual = default_inverse_retraction_method(N, typeof(n)),
             retraction_method::RM = default_retraction_method(M, typeof(p)),
             vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+            vector_transport_method_dual::VTM_Dual = default_vector_transport_method(N, typeof(n)),
             X::T = zero_vector(N, n),
         ) where {
-            P, Q, T, C <: AbstractDict{Symbol}, RM <: AbstractRetractionMethod,
-            IRM <: AbstractInverseRetractionMethod, VTM <: AbstractVectorTransportMethod,
+            P, Q, T, C <: AbstractDict{Symbol}, SC <: StoppingCriterion, RM <: AbstractRetractionMethod,
+            IRM <: AbstractInverseRetractionMethod, IRM_Dual <: AbstractInverseRetractionMethod,
+            VTM <: AbstractVectorTransportMethod, VTM_Dual <: AbstractVectorTransportMethod,
         }
-        return new{P, Q, T, C, RM, IRM, VTM}(
-            callbacks, dual_stepsize, inverse_retraction_method, m, n, p,
+        return new{P, Q, T, C, SC, RM, IRM, IRM_Dual, VTM, VTM_Dual}(
+            callbacks, dual_stepsize, inverse_retraction_method, inverse_retraction_method_dual, m, n, p,
             primal_stepsize, regularization_parameter, retraction_method,
             stopping_criterion, update_dual_base, update_primal_base,
-            vector_transport_method, X,
+            vector_transport_method, vector_transport_method_dual, X,
         )
     end
 end
@@ -264,37 +276,38 @@ function Base.show(io::IO, pdsns::PrimalDualSemismoothNewtonState)
     print(io, "callbacks = ", pdsns.callbacks, ", ")
     print(io, "dual_stepsize = ", pdsns.dual_stepsize, ", ")
     print(io, "inverse_retraction_method = ", pdsns.inverse_retraction_method, ", ")
+    print(io, "inverse_retraction_method_dual = ", pdsns.inverse_retraction_method_dual, ", ")
     print(io, "m = ", pdsns.m, ", n = ", pdsns.n, ", p = ", pdsns.p, ", ")
     print(io, "primal_stepsize = ", pdsns.primal_stepsize, ", ")
     print(io, "regularization_parameter = ", pdsns.regularization_parameter, ", ")
     print(io, "retraction_method = ", pdsns.retraction_method, ", ")
     print(io, "stopping_criterion = ", status_summary(pdsns.stop; context = :short), ", ")
     print(io, "update_dual_base = ", pdsns.update_dual_base, ", update_primal_base = ", pdsns.update_primal_base, ", ")
-    print(io, "vector_transport_method = ", pdsns.vector_transport_method, ", X = ", pdsns.X)
+    print(io, "vector_transport_method = ", pdsns.vector_transport_method, ", ")
+    print(io, "vector_transport_method_dual = ", pdsns.vector_transport_method_dual, ", X = ", pdsns.X)
     return print(io, ")")
 end
 
 function status_summary(pdsns::PrimalDualSemismoothNewtonState; context::Symbol = :default)
     (context === :short) && return repr(pdsns)
-    i = get_count(pdsns, :Iterations)
     (context === :inline) && return "A solver state for the primal dual semismooth Newton solver$(_iteration_suffix(pdsns))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(pdsns.stop) ? "Yes" : "No"
     as = _callbacks_summary(pdsns)
     s = """
     # Solver state for `Manopt.jl`s primal dual semismooth Newton
-    $Iter
+    $(_iterations_str(pdsns))
     ## Parameters$(as)
     * primal_stepsize:          $(_MANOPT_INDENT)$(pdsns.primal_stepsize)
     * dual_stepsize:            $(_MANOPT_INDENT)$(pdsns.dual_stepsize)
     * regularization_parameter: $(_MANOPT_INDENT)$(pdsns.regularization_parameter)
     * retraction_method:        $(_MANOPT_INDENT)$(pdsns.retraction_method)
     * inverse_retraction_method:$(_MANOPT_INDENT)$(pdsns.inverse_retraction_method)
+    * inverse_retraction_method_dual:$(_MANOPT_INDENT)$(pdsns.inverse_retraction_method_dual)
     * vector_transport_method:  $(_MANOPT_INDENT)$(pdsns.vector_transport_method)
+    * vector_transport_method_dual:$(_MANOPT_INDENT)$(pdsns.vector_transport_method_dual)
 
     ## Stopping criterion
     $(_in_str(status_summary(pdsns.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(pdsns))"""
     return s
 end
 function Base.show(io::IO, pdmssno::PrimalDualManifoldSemismoothNewtonObjective)
@@ -335,7 +348,7 @@ Given a `cost` function ``\mathcal E: \mathcal M → \overline{ℝ}`` of the for
 \mathcal E(p) = F(p) + G( Λ(p) ),
 ```
 where ``F: \mathcal M → \overline{ℝ}``, ``G: \mathcal N → \overline{ℝ}``,
-and ``Λ: \mathcal M → \mathcal N``. The remaining input parameters are
+and ``Λ: \mathcal M → \mathcal N``.
 """
 
 _doc_PDSN = """
@@ -346,6 +359,11 @@ Perform the Primal-Dual Riemannian semismooth Newton algorithm.
 
 $(_doc_PDSN_formula)
 
+# Input
+
+$(_args(:M))
+$(_args(:M; name = "N", M = "N"))
+$(_args(:f; name = "cost"))
 * `p, X`:                          primal and dual start points ``p∈$(_math(:Manifold))`` and ``X ∈ T_n$(_math(:Manifold, M = "N"))``
 * `m,n`:                           base points on ``$(_math(:Manifold))`` and ``$(_math(:Manifold, M = "N"))``, respectively.
 * `linearized_forward_operator`:   the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
@@ -360,6 +378,7 @@ For more details on the algorithm, see [DiepeveenLellmann:2021](@cite).
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `dual_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
 $(_kwargs([:evaluation, :inverse_retraction_method]))
+$(_kwargs(:inverse_retraction_method; name = "inverse_retraction_method_dual", M = "N", p = "n"))
 * `Λ=missing`: the exact operator, that is required if `Λ(m)=n` does not hold;
   `missing` indicates, that the forward operator is exact.
 * `primal_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
@@ -369,6 +388,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)"))
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
 $(_kwargs(:vector_transport_method))
+$(_kwargs(:vector_transport_method; name = "vector_transport_method_dual", M = "N", p = "n"))
 
 $(_note(:OtherKeywords))
 
@@ -412,7 +432,9 @@ function primal_dual_semismooth_Newton!(
         update_dual_base::Union{Function, Missing} = missing,
         retraction_method::RM = default_retraction_method(M, typeof(p)),
         inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
+        inverse_retraction_method_dual::AbstractInverseRetractionMethod = default_inverse_retraction_method(N, typeof(n)),
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+        vector_transport_method_dual::AbstractVectorTransportMethod = default_vector_transport_method(N, typeof(n)),
         kwargs...,
     ) where {
         mT <: AbstractManifold, nT <: AbstractManifold, TF, P, Q, T,
@@ -442,7 +464,9 @@ function primal_dual_semismooth_Newton!(
         update_dual_base = update_dual_base,
         retraction_method = retraction_method,
         inverse_retraction_method = inverse_retraction_method,
+        inverse_retraction_method_dual = inverse_retraction_method_dual,
         vector_transport_method = vector_transport_method,
+        vector_transport_method_dual = vector_transport_method_dual,
     )
     dpdsn = decorate_state!(pdsn; kwargs...)
     solve!(tmp, dpdsn)
@@ -464,7 +488,7 @@ function step_solver!(tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonS
     if !ismissing(pdsn.update_dual_base)
         n_old = deepcopy(pdsn.n)
         pdsn.n = pdsn.update_dual_base(tmp, pdsn, iter)
-        pdsn.X = vector_transport_to(N, n_old, pdsn.X, pdsn.n, pdsn.vector_transport_method)
+        pdsn.X = vector_transport_to(N, n_old, pdsn.X, pdsn.n, pdsn.vector_transport_method_dual)
     end
     return pdsn
 end
@@ -535,7 +559,7 @@ function construct_primal_dual_residual_vector(
     # (2) if p.Λ is missing, assume that n = Λ(m) and do not PT
     noPT = ismissing(get_objective(obj, true).Λ!)
     ξ_update = noPT ? ξ_update : vector_transport_to(
-            N, forward_operator(tmp, pdsn.m), ξ_update, pdsn.n, pdsn.vector_transport_method,
+            N, forward_operator(tmp, pdsn.m), ξ_update, pdsn.n, pdsn.vector_transport_method_dual,
         )
     # (3) the dual update
     ξ_update = get_dual_prox(
@@ -585,7 +609,7 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
     noPT = ismissing(get_objective(obj, true).Λ!)
 
     η₁ = noPT ? η₁ : vector_transport_to(
-            N, forward_operator(tmp, pdsn.m), η₁, pdsn.n, pdsn.vector_transport_method
+            N, forward_operator(tmp, pdsn.m), η₁, pdsn.n, pdsn.vector_transport_method_dual
         )
     # (3) to the dual update
     η₁ = pdsn.X + pdsn.dual_stepsize * η₁
@@ -593,9 +617,8 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
     ∂X₁₁ = spzeros(dims, dims)
     ∂X₂₁ = spzeros(dualdims, dims)
 
-    Mdims = prod(manifold_dimension(M))
-    for j in 1:Mdims
-        eⱼ = zeros(Mdims)
+    for j in 1:dims
+        eⱼ = zeros(dims)
         eⱼ[j] = 1
         Θⱼ = get_vector(M, pdsn.p, eⱼ, Θ)
         Gⱼ = differential_shortest_geodesic_endpoint(M, pdsn.m, pdsn.p, 1 / 2, Θⱼ)
@@ -619,11 +642,10 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
         ∂X₁₁[:, j] = sp_∂X₁₁j
 
         Mⱼ = differential_log_argument(M, pdsn.m, pdsn.p, Θⱼ)
-        noPT = ismissing(get_objective(obj, true).Λ!)
         Kⱼ = pdsn.dual_stepsize * (
             noPT ? linearized_forward_operator(tmp, pdsn.m, Mⱼ, pdsn.n) : vector_transport_to(
                     N, forward_operator(tmp, pdsn.m), linearized_forward_operator(tmp, pdsn.m, Mⱼ, pdsn.n), pdsn.n,
-                    pdsn.vector_transport_method,
+                    pdsn.vector_transport_method_dual,
                 )
         )
         Jⱼ = get_differential_dual_prox(tmp, pdsn.n, pdsn.dual_stepsize, η₁, Kⱼ)
@@ -638,9 +660,8 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
     ∂X₁₂ = spzeros(dims, dualdims)
     ∂X₂₂ = spzeros(dualdims, dualdims)
 
-    Ndims = prod(manifold_dimension(N))
-    for j in 1:Ndims
-        eⱼ = zeros(Ndims)
+    for j in 1:dualdims
+        eⱼ = zeros(dualdims)
         eⱼ[j] = 1
         Ξⱼ = get_vector(N, pdsn.n, eⱼ, Ξ)
         hⱼ = -pdsn.primal_stepsize * adjoint_linearized_operator(tmp, pdsn.m, pdsn.n, Ξⱼ) # officially ∈ T*mM, but embedded in TmM

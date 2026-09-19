@@ -137,7 +137,7 @@ There are basically only four methods we need to implement for our solver
 - `initialize_solver!(mp, rws)` which initializes the solver before the first iteration
 - `step_solver!(mp, rws, k)` which implements the `k`th iteration, where `k` is given to you as the third parameter
 - `get_iterate(rws)` which accesses the iterate from other places in the solver
-- `get_solver_result(rws)` returning the solvers final (best) point we reached.
+- `get_solver_result(rws)` returning the solver's final (best) point we reached.
   By default this would return the last iterate `rws.p` (or more precisely calls [`get_iterate`](@ref)), but since we randomly walk and remember
     our best point in `q`, this has to return `rws.q`.
 
@@ -149,12 +149,10 @@ You implement these by multiple dispatch on the types after importing said funct
 import Manopt: initialize_solver!, step_solver!, get_iterate, get_solver_result
 ```
 
-The state we defined before has two fields where we use the common names used in `Manopt.jl`,
-that is the [`StoppingCriterion`](@ref) is usually in `stop` and the iterate in `p`.
-If your choice is different, you need to reimplement
-
-- `stop_solver!(mp, rws, k)` to determine whether or not to stop after the `k`th iteration.
-- `get_iterate(rws)` to access the current iterate
+The state we defined before uses the field names common in `Manopt.jl`, that is the
+[`StoppingCriterion`](@ref) is stored in `stop` and the iterate in `p`.
+A default [`get_stopping_criterion`](@ref) relies on the stopping criterion being in `stop`. It has to be overwritten for solvers not following this naming scheme.
+Furthermore the function `stop_solver!(mp, rws, k)` used to determine whether or not to stop after the `k`th iteration relies on the stopping criterion being stored at that place.
 
 We recommend to follow the general scheme with the `stop` field.
 `Manopt.jl` already provides a library of available [stopping criteria](../commons/stopping_criteria.md) you can use.
