@@ -328,11 +328,12 @@ $(_tex(:hat, "η_k")) = - B_k $(_tex(:widehat, "$(_tex(:grad))f(p_k)")),
 """
     QuasiNewtonPreconditioner{F}
 
-A preconditioner for the quasi-Newton direction updates: for a
-[`QuasiNewtonMatrixDirectionUpdate`](@ref) it is applied to the gradient before the matrix is
-applied (or the linear system is solved), for a
-[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) it takes the place of the initial operator
-inside the two-loop recursion, see [`quasi_Newton`](@ref).
+A preconditioner for the quasi-Newton direction updates, see [`quasi_Newton`](@ref).
+
+For a [`QuasiNewtonMatrixDirectionUpdate`](@ref) it is applied to the gradient before the matrix is
+applied (or the linear system is solved).
+For a [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) it takes the place of the initial operator
+inside the two-loop recursion.
 
 # Fields
 

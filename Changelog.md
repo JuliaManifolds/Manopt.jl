@@ -149,6 +149,7 @@ This is yet another round of review – maybe also introducing a few test tools
 * A stochastic gradient given as a single in-place function raises a clear error.
 * a range of `nothing` means the default range in all accessors of vector functions, cached constrained objectives and a `ConstrainedManoptProblem`.
 * `difference_of_convex_algorithm` and `difference_of_convex_proximal_point` build their default sub state also when only a `sub_problem=` is given.
+* `ConjugateResidualState` accepts a decorated objective, so `sub_kwargs=` of `interior_point_Newton` can add for example a counter.
 
 ## [0.6.7] September 9, 2026
 

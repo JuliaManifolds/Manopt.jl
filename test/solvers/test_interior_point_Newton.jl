@@ -103,6 +103,13 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             sub_kwargs = (record = [:Iterate],),
         )
         @test q_sub == q
+        # a decorated sub objective, here with a counter, gives the same result
+        q_sub2 = interior_point_Newton(
+            M, f, grad_f, Hess_f, p_0;
+            g = g, grad_g = grad_g, Hess_g = Hess_g, stopping_criterion = sc,
+            sub_kwargs = (count = [:Cost],),
+        )
+        @test q_sub2 == q
 
         # (b) inplace call
         q2 = copy(M, p_0)
