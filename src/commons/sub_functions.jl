@@ -180,7 +180,7 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
     Xt = zero_vector(M, p)
     # First Summand of Hess L
     Y1, Y2 = submanifold_components(N, Y)
-    copyto!(M, Y1, get_hessian(M, cKKTvfJ.cmo, p, Xp)) # Hess f
+    get_hessian!(M, Y1, cKKTvfJ.cmo, p, Xp) # Hess f
     # Build the rest iteratively
     for i in 1:m #ineq
         get_hess_inequality_constraint!(M, Xt, cKKTvfJ.cmo, p, Xp, i)
@@ -263,12 +263,12 @@ where an additional parameter ``u`` is used as well as a smoothing technique,
 for example [`LogarithmicSumOfExponentials`](@ref) or [`LinearQuadraticHuber`](@ref)
 to obtain a smooth cost function. This struct is also a functor `(M,p) -> v` of the cost ``v``.
 
-## Fields
+# Fields
 
 * `ρ::T`, `u::T`: as described in the mathematical formula.
 * `co::CO`:     the original cost
 
-## Constructor
+# Constructor
 
     ExactPenaltyCost(co::ConstrainedManifoldObjective, ρ, u; smoothing=LinearQuadraticHuber())
 """
@@ -278,17 +278,21 @@ mutable struct ExactPenaltyCost{S, CO, T} <: AbstractConstrainedFunction{CO, T}
     u::T
 end
 function ExactPenaltyCost(
-        co::ConstrainedManifoldObjective, ρ::T, u::T; smoothing::S = LinearQuadraticHuber()
-    ) where {T, S <: SmoothingTechnique}
-    return ExactPenaltyCost{S, typeof(co), T}(co, ρ, u)
+        co::Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective{<:ConstrainedManifoldObjective}}, ρ::Real, u::Real;
+        smoothing::S = LinearQuadraticHuber(),
+    ) where {S <: SmoothingTechnique}
+    ρ_, u_ = promote(float(ρ), float(u))
+    return ExactPenaltyCost{S, typeof(co), typeof(ρ_)}(co, ρ_, u_)
 end
 function (L::ExactPenaltyCost{<:LogarithmicSumOfExponentials})(M::AbstractManifold, p)
     gp = get_inequality_constraint(M, L.co, p, :)
     hp = get_equality_constraint(M, L.co, p, :)
     m = length(gp)
     n = length(hp)
-    cost_ineq = (m > 0) ? sum(L.u .* log.(1 .+ exp.(gp ./ L.u))) : 0.0
-    cost_eq = (n > 0) ? sum(L.u .* log.(exp.(hp ./ L.u) .+ exp.(-hp ./ L.u))) : 0.0
+    # log(1 + e^t) = max(t, 0) + log(1 + e^{-|t|}), to reduce chance of overflow
+    cost_ineq = (m > 0) ? sum(max.(gp, 0) .+ L.u .* log1p.(exp.(-abs.(gp) ./ L.u))) : 0.0
+    # log(e^t + e^{-t}) = |t| + log(1 + e^{-2|t|}), to reduce chance of overflow
+    cost_eq = (n > 0) ? sum(abs.(hp) .+ L.u .* log1p.(exp.(-2 .* abs.(hp) ./ L.u))) : 0.0
     return get_cost(M, L.co, p) + (L.ρ) * (cost_ineq + cost_eq)
 end
 function (L::ExactPenaltyCost{<:LinearQuadraticHuber})(M::AbstractManifold, p)
@@ -313,12 +317,12 @@ This struct is also a functor in both formats
 * `(M, p) -> X` to compute the gradient in allocating fashion.
 * `(M, X, p)` to compute the gradient in an in-place fashion.
 
-## Fields
+# Fields
 
 * `ρ::T`, `u::T` see [`ExactPenaltyCost`](@ref).
 * `co::CO` the [`ConstrainedManifoldObjective`](@ref)
 
-## Constructor
+# Constructor
 
     ExactPenaltyGrad(co::ConstrainedManifoldObjective, ρ, u; smoothing=LinearQuadraticHuber())
 """
@@ -328,9 +332,11 @@ mutable struct ExactPenaltyGrad{S, CO, T} <: AbstractConstrainedFunction{CO, T}
     u::T
 end
 function ExactPenaltyGrad(
-        co::ConstrainedManifoldObjective, ρ::T, u::T; smoothing::S = LinearQuadraticHuber()
-    ) where {T, S <: SmoothingTechnique}
-    return ExactPenaltyGrad{S, typeof(co), T}(co, ρ, u)
+        co::Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective{<:ConstrainedManifoldObjective}}, ρ::Real, u::Real;
+        smoothing::S = LinearQuadraticHuber(),
+    ) where {S <: SmoothingTechnique}
+    ρ_, u_ = promote(float(ρ), float(u))
+    return ExactPenaltyGrad{S, typeof(co), typeof(ρ_)}(co, ρ_, u_)
 end
 # Default (functions constraints): evaluate all gradients
 # Since for LogExp the pre-factor c seems to not be zero, this might be the best way to go here
@@ -347,14 +353,12 @@ function (EG::ExactPenaltyGrad{<:LogarithmicSumOfExponentials})(M::AbstractManif
     get_gradient!(M, X, EG.co, p)
     c = 0
     # add gradient of the components of g
-    (m > 0) && (c = EG.ρ .* exp.(gp ./ EG.u) ./ (1 .+ exp.(gp ./ EG.u)))
+    # e^t / (1 + e^t) = 1 / (1 + e^{-t}), to reduce chance of overflow
+    (m > 0) && (c = EG.ρ ./ (1 .+ exp.(-gp ./ EG.u)))
     (m > 0) && (X .+= sum(get_grad_inequality_constraint(M, EG.co, p, :) .* c))
     # add gradient of the components of h
-    (n > 0) && (
-        c =
-            EG.ρ .* (exp.(hp ./ EG.u) .- exp.(-hp ./ EG.u)) ./
-            (exp.(hp ./ EG.u) .+ exp.(-hp ./ EG.u))
-    )
+    # (e^t - e^{-t}) / (e^t + e^{-t}) = tanh(t), to reduce chance of overflow
+    (n > 0) && (c = EG.ρ .* tanh.(hp ./ EG.u))
     (n > 0) && (X .+= sum(get_grad_equality_constraint(M, EG.co, p, :) .* c))
     return X
 end
@@ -457,7 +461,9 @@ function Base.show(io::IO, KKTvf::KKTVectorField)
 end
 function status_summary(KKTvf::KKTVectorField; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvf))
-    return "The KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvf.cmo; context = context))"
+    return """
+    The KKT vector field for the constrained objective
+    $(_in_str(status_summary(KKTvf.cmo; context = context); indent = 1))"""
 end
 
 @doc """
@@ -541,7 +547,9 @@ function Base.show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
 end
 function status_summary(KKTvfJ::KKTVectorFieldJacobian; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvfJ))
-    return "The Jacobian of the KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfJ.cmo; context = context))"
+    return """
+    The Jacobian of the KKT vector field for the constrained objective
+    $(_in_str(status_summary(KKTvfJ.cmo; context = context); indent = 1))"""
 end
 
 @doc """
@@ -624,7 +632,9 @@ function Base.show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
 end
 function status_summary(KKTvfAdJ::KKTVectorFieldAdjointJacobian; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvfAdJ))
-    return "The adjoint Jacobian of the KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfAdJ.cmo; context = context))"
+    return """
+    The adjoint Jacobian of the KKT vector field for the constrained objective
+    $(_in_str(status_summary(KKTvfAdJ.cmo; context = context); indent = 1))"""
 end
 
 @doc """
@@ -663,7 +673,9 @@ function Base.show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
 end
 function status_summary(KKTvfNSq::KKTVectorFieldNormSq; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvfNSq))
-    return "The squared norm of the KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfNSq.cmo; context = context))"
+    return """
+    The squared norm of the KKT vector field for the constrained objective
+    $(_in_str(status_summary(KKTvfNSq.cmo; context = context); indent = 1))"""
 end
 
 @doc """
@@ -737,7 +749,9 @@ function Base.show(io::IO, KKTvfNSqGrad::KKTVectorFieldNormSqGradient)
 end
 function status_summary(KKTvfNSqGrad::KKTVectorFieldNormSqGradient; context::Symbol = :default)
     _is_inline(context) && (return repr(KKTvfNSqGrad))
-    return "The gradient of the squared norm of the KKT vector field for the constrained objective\n$(_MANOPT_INDENT)$(status_summary(KKTvfNSqGrad.cmo; context = context))"
+    return """
+    The gradient of the squared norm of the KKT vector field for the constrained objective
+    $(_in_str(status_summary(KKTvfNSqGrad.cmo; context = context); indent = 1))"""
 end
 
 @doc """

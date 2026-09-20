@@ -33,7 +33,10 @@ using Test
         return_state = true,
     )
 
-    @test rosenbrock(M, get_iterate(x_opt)) < 1.503084
+    # the run stops on the gradient norm, so assert that rather than a recorded cost
+    @test has_converged(x_opt)
+    @test norm(M, get_iterate(x_opt), get_gradient(x_opt)) < 1.0e-6
+    @test rosenbrock(M, get_iterate(x_opt)) < rosenbrock(M, x0)
     @test startswith(sprint(show, ls_hz), "LineSearchesStepsize(HagerZhang")
     @test startswith(Manopt.status_summary(ls_hz), "A line search step size wrapper for LineSearches.jl")
 
@@ -43,11 +46,12 @@ using Test
     )
     mp = DefaultManoptProblem(M, mgo)
     @test get_last_stepsize(mp, x_opt, 1) > 0.0
+    @test get_last_stepsize(mp, x_opt, 1) == ls_hz.last_stepsize
 
-    # this tests catching LineSearchException
+    # a search direction that is not finite makes the line search throw
     @test_throws LineSearchException ls_hz(mp, x_opt, 1, NaN * zero_vector(M, x0))
 
-    # test rethrowing errors
+    # an error from the cost function is passed on unchanged
     function rosenbrock_throw(::AbstractManifold, x)
         return error("test exception")
     end

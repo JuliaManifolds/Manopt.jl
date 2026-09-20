@@ -41,13 +41,15 @@ function check_differential(
         error::Symbol = :none,
         window = nothing,
     )
-    Xn = X ./ norm(M, p, X) # normalize tangent direction
+    n = norm(M, p, X)
+    iszero(n) && throw(ArgumentError("The tangent vector X has to be nonzero to check the $(name)."))
+    Xn = X ./ n # normalize tangent direction
     # function for the directional derivative
     #
     T = exp10.(log_range)
     # points `p_i` to evaluate the error function at
     points = map(t -> ManifoldsBase.retract_fused(M, p, Xn, t, retraction_method), T)
-    costs = [F(M, pi) for pi in points]
+    costs = [F(M, q) for q in points]
     # linearized
     linearized = map(t -> F(M, p) + t * dF(M, p, Xn), T)
     return prepare_check_result(
@@ -283,15 +285,17 @@ function check_Hessian(
     end
     #
     # slope verification
-    X_n = X ./ norm(M, p, X) # normalize tangent direction
-    Hessian_n = Hessian ./ norm(M, p, X)
+    n = norm(M, p, X)
+    iszero(n) && throw(ArgumentError("The tangent vector X has to be nonzero to check the Hessian."))
+    X_n = X ./ n # normalize tangent direction
+    Hessian_n = Hessian ./ n
     # function for the directional derivative
     #
     T = exp10.(log_range)
     # points `p_i` to evaluate error function at
     points = map(t -> ManifoldsBase.retract_fused(M, p, X_n, t, retraction_method), T)
     # corresponding costs
-    costs = [f(M, pi) for pi in points]
+    costs = [f(M, q) for q in points]
     # linearized
     linearized = map(
         t ->

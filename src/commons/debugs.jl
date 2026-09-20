@@ -44,7 +44,7 @@ end
 debug for the amount of change of the iterate (stored in `get_iterate` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
-# Keyword parameters
+# Keyword arguments
 
 * `storage=`[`StoreStateAction`](@ref)`( [:Iterate] )`: storage of the previous iterate
 * `prefix="Last Change: "`: prefix of the debug output (ignored if you set `format`)
@@ -106,7 +106,7 @@ print the current cost function value, see [`get_cost`](@ref).
 # Constructors
     DebugCost()
 
-# Parameters
+# Keyword arguments
 
 * `format="f(x): %f"`: format to print the output (`"current cost: %f"` when `long=true`)
 * `io=stdout`: default stream to print the debug to.
@@ -166,8 +166,9 @@ function status_summary(di::DebugDivider; context::Symbol = :default)
     # inline and default
     return "A DebugAction printing the String “$(escape_string(di.divider))” as a divider"
 end
-# A global constant for empty debugs
-const _EMPTY_DIVIDER = DebugDivider("")
+# A global constant for empty debugs; `devnull` because it never prints and, unlike `stdout`,
+# survives being serialized into the precompiled image
+const _EMPTY_DIVIDER = DebugDivider(""; io = devnull)
 
 """
     DebugDualChange(; kwargs...)
@@ -220,7 +221,7 @@ function (d::DebugDualChange)(
     return d.storage(tmp, apds, k)
 end
 function show(io::IO, ddc::DebugDualChange)
-    return print(io, "DebugDualChange(; io = ", ddc.io, ", format=\"$(escape_string(ddc.format))\")")
+    return print(io, "DebugDualChange(; format=\"$(escape_string(ddc.format))\")")
 end
 function status_summary(ddc::DebugDualChange; context::Symbol = :default)
     (context === :short) && return repr(ddc)
@@ -244,6 +245,7 @@ should at least record `:Iterate`, `:X` and `:n`.
 * `format="\$prefix%s"`: format to print the dual residual, using the `prefix` by default
 * `prefix="Dual Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
+* `at_init=false`: whether to print also at initialization
 """
 mutable struct DebugDualResidual <: DebugAction
     io::IO
@@ -286,7 +288,7 @@ function (d::DebugDualResidual)(
     return d.storage(tmp, apds, k)
 end
 function show(io::IO, d::DebugDualResidual)
-    return print(io, "DebugDualResidual(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
+    return print(io, "DebugDualResidual(; format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
 end
 function status_summary(d::DebugDualResidual; context::Symbol = :default)
     (context === :short) && return repr(d)
@@ -336,7 +338,7 @@ Print the dual variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set to display the field `X` of the state.
 """
-DebugDualIterate(opts...; kwargs...) = DebugEntry(:X, opts...; kwargs...)
+DebugDualIterate(; kwargs...) = DebugEntry(:X; kwargs...)
 
 """
     DebugDualBaseIterate(; kwargs...)
@@ -396,14 +398,15 @@ end
 function (d::DebugEntryChange)(
         p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
-    if k == 0
-        # on init if field not present -> generate
-        !has_storage(d.storage, d.field) && d.storage(p, st, k)
+    if k <= 0
+        # initialization (`k = 0`) and update-only calls (`k < 0`) do not print;
+        # on init only generate the value if the field is not stored yet
+        (k < 0 || !has_storage(d.storage, d.field)) && d.storage(p, st, k)
         return nothing
     end
     x = get_storage(d.storage, d.field)
     v = d.distance(p, st, getproperty(st, d.field), x)
-    (k > 0) && Printf.format(d.io, Printf.Format(d.format), v)
+    Printf.format(d.io, Printf.Format(d.format), v)
     d.storage(p, st, k)
     return nothing
 end
@@ -440,18 +443,18 @@ Print the primal base variable by using [`DebugEntry`](@ref),
 see their constructors for detail.
 This method is further set to display the field `m` of the state.
 """
-DebugPrimalBaseIterate(opts...; kwargs...) = DebugEntry(:m, opts...; kwargs...)
+DebugPrimalBaseIterate(; kwargs...) = DebugEntry(:m; kwargs...)
 
 """
-    DebugPrimalBaseChange(opts...; prefix="Primal Base Change:", kwargs...)
+    DebugPrimalBaseChange(; prefix="Primal Base Change:", kwargs...)
 
 Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on the field `m` of the state.
 """
-function DebugPrimalBaseChange(opts...; prefix = "Primal Base Change:", kwargs...)
+function DebugPrimalBaseChange(; prefix = "Primal Base Change:", kwargs...)
     return DebugEntryChange(
-        :m, (p, o, x, y) -> distance(get_manifold(p, 1), x, y),
-        opts...; prefix = prefix, kwargs...,
+        :m, (p, o, x, y) -> distance(get_manifold(p, 1), x, y);
+        prefix = prefix, kwargs...,
     )
 end
 
@@ -500,6 +503,7 @@ end
 function (d::DebugFeasibility)(
         mp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
+    (k < (d.at_init ? 0 : 1)) && return nothing
     s = ""
     cmo = get_objective(mp, true) #Unwrap to get the constrained objective.
     p = get_iterate(st)
@@ -522,7 +526,7 @@ function (d::DebugFeasibility)(
         (f === :TotalEq) && (s *= "$(sum(abs.(eqc_nz); init = 0.0))")
         (f === :TotalInEq) && (s *= "$(sum(ineqc_pos; init = 0.0))")
     end
-    print(d.io, (k >= (d.at_init ? 0 : 1)) ? s : "")
+    print(d.io, s)
     return nothing
 end
 function show(io::IO, d::DebugFeasibility)
@@ -539,7 +543,7 @@ end
 @doc """
     DebugIfEntry <: DebugAction
 
-Issue a warning, info, or error if a certain field does _not_ pass a the `check`.
+Issue a warning, info, or error if a certain field does _not_ pass the `check`.
 
 The `message` is printed in this case. If it contains a `@printf` argument identifier,
 that one is filled with the value of the `field`.
@@ -590,7 +594,7 @@ end
 function status_summary(d::DebugIfEntry; context::Symbol = :default)
     (context === :short) && (return repr(d))
     # Inline and default
-    return "A DebugAction printing the entry :$(d.field) of the solver state if $(d.check) of that field is true, in format “$(escape_string(d.msg))” as $(d.type)"
+    return "A DebugAction printing the entry :$(d.field) of the solver state if that field does not pass $(d.check), in format “$(escape_string(d.msg))” as $(d.type)"
 end
 
 @doc """
@@ -637,7 +641,7 @@ end
 debug for the amount of change of the gradient (stored in `get_gradient` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
-# Keyword parameters
+# Keyword arguments
 
 * `storage=`[`StoreStateAction`](@ref)`( [:Iterate, :Gradient] )`: storage of the action for previous data
 * `prefix="Last Change: "`: prefix of the debug output (ignored if you set `format`)
@@ -790,7 +794,7 @@ end
 
     DebugIteration()
 
-# Keyword parameters
+# Keyword arguments
 
 * `format="# %-6d"`: format to print the output
 * `io=stdout`: default stream to print the debug to.
@@ -909,6 +913,7 @@ with the keywords
 * `format="\$prefix%s"`: format to print the primal dual residual, using the `prefix` by default
 * `prefix="PD Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
+* `at_init=false`: whether to print also at initialization
 """
 mutable struct DebugPrimalDualResidual <: DebugAction
     io::IO
@@ -947,7 +952,7 @@ function (d::DebugPrimalDualResidual)(
     return d.storage(tmp, apds, k)
 end
 function show(io::IO, d::DebugPrimalDualResidual)
-    return print(io, "DebugPrimalDualResidual(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
+    return print(io, "DebugPrimalDualResidual(; format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
 end
 function status_summary(d::DebugPrimalDualResidual; context::Symbol = :default)
     (context === :short) && return repr(d)
@@ -955,12 +960,12 @@ function status_summary(d::DebugPrimalDualResidual; context::Symbol = :default)
 end
 
 """
-    DebugPrimalIterate(opts...;kwargs...)
+    DebugPrimalIterate(; kwargs...)
 
 Print the primal variable by using [`DebugIterate`](@ref),
 see their constructors for detail.
 """
-DebugPrimalIterate(opts...; kwargs...) = DebugIterate(opts...; kwargs...)
+DebugPrimalIterate(; kwargs...) = DebugIterate(; kwargs...)
 
 
 @doc """
@@ -980,6 +985,7 @@ should at least record `:Iterate`, `:X` and `:n`.
 * `format="\$prefix%s"`: format to print the primal residual, using the `prefix` by default
 * `prefix="Primal Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
+* `at_init=false`: whether to print also at initialization
 """
 mutable struct DebugPrimalResidual <: DebugAction
     io::IO
@@ -1020,7 +1026,7 @@ function (d::DebugPrimalResidual)(
     return d.storage(tmp, apds, k)
 end
 function show(io::IO, d::DebugPrimalResidual)
-    return print(io, "DebugPrimalResidual(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
+    return print(io, "DebugPrimalResidual(; format=\"$(escape_string(d.format))\", at_init=$(d.at_init))")
 end
 function status_summary(d::DebugPrimalResidual; context::Symbol = :default)
     (context === :short) && return repr(d)
@@ -1049,7 +1055,7 @@ mutable struct DebugProximalParameter <: DebugAction
 end
 function Base.show(io::IO, d::DebugProximalParameter)
     return print(
-        io, "DebugProximalParameter(; io = ", d.io, ", format=\"$(escape_string(d.format))\", at_init = $(d.at_init))",
+        io, "DebugProximalParameter(; format=\"$(escape_string(d.format))\", at_init=$(d.at_init))",
     )
 end
 function status_summary(d::DebugProximalParameter; context::Symbol = :default)
@@ -1092,7 +1098,7 @@ function Base.show(io::IO, ds::DebugStepsize)
 end
 function status_summary(ds::DebugStepsize; context::Symbol = :default)
     (context === :short) && return "(:Stepsize, \"$(escape_string(ds.format))\")"
-    return "A DebugAction that prints the current step size to $(ds.io) in format “$(escape_string(ds.format))”"
+    return "A DebugAction that prints the current step size in format “$(escape_string(ds.format))”"
 end
 
 @doc """
@@ -1157,7 +1163,7 @@ mutable struct DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
     end
 end
 function show(io::IO, d::DebugWarnIfLagrangeMultiplierIncreases)
-    m = (d.status === :No ? "" : ":$(d.status)")
+    m = ":$(d.status)"
     return print(io, "DebugWarnIfLagrangeMultiplierIncreases($(m); tol=$(d.tol))")
 end
 function status_summary(d::DebugWarnIfLagrangeMultiplierIncreases; context::Symbol = :default)
@@ -1233,11 +1239,11 @@ end
     DebugTime()
 
 Measure time and print the intervals. Using `start=true` you can start the timer on construction,
-for example to measure the runtime of an algorithm overall (adding)
+for example to measure the runtime of an algorithm overall.
 
 The measured time is rounded using the given `time_accuracy` and printed after [canonicalization](https://docs.julialang.org/en/v1/stdlib/Dates/#Dates.canonicalize).
 
-# Keyword parameters
+# Keyword arguments
 
 * `io=stdout`:             default stream to print the debug to.
 * `format="\$prefix %s"`:   format to print the output, where `%s` is the canonicalized time.
@@ -1343,6 +1349,7 @@ end
 function (d::DebugWarnIfCostIncreases)(
         p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
+    (k < 0) && (return nothing)
     if d.status !== :No
         cost = get_cost(p, get_iterate(st))
         if cost > d.old_cost + d.tol
@@ -1368,7 +1375,7 @@ function (d::DebugWarnIfCostIncreases)(
     return nothing
 end
 function show(io::IO, d::DebugWarnIfCostIncreases)
-    m = (d.status === :No ? "" : ":$(d.status)")
+    m = ":$(d.status)"
     return print(io, "DebugWarnIfCostIncreases($(m); tol=$(d.tol))")
 end
 function status_summary(d::DebugWarnIfCostIncreases; context::Symbol = :default)
@@ -1398,6 +1405,7 @@ end
 function (d::DebugWarnIfCostNotFinite)(
         p::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
+    (k < 0) && (return nothing)
     if d.status !== :No
         cost = get_cost(p, get_iterate(st))
         if !isfinite(cost)
@@ -1451,6 +1459,7 @@ end
 function (d::DebugWarnIfFieldNotFinite)(
         ::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
+    (k < 0) && (return nothing)
     if d.status !== :No
         if d.field == :Iterate
             v = get_iterate(st)
@@ -1517,6 +1526,7 @@ end
 function (d::DebugWarnIfGradientNormTooLarge)(
         mp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
+    (k < 0) && (return nothing)
     if d.status !== :No
         M = get_manifold(mp)
         p = get_iterate(st)
@@ -1536,8 +1546,7 @@ function (d::DebugWarnIfGradientNormTooLarge)(
     return nothing
 end
 function show(io::IO, d::DebugWarnIfGradientNormTooLarge)
-    # only print status if active
-    m = (d.status === :No ? "" : ", :$(d.status)")
+    m = ", :$(d.status)"
     return print(io, "DebugWarnIfGradientNormTooLarge($(d.factor)$(m))")
 end
 function status_summary(d::DebugWarnIfGradientNormTooLarge; context::Symbol = :default)
@@ -1573,7 +1582,7 @@ end
 function (d::DebugWarnIfStepsizeCollapsed)(
         amp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
     )
-    (k == 0) && (return nothing)
+    (k < 1) && (return nothing)
     if d.status !== :No
         if get_last_stepsize(amp, st, k) ≤ d.stop_when_stepsize_less
             @warn "Backtracking stopped because the stepsize fell below the threshold $(d.stop_when_stepsize_less)."
@@ -1586,7 +1595,7 @@ function (d::DebugWarnIfStepsizeCollapsed)(
     return nothing
 end
 function show(io::IO, d::DebugWarnIfStepsizeCollapsed)
-    m = (d.status === :No ? "" : ", :$(d.status)")
+    m = ", :$(d.status)"
     return print(io, "DebugWarnIfStepsizeCollapsed($(d.stop_when_stepsize_less)$(m))")
 end
 function status_summary(d::DebugWarnIfStepsizeCollapsed; context::Symbol = :default)
@@ -1683,9 +1692,9 @@ function DebugFactory(a::Vector{<:Any})
     for d in b
         offset = d.first === :BeforeIteration ? 0 : 1
         debug = DebugGroupFactory(d.second; activation_offset = offset)
-        (:WhenActive in a) && (debug = DebugWhenActive(debug))
+        any(x -> x === :WhenActive, a) && (debug = DebugWhenActive(debug))
         # Add DebugEvery to all but Start and Stop
-        (!(d.first in [:Start, :Stop]) && (ae > 0)) && (debug = DebugEvery(debug, ae; activation_offset = offset))
+        (!(d.first === :Start || d.first === :Stop) && (ae > 0)) && (debug = DebugEvery(debug, ae; activation_offset = offset))
         dictionary[d.first] = debug
     end
     return dictionary
@@ -1698,12 +1707,12 @@ Generate a [`DebugGroup`](@ref) of [`DebugAction`](@ref)s. The following rules a
 
 1. Any `Symbol` is passed to [`DebugActionFactory`](@ref DebugActionFactory(::Symbol))
 2. Any `(Symbol, String)` generates similar actions as in 1., but the string is used for `format=`,
-   see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,String}))
+   see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,Any}))
 3. Any `String` is passed to [`DebugActionFactory`](@ref)
 4. Any `Function` generates a [`DebugCallback`](@ref).
 5. Any [`DebugAction`](@ref) is included as is.
 
-If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of these is build.
+If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of these is built.
 
 If any integers are present, the last of these is used to wrap the group in a
 [`DebugEvery`](@ref)`(k)`.
@@ -1742,7 +1751,7 @@ create a [`DebugAction`](@ref) where
 * a [`DebugAction`](@ref) is passed through
 * a `Symbol` creates a [`DebugEntry`](@ref) of that symbol, with the exceptions
   listed in [`DebugActionFactory`](@ref DebugActionFactory(::Symbol)).
-* a `Tuple{Symbol,String}` creates a [`DebugEntry`](@ref) of that symbol where the String specifies the format.
+* a `Tuple{Symbol,Any}` creates a [`DebugEntry`](@ref) of that symbol, where the second entry specifies the format.
 * a `<:Function` creates a [`DebugCallback`](@ref) with the function as callback.
 """
 function DebugActionFactory end
@@ -1775,7 +1784,7 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:IterativeTime` creates a [`DebugTime`](@ref)`(; mode=:Iterative)`
-* `:ProxParameter` creates a [`DebugProximalParameter`](@ref)`()`
+* `:ProxParameter` or `:ProximalParameter` creates a [`DebugProximalParameter`](@ref)`()`
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:Stop` creates a [`DebugStoppingCriterion`](@ref)`()`
 * `:Time` creates a [`DebugTime`](@ref)
@@ -1799,7 +1808,7 @@ function DebugActionFactory(d::Symbol)
     (d == :Iterate) && return DebugIterate()
     (d == :Iteration) && return DebugIteration()
     (d == :Feasibility) && return DebugFeasibility()
-    (d == :ProxParameter) && return DebugProximalParameter()
+    (d in (:ProxParameter, :ProximalParameter)) && return DebugProximalParameter()
     (d == :Stepsize) && return DebugStepsize()
     (d == :Stop) && return DebugStoppingCriterion()
     (d == :WarnStepsize) && return DebugWarnIfStepsizeCollapsed()
@@ -1817,7 +1826,7 @@ function DebugActionFactory(d::Symbol)
     return DebugEntry(d)
 end
 """
-    DebugActionFactory(t::Tuple{Symbol,String})
+    DebugActionFactory(t::Tuple{Symbol,Any})
 
 Convert certain Symbols in the `debug=[ ... ]` vector to [`DebugAction`](@ref)s
 Currently the following ones are done, where the string in `t[2]` is passed as the
@@ -1832,7 +1841,7 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 * `:GradientNorm` creates a [`DebugGradientNorm`](@ref)
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
-* `:ProxParameter` creates a [`DebugProximalParameter`](@ref)
+* `:ProxParameter` or `:ProximalParameter` creates a [`DebugProximalParameter`](@ref)
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:Stop` creates a [`DebugStoppingCriterion`](@ref), where `t[2]` is used as its `prefix` and not as a format
 * `:Time` creates a [`DebugTime`](@ref)
@@ -1852,7 +1861,7 @@ function DebugActionFactory(t::Tuple{Symbol, Any})
     (t[1] == :Iteration) && return DebugIteration(; format = t[2])
     (t[1] == :Iterate) && return DebugIterate(; format = t[2])
     (t[1] == :IterativeTime) && return DebugTime(; mode = :Iterative, format = t[2])
-    (t[1] == :ProxParameter) && return DebugProximalParameter(; format = t[2])
+    (t[1] in (:ProxParameter, :ProximalParameter)) && return DebugProximalParameter(; format = t[2])
     (t[1] == :Stepsize) && return DebugStepsize(; format = t[2])
     (t[1] == :Stop) && return DebugStoppingCriterion(t[2])
     (t[1] == :Time) && return DebugTime(; format = t[2])

@@ -2,7 +2,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
 
 @testset "Generic Parameters" begin
     # test one internal fallback
-    Manopt.get_parameter(:None, Val(:default)) === nothing
+    @test Manopt.get_parameter(Val(:None), Val(:default)) === nothing
     @test_logs (:info, "Setting the `Manopt.jl` parameter :TestValue to Å.") Manopt.set_parameter!(
         :TestValue, "Å"
     )

@@ -1,7 +1,7 @@
 @doc """
     CyclicProximalPointState <: AbstractManoptSolverState
 
-stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
+State for the [`cyclic_proximal_point`](@ref) solver.
 
 # Fields
 
@@ -16,7 +16,7 @@ $(_fields(:stopping_criterion; name = "stop"))
 
     CyclicProximalPointState(M::AbstractManifold; kwargs...)
 
-Generate the options
+Generate the state
 
 ## Input
 
@@ -81,20 +81,17 @@ function Base.show(io::IO, cpps::CyclicProximalPointState)
 end
 function status_summary(cpps::CyclicProximalPointState; context::Symbol = :default)
     (context === :short) && return repr(cpps)
-    i = get_count(cpps, :Iterations)
     (context === :inline) && return "A solver state for the cyclic proximal point algorithm$(_iteration_suffix(cpps))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(cpps.stop) ? "Yes" : "No"
     as = _callbacks_summary(cpps)
     s = """
     # Solver state for `Manopt.jl`s Cyclic Proximal Point Algorithm
-    $Iter
+    $(_iterations_str(cpps))
     ## Parameters$(as)
     * evaluation order of the proximal maps: :$(cpps.order_type)
 
     ## Stopping criterion
     $(_in_str(status_summary(cpps.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(cpps))"""
     return s
 end
 

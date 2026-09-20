@@ -277,7 +277,7 @@ get_record(s3)
 
 ## Writing own [`RecordAction`](@ref)s
 
-Let's investigate where we want to count the number of function evaluations, again just to illustrate, since for the gradient this is just one evaluation per iteration.
+Let's look at an example where we want to count the number of cost function evaluations, again just to illustrate, since for the gradient this is just one evaluation per iteration.
 We first define a cost, that counts its own calls.
 
 ```{julia}

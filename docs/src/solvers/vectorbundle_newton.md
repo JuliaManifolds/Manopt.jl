@@ -32,7 +32,7 @@ AffineCovariantStepsize
 
 ```@autodocs
 Modules = [Manopt]
-Pages = ["vectorbundle_newton.jl"]
+Pages = ["solvers/vectorbundle_newton.jl"]
 Order = [:function]
 Public=false
 Private=true

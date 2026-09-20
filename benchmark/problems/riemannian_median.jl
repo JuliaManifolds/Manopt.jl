@@ -17,7 +17,7 @@ const M = Hyperbolic(d)
 const data = let rng = MersenneTwister(42), p = [i == d + 1 ? 1.0 : 0.0 for i in 1:(d + 1)]
     [exp(M, p, σ * rand(rng, M; vector_at = p)) for _ in 1:n]
 end
-const p0 = data[1]
+const p0 = copy(M, data[1])
 # CPPA cycles through all `n` proximal maps per iteration, so a few hundred
 # iterations already are a few 10 000 proximal maps.
 const sc = StopAfterIteration(100) | StopWhenChangeLess(M, 1.0e-9)

@@ -33,7 +33,7 @@ Initialize the state with default values.
 * `α::R=0.0`
 * `β::R=0.0`
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M = "TpM"))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:X; default = _open_link(:rand; M = "TpM")))
 * `warm_start=true`: whether to reuse the values in `X` for the initialization (`true`) or to start from the zero vector (`false`), see the field description above.
 
@@ -55,16 +55,16 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion, C <: Abs
     stop::TStop
     warm_start::Bool
     function ConjugateResidualState(;
-            callbacks::C, X::T, r::T, d::T, Ar::T, Ad::T, α::R, β::R, rAr::R, stopping_criterion::SC, warm_start::Bool
+            callbacks::C, X::T, r::T, d::T, Ar::T, Ad::T, α::R, β::R, stopping_criterion::SC, warm_start::Bool
         ) where {T, R, SC <: StoppingCriterion, C <: AbstractDict{Symbol}}
         crs = new{T, R, SC, C}()
         crs.callbacks = callbacks; crs.X = X; crs.r = r; crs.d = d; crs.Ar = Ar; crs.Ad = Ad
-        crs.α = α; crs.β = β; crs.rAr = rAr; crs.stop = stopping_criterion
+        crs.α = α; crs.β = β; crs.rAr = zero(R); crs.stop = stopping_criterion
         crs.warm_start = warm_start
         return crs
     end
     function ConjugateResidualState(
-            TpM::TangentSpace, aslso::AbstractSymmetricLinearSystemObjective;
+            TpM::TangentSpace, aslso::Union{AbstractSymmetricLinearSystemObjective, AbstractDecoratedManifoldObjective};
             callbacks::C = Dict{Symbol, Function}(),
             X::T = rand(TpM), r::T = (-get_gradient(TpM, aslso, X)), d::T = copy(TpM, r),
             Ar::T = get_hessian(TpM, aslso, X, r), Ad::T = copy(TpM, Ar), α::Real = 0.0, β::Real = 0.0,
@@ -72,8 +72,8 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion, C <: Abs
             warm_start::Bool = true,
             kwargs...,
         ) where {T, SC <: StoppingCriterion, C <: AbstractDict{Symbol}}
-        R = promote_type(typeof(α), typeof(β))
-        return ConjugateResidualState(; callbacks = callbacks, X = X, r = r, d = d, Ar = Ar, Ad = Ad, α = α, β = β, rAr = zero(R), stopping_criterion = stopping_criterion, warm_start = warm_start)
+        R = float(promote_type(typeof(α), typeof(β)))
+        return ConjugateResidualState(; callbacks = callbacks, X = X, r = r, d = d, Ar = Ar, Ad = Ad, α = convert(R, α), β = convert(R, β), stopping_criterion = stopping_criterion, warm_start = warm_start)
     end
 end
 get_callbacks(crs::ConjugateResidualState) = crs.callbacks
@@ -84,27 +84,24 @@ function set_iterate!(crs::ConjugateResidualState, ::AbstractManifold, X)
 end
 
 get_gradient(crs::ConjugateResidualState) = crs.r
-function set_gradient!(crs::ConjugateResidualState, ::AbstractManifold, r)
-    crs.r = r
+function set_gradient!(crs::ConjugateResidualState, TpM::AbstractManifold, p, r)
+    copyto!(TpM, crs.r, p, r)
     return crs
 end
 function status_summary(crs::ConjugateResidualState; context::Symbol = :default)
-    i = get_count(crs, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(crs.stop) ? "Yes" : "No"
     (context === :short) && return repr(crs)
     (context === :inline) && return "A solver state for the conjugate residual solver$(_iteration_suffix(crs))"
     as = _callbacks_summary(crs)
     s = """
     # Solver state for `Manopt.jl`s Conjugate Residual Method
-    $Iter
+    $(_iterations_str(crs))
     ## Parameters$(as)
     * α: $(crs.α)
     * β: $(crs.β)
 
     ## Stopping criterion
     $(_in_str(status_summary(crs.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(crs))"""
     return s
 end
 function Base.show(io::IO, crs::ConjugateResidualState)
@@ -189,7 +186,7 @@ function get_reason(swrr::StopWhenRelativeResidualLess)
 end
 function status_summary(swrr::StopWhenRelativeResidualLess; context::Symbol = :default)
     (context === :short) && return repr(swrr)
-    has_stopped = (swrr.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(swrr)
     s = has_stopped ? "reached" : "not reached"
     return _is_inline(context) ? "‖r^(k)‖ / c < ε:$(_MANOPT_INDENT)$s" : "A stopping criterion to stop when the relative residual is less than the threshold of $(swrr.ε)\n$(_MANOPT_INDENT)$s"
 end
@@ -245,9 +242,11 @@ Note that the right hand side of Step 7 is the same as evaluating ``$(_tex(:Cal,
 
 $(_kwargs(:evaluation))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M = "TpM"))`)`$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)"))
   where ``c = $(_tex(:norm, "b"))`` is the norm of the vector field `b` at `p`.
 * `warm_start=true`: whether to reuse the initial `X` to warm start the solver (`true`) or to start from the zero vector (`false`), see [`ConjugateResidualState`](@ref).
+
+$(_note(:OtherKeywords))
 
 $(_note(:OutputSection))
 """

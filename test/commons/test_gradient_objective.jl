@@ -157,6 +157,15 @@ using ManifoldsBase, Manopt, Test
             costgradient = fg!, costdifferential = fd, evaluation = InplaceEvaluation()
         )
         mfo9 = ManifoldFirstOrderObjective(; cost = f, differential = diff_f)
+        # the combined gradient and differential cases 6 and 7
+        fgd(M, p, X) = (f(M, p), grad_f(M, p), diff_f(M, p, X))
+        fgd!(M, Y, p, X) = (f(M, p), grad_f!(M, Y, p), diff_f(M, p, X))
+        mfo10a = ManifoldFirstOrderObjective(; cost = f, gradientdifferential = gd)
+        mfo10i = ManifoldFirstOrderObjective(; cost = f, gradientdifferential = gd!, evaluation = InplaceEvaluation())
+        mfo11a = ManifoldFirstOrderObjective(; costgradientdifferential = fgd)
+        mfo11i = ManifoldFirstOrderObjective(; costgradientdifferential = fgd!, evaluation = InplaceEvaluation())
+        @test startswith(repr(mfo11a), "ManifoldFirstOrderObjective(; costgradientdifferential = ")
+        @test_throws ArgumentError ManifoldFirstOrderObjective(; gradientdifferential = gd) # no cost
 
         # only cost
         @test_throws ArgumentError ManifoldFirstOrderObjective(; cost = f)
@@ -171,8 +180,8 @@ using ManifoldsBase, Manopt, Test
         # collect all allocs, inplace, and 6&9
         mfod1a = Manopt.Test.DummyDecoratedObjective(mfo1a)
         mfod1i = Manopt.Test.DummyDecoratedObjective(mfo1i)
-        cda = [mfo1a, mfo2a, mfo3a, mfo4a, mfo5a, mfo7a, mfo8a, mfod1a]
-        cdi = [mfo1i, mfo2i, mfo3i, mfo4i, mfo5i, mfo7i, mfo8i, mfod1i]
+        cda = [mfo1a, mfo2a, mfo3a, mfo4a, mfo5a, mfo7a, mfo8a, mfod1a, mfo10a, mfo11a]
+        cdi = [mfo1i, mfo2i, mfo3i, mfo4i, mfo5i, mfo7i, mfo8i, mfod1i, mfo10i, mfo11i]
         cdr = [mfo6, mfo9]
         # For all: Test cost&diff
         Y = zero_vector(M, p)
@@ -223,6 +232,13 @@ using ManifoldsBase, Manopt, Test
         # Corner case, check that the fake-empty one causes the errors as expected
         mfo_fa = ManifoldFirstOrderObjective{typeof((;))}((;))
         mfo_fi = ManifoldFirstOrderObjective{typeof((;))}((;))
+        # a combined evaluation counts every value it computes
+        co11 = ManifoldCountObjective(M, mfo11a, [:Cost, :Gradient, :Differential])
+        @test get_gradient(M, co11, p) == G
+        @test (get_count(co11, :Cost), get_count(co11, :Gradient), get_count(co11, :Differential)) == (1, 1, 1)
+        co10 = ManifoldCountObjective(M, mfo10a, [:Cost, :Gradient, :Differential])
+        @test get_gradient(M, co10, p) == G
+        @test (get_count(co10, :Cost), get_count(co10, :Gradient), get_count(co10, :Differential)) == (0, 1, 1)
         for mfo_f in [mfo_fa, mfo_fi]
             @test_throws ErrorException get_cost(M, mfo_f, q)
             @test_throws ErrorException get_gradient(M, mfo_f, q)

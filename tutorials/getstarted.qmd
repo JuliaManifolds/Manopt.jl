@@ -102,7 +102,7 @@ acts as a [decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern).
 This way we can easily specify a certain debug to be printed.
 The goal is to get an output of the form
 
-```{shell}
+```
 # k | Last Change: [...] | f(p): [...] |
 ```
 

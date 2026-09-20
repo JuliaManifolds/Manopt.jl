@@ -40,6 +40,12 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     #
     rs_empty = RecordSolverState(gds, [])
     @test contains(Manopt.status_summary(rs_empty), "No recordings registered.")
+    # the summary lists every record action with its own summary
+    rs_two = RecordSolverState(gds, Dict(:Iteration => RecordGroup([RecordIteration(), RecordCost()]), :Stop => RecordIteration()))
+    ss_two = Manopt.status_summary(rs_two)
+    @test contains(ss_two, "## Record\n")
+    @test contains(ss_two, "    :Stop = A RecordAction to record the current iteration number")
+    @test contains(ss_two, "    :Iteration = A group of 2 RecordActions:")
     #
     @test get_initial_stepsize(dmp, rs) == 1.0
     @test get_stepsize(dmp, rs, 1) == 1.0
@@ -109,6 +115,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @testset "RecordEvery" begin
         c = RecordEvery(a, 10, true)
         @test repr(c) == "RecordEvery(RecordIteration(), 10, true)"
+        @test_throws DomainError RecordEvery(a, 0)
         @test Manopt.status_summary(c; context = :short) == "[:Iteration, 10]"
         @test startswith(Manopt.status_summary(c), "A RecordAction that records every 10th iteration with\n")
         c(dmp, gds, 0)
@@ -208,6 +215,11 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         g(dmp, gds, 21) # record
         @test length(get_record(g)) == 1
         gds.stop(dmp, gds, 0) # reset
+        # without a reason nothing is recorded, a reset empties the record even then
+        g(dmp, gds, 22)
+        @test length(get_record(g)) == 1
+        g(dmp, gds, -1)
+        @test get_record(g) == String[]
     end
     @testset "RecordSubsolver" begin
         rss = RecordSubsolver()
@@ -220,6 +232,10 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test get_record(rss) == [[1]]
         rss(dmp, epms, -1) # reset
         @test length(get_record(rss)) == 0
+        # a state that declares its sub problem through the trait only
+        fws = FrankWolfeState(M, dmp, rs)
+        rss(dmp, fws, 1)
+        @test get_record(rss) == [[1]]
     end
     @testset "RecordWhenActive" begin
         i = RecordIteration()
@@ -319,6 +335,14 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test t isa Nanosecond
         h1(dmp, gds, 1)
         @test h1.start == t
+        # the update calls of RecordEvery do not restart the cumulative timer
+        h4 = RecordEvery(RecordTime(; mode = :Cumulative), 2)
+        for k in 1:4
+            sleep(0.002)
+            h4(dmp, gds, k)
+        end
+        @test length(h4.record.recorded_values) == 2
+        @test h4.record.recorded_values[2] > h4.record.recorded_values[1]
         h2 = RecordTime(; mode = :Iterative)
         t = h2.start
         @test t isa Nanosecond
@@ -337,6 +361,11 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test repr(RecordGradientNorm()) == "RecordGradientNorm()"
         # since only the type is stored can test
         @test repr(RecordGradient(zeros(3))) == "RecordGradient(Vector{Float64})"
+        # a type builds the same record as a value of that type
+        rg = RecordGradient(Vector{Float64})
+        @test rg isa RecordGradient{Vector{Float64}}
+        rg(dmp, gds, 1)
+        @test rg.recorded_values == [get_gradient(gds)]
     end
     @testset "Record and parameter passthrough" begin
         s = TestRecordParameterState(0)

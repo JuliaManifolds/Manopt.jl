@@ -103,10 +103,10 @@ using RecursiveArrayTools
 
         st.yk = [2.0, 4.0]
         st.sk = [4.0, 2.0]
-        update_hessian!(ha, mp, st, p, 1)
         grad = grad_f(M, p)
         st.p = p
         st.X = grad
+        update_hessian!(ha, mp, st, p, 1)
 
         d = similar(grad)
         ha(d, mp, st)

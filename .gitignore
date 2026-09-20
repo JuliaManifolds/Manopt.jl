@@ -3,7 +3,7 @@
 *.jl.mem
 /docs/build/
 /docs/site/
-Tutorials/.ipynb_checkpoints
+tutorials/.ipynb_checkpoints
 .vscode
 Manifest.toml
 *.DS_Store

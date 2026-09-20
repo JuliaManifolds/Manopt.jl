@@ -1,5 +1,5 @@
 using Manifolds, ManifoldsBase, Manopt, Test
-using Manopt: get_value, get_value!, get_value_function, get_gradient_function
+using Manopt: get_value, get_value!, get_value_function
 @testset "VectorialGradientCost" begin
     M = ManifoldsBase.DefaultManifold(3)
     g(M, p) = [p[1] - 1, -p[2] - 1]
@@ -93,9 +93,23 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
         g!, jac_g!, 2; evaluation = InplaceEvaluation(),
         jacobian_type = CoefficientVectorialType(DefaultBasis()),
     )
-    @test Manopt.get_basis(vgf_ji.jacobian_type) == vgf_ji.jacobian_type.basis
     @test Manopt.get_basis(vgf_jib.jacobian_type) == DefaultBasis()
-    @test Manopt.get_basis(vgf_vi.jacobian_type) == DefaultOrthonormalBasis()
+    @testset "Hessian in array power representation" begin
+        Ms = Sphere(2)
+        ps = [1.0, 0.0, 0.0]
+        Xs = [0.0, 1.0, 0.0]
+        gs(M, q) = [q[2], q[3]]
+        grad_arr(M, q) = hcat(project(M, q, [0.0, 1.0, 0.0]), project(M, q, [0.0, 0.0, 1.0]))
+        hess_arr(M, q, Y) = hcat(-q * Y[2], -q * Y[3])
+        vhf_arr = VectorHessianFunction(
+            gs, grad_arr, hess_arr, 2;
+            jacobian_type = FunctionVectorialType(ArrayPowerRepresentation()),
+            hessian_type = FunctionVectorialType(ArrayPowerRepresentation()),
+        )
+        @test get_hessian(Ms, vhf_arr, ps, Xs, :) == hess_arr(Ms, ps, Xs)
+        @test get_hessian(Ms, vhf_arr, ps, Xs, 1) == hess_arr(Ms, ps, Xs)[:, 1]
+        @test get_gradient(Ms, vhf_arr, ps, :) == grad_arr(Ms, ps)
+    end
     @testset "differential with a number-typed point" begin
         # a differential returns one number per component, so it must not be wrapped as a
         # tangent vector – for a number-typed point that wrapping used to throw
@@ -125,6 +139,8 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
         @test a_b == [1.0, -2.0]
     end
     p = [1.0, 2.0, 3.0]
+    # a range of nothing means the range of the function
+    @test get_gradient(M, vgf_fa, p, :, nothing) == get_gradient(M, vgf_fa, p, :)
     c = [0.0, -3.0]
     jc = [0.0, 3.0, 0.0] #see above c1, -c2, 0
     X = [1.0, 0.5, 0.25]
@@ -178,16 +194,19 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
         ci = similar([c[1]])
         get_value!(M, ci, vgf, p, 1)
         @test ci[1] == c[1]
-        if !(vgf isa VectorDifferentialFunction)
-            # range access not yet implemented / too expensive for VDF
-            @test get_gradient(M, vgf, p) == gg
-            @test get_gradient(M, vgf, p, :) == gg
-            @test get_gradient(M, vgf, p, 1:2) == gg
-            @test get_gradient(M, vgf, p, [1, 2]) == gg
-            Y = [zero_vector(M, p), zero_vector(M, p)]
-            get_gradient!(M, Y, vgf, p, :)
-            @test Y == gg
-        end
+        # the value keeps the precision of the point
+        @test eltype(get_value(M, vgf, BigFloat.(p))) == BigFloat
+        # with an array power representation the gradients form the columns of a matrix
+        as_range(v) = Manopt.get_range(vgf.jacobian_type) isa ArrayPowerRepresentation ? hcat(v...) : v
+        @test get_gradient(M, vgf, p) == as_range(gg)
+        @test get_gradient(M, vgf, p, :) == as_range(gg)
+        @test get_gradient(M, vgf, p, 1:2) == as_range(gg)
+        @test get_gradient(M, vgf, p, [1, 2]) == as_range(gg)
+        @test get_gradient(M, vgf, p, [2, 1]) == as_range(reverse(gg))
+        @test get_gradient(M, vgf, p, [false, true]) == as_range(gg[2:2])
+        Y = as_range([zero_vector(M, p), zero_vector(M, p)])
+        get_gradient!(M, Y, vgf, p, :)
+        @test Y == as_range(gg)
         @test get_gradient(M, vgf, p, 1) == gg[1]
         @test get_gradient(M, vgf, p, 2) == gg[2]
         Z = zero_vector(M, p)
@@ -231,6 +250,10 @@ using Manopt: get_value, get_value!, get_value_function, get_gradient_function
     gh = [X, -X]
     # Hessian
     @test Manopt.get_hessian_function(vhf_fa) === hess_g
+    @test Manopt.get_hessian_function(vhf_fa, true) === hess_g
+    # the value function accessor works for every vector function
+    @test get_value_function(vhf_fa) === g
+    @test get_value_function(vgf_dfn) === g
     @test all(Manopt.get_hessian_function(vhf_va) .=== [hess_g1, hess_g2])
     @test Manopt.get_hessian_function(vhf_fi; evaluation = InplaceEvaluation()) === hess_g!
     @test all(Manopt.get_hessian_function(vhf_vi; evaluation = InplaceEvaluation()) .=== [hess_g1!, hess_g2!])

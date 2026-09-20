@@ -84,5 +84,11 @@ using ManifoldDiff: prox_distance, prox_distance!
         s = DouglasRachford(M, f3, [prox1b, prox2b], p; return_state = true)
         q2 = get_solver_result(s)[]
         @test q1 == q2
+        # the cost is wrapped as well, so it can be recorded
+        s3 = DouglasRachford(
+            M, f3, [prox1b, prox2b], p;
+            stopping_criterion = StopAfterIteration(2), record = [:Cost], return_state = true,
+        )
+        @test get_record(s3) == [f3(M, p_star), f3(M, p_star)]
     end
 end

@@ -133,14 +133,11 @@ function Base.show(io::IO, pss::ParticleSwarmState)
 end
 function status_summary(pss::ParticleSwarmState; context::Symbol = :default)
     (context === :short) && return repr(pss)
-    i = get_count(pss, :Iterations)
     (context === :inline) && return "A solver state for the particle swarm solver$(_iteration_suffix(pss))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(pss.stop) ? "Yes" : "No"
     as = _callbacks_summary(pss)
     s = """
     # Solver state for `Manopt.jl`s Particle Swarm Optimization Algorithm
-    $Iter
+    $(_iterations_str(pss))
     ## Parameters$(as)
     * inertia:          $(pss.inertia)
     * social_weight:    $(pss.social_weight)
@@ -151,7 +148,7 @@ function status_summary(pss::ParticleSwarmState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(pss.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(pss))"""
     return s
 end
 #
@@ -227,8 +224,8 @@ where
 * ``ω`` denotes the inertia,
 * ``c`` and ``s`` are a cognitive and a social weight, respectively,
 * ``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step
-* $(_math(:VectorTransport)) is a vector transport, and
-* $(_tex(:invretr)) is an inverse retraction
+* ``$(_math(:VectorTransport))`` is a vector transport, and
+* ``$(_tex(:invretr))`` is an inverse retraction
 
 Then the position of the particle is updated as
 
@@ -249,12 +246,12 @@ $(_args([:M, :f]))
 
 Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObjective`](@ref) `mco`.
 
-# Keyword Arguments
+# Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `cognitive_weight=1.4`: a cognitive weight factor
 * `inertia=0.65`: the inertia of the particles
-$(_kwargs([:inverse_retraction_method, :retraction_method]))
+$(_kwargs([:inverse_retraction_method, :retraction_method]; p = "swarm[1]"))
 * `social_weight=1.4`: a social weight factor
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenSwarmVelocityLess`](@ref)`(1e-4)"))
 * `swarm_size=100`: swarm size, if it should be generated randomly
@@ -350,14 +347,15 @@ function step_solver!(mp::AbstractManoptProblem, s::ParticleSwarmState, ::Any)
         vector_transport_to!(
             M, s.velocity[i], s.q, s.velocity[i], s.swarm[i], s.vector_transport_method
         )
-        if get_cost(mp, s.swarm[i]) < get_cost(mp, s.positional_best[i])
+        c = get_cost(mp, s.swarm[i])
+        if c < get_cost(mp, s.positional_best[i])
             copyto!(M, s.positional_best[i], s.swarm[i])
-            if get_cost(mp, s.positional_best[i]) < get_cost(mp, s.p)
+            if c < get_cost(mp, s.p)
                 copyto!(M, s.p, s.positional_best[i])
             end
         end
     end
-    return
+    return s
 end
 
 #
@@ -384,7 +382,10 @@ mutable struct StopWhenSwarmVelocityLess{F <: Real} <: StoppingCriterion
     threshold::F
     at_iteration::Int
     velocity_norms::Vector{F}
-    StopWhenSwarmVelocityLess(tolerance::F) where {F} = new{F}(tolerance, -1, F[])
+    function StopWhenSwarmVelocityLess(tolerance::Real)
+        t = float(tolerance)
+        return new{typeof(t)}(t, -1, typeof(t)[])
+    end
 end
 # It just indicates loss of velocity, not convergence to a minimizer
 indicates_convergence(c::StopWhenSwarmVelocityLess) = false
@@ -414,7 +415,7 @@ end
 function status_summary(c::StopWhenSwarmVelocityLess; context::Symbol = :default)
     has_stopped = (c.at_iteration >= 0) && (norm(c.velocity_norms) < c.threshold)
     s = has_stopped ? "reached" : "not reached"
-    return "swarm velocity norm < $(c.threshold):$(_MANOPT_INDENT)$s"
+    return (_is_inline(context) ? "swarm velocity norm < $(c.threshold):$(_MANOPT_INDENT)" : "Stop when the norm of the swarm velocities is less than the threshold $(c.threshold)\n$(_MANOPT_INDENT)") * s
 end
 function Base.show(io::IO, c::StopWhenSwarmVelocityLess)
     return print(io, "StopWhenSwarmVelocityLess($(c.threshold))")

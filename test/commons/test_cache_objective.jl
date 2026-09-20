@@ -22,6 +22,12 @@ function (tgc::TestGradCount)(M, X, p)
     X .= p
     return X
 end
+# A cost with a parameter that can be changed with `set_parameter!`
+mutable struct TestScaledCost
+    s::Float64
+end
+(tsc::TestScaledCost)(M, p) = tsc.s * norm(p)
+Manopt.set_parameter!(tsc::TestScaledCost, ::Val{:s}, s) = (tsc.s = s; tsc)
 mutable struct TestCostGradCount
     i::Int
 end
@@ -66,7 +72,12 @@ end
         # allocating
         mgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
         # Init to copy of p - init cache
-        sco1 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p = copy(M, p))
+        # by default the cache starts empty and evaluates nothing
+        sco0 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p = copy(M, p))
+        @test (sco0.c_valid, sco0.X_valid) == (false, false)
+        @test mgoa.functions[:cost].i == 0
+        @test mgoa.functions[:gradient].f.i == 0
+        sco1 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p = copy(M, p), initialized = true)
         sco1r = repr(sco1)
         @test startswith(sco1r, "SimpleManifoldCachedObjective")
         @test contains(sco1r, "initialized = ")
@@ -188,7 +199,7 @@ end
         mcgoi = ManifoldCostGradientObjective(
             TestCostGradCount(0); evaluation = InplaceEvaluation()
         )
-        sco4 = Manopt.SimpleManifoldCachedObjective(M, mcgoi; p = p)
+        sco4 = Manopt.SimpleManifoldCachedObjective(M, mcgoi; p = p, initialized = true)
         # evaluated on init -> evaluates twice
         @test sco4.objective.functions[:costgradient].i == 2
         @test get_gradient(M, sco4, p) == p
@@ -211,6 +222,14 @@ end
         @test X == s
         @test get_gradient(M, sco4, s) == s # cached
         @test sco4.objective.functions[:costgradient].i == 7
+        # a parameter change invalidates the cached values
+        sc = TestScaledCost(1.0)
+        sco5 = objective_cache_factory(M, ManifoldGradientObjective(sc, (M, q) -> q), :Simple)
+        @test get_cost(M, sco5, q) == norm(q)
+        @test sco5.c_valid
+        Manopt.set_parameter!(sco5, :Cost, :s, 2.0)
+        @test !sco5.c_valid
+        @test get_cost(M, sco5, q) == 2 * norm(q)
     end
     @testset "ManifoldCachedObjective on Cost&Grad" begin
         M = Sphere(2)
@@ -294,6 +313,15 @@ end
         # one of these was cached
         @test get_count(lco, :Cost) == a2 + 2
         @test get_count(lco, :Gradient) == b2 + 2
+        # the combined cost and differential accessor serves and fills the caches
+        a3 = get_count(lco, :Cost)
+        d3 = get_count(lco, :Differential)
+        cd1 = Manopt.get_cost_and_differential(M, lco, q, X)
+        cd2 = Manopt.get_cost_and_differential(M, lco, q, X)
+        @test cd1 == cd2
+        @test cd1 == (get_cost(M, o, q), get_differential(M, o, q, X))
+        @test get_count(lco, :Cost) == a3 # the cost at q was cached above
+        @test get_count(lco, :Differential) == d3 + 1
 
         #
         # CostGrad
@@ -327,7 +355,7 @@ end
         Z = similar(Y)
         get_gradient!(M, Z, lco2a, p)
         @test Z == X
-        get_gradient!(M, Y, lco, -p) #trigger cache with in-place
+        Y = f_f_grad(M, -p)[2] # the expected gradient at `-p`
         @test Y == -X
         # Similar with
         # Gradient not yet cached from cost (fornow) so one new evaluations
@@ -341,6 +369,48 @@ end
         # Check default trigger
         @test_throws DomainError Manopt.init_caches(M, [:Cost], Nothing)
         @test_throws ErrorException Manopt.init_caches(M, [:None], LRU)
+        # changing a parameter of the wrapped objective empties the caches
+        sc = TestScaledCost(1.0)
+        lco3 = objective_cache_factory(M, ManifoldCostObjective(sc), (:LRU, [:Cost], 5))
+        @test get_cost(M, lco3, p) == 1.0
+        Manopt.set_parameter!(lco3, :Cost, :s, 2.0)
+        @test get_cost(M, lco3, p) == 2.0
+    end
+    @testset "The subgradient function of a cached objective is cached" begin
+        M = Euclidean(2)
+        calls = Ref(0)
+        fs(M, p) = sum(abs, p)
+        ∂fs(M, p) = (calls[] += 1; sign.(p))
+        sgc = objective_cache_factory(M, ManifoldSubgradientObjective(fs, ∂fs), (:LRU, [:SubGradient], 5))
+        ∂fc = Manopt.get_subgradient_function(sgc)
+        q = [1.0, -2.0]
+        @test ∂fc(M, q) == sign.(q)
+        @test ∂fc(M, q) == sign.(q)
+        @test calls[] == 1
+        @test Manopt.get_subgradient_function(sgc, true) === ∂fs
+        ∂fc! = Manopt.get_subgradient_function(sgc; evaluation = InplaceEvaluation())
+        Xc = zero_vector(M, q)
+        @test ∂fc!(M, Xc, q) == sign.(q)
+        @test calls[] == 1 # the cache answers the in-place call as well
+    end
+    @testset "The simple cache for an objective without a gradient" begin
+        M = Euclidean(2)
+        fs(M, p) = sum(abs, p)
+        ∂fs(M, p) = sign.(p)
+        kw = (; stopping_criterion = StopAfterIteration(20))
+        q = subgradient_method(M, fs, ∂fs, [1.0, -2.0]; kw...)
+        qc = subgradient_method(M, fs, ∂fs, [1.0, -2.0]; cache = :Simple, kw...)
+        @test qc == q
+    end
+    @testset "Caches on a manifold with number points" begin
+        M = Circle()
+        f(M, p) = 0.5 * p^2
+        grad_f(M, p) = p
+        ref = gradient_descent(M, f, grad_f, 0.5; stopping_criterion = StopAfterIteration(3))
+        for cache in ((:LRU, [:Cost]), (:LRU, [:Cost, :Gradient]), :Simple)
+            q = gradient_descent(M, f, grad_f, 0.5; cache = cache, stopping_criterion = StopAfterIteration(3))
+            @test q ≈ ref
+        end
     end
     @testset "Function passthrough" begin
         Random.seed!(42)

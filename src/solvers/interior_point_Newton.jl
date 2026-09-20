@@ -302,7 +302,8 @@ mutable struct InteriorPointNewtonState{
             stepsize::S = ArmijoLinesearchStepsize(
                 get_manifold(step_problem);
                 retraction_method = default_retraction_method(get_manifold(step_problem)),
-                initial_stepsize = 1.0, additional_decrease_condition = centrality_condition,
+                initial_stepsize = 1.0, stop_increasing_at_step = 0,
+                additional_decrease_condition = centrality_condition,
             ),
             stopping_criterion = StopAfterIteration(200) | StopWhenChangeLess(M, 1.0e-8),
             kwargs...,
@@ -323,6 +324,7 @@ mutable struct InteriorPointNewtonState{
         )
     end
 end
+has_sub_problem(::Type{<:InteriorPointNewtonState}) = true
 function InteriorPointNewtonState(
         M::AbstractManifold, cmo::ConstrainedManifoldObjective, sub_problem;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
@@ -332,13 +334,11 @@ function InteriorPointNewtonState(
     return InteriorPointNewtonState(M, cmo, sub_problem_, cfs; kwargs...)
 end
 # get & set iterate
-get_iterate(ips::InteriorPointNewtonState) = ips.p
 function set_iterate!(ips::InteriorPointNewtonState, ::AbstractManifold, p)
     ips.p = p
     return ips
 end
 # get & set gradient (not sure if needed?)
-get_gradient(ips::InteriorPointNewtonState) = ips.X
 function set_gradient!(ips::InteriorPointNewtonState, ::AbstractManifold, X)
     ips.X = X
     return ips
@@ -351,26 +351,23 @@ additional_callbacks(::Type{<:InteriorPointNewtonState}) = [:BeforeSubsolver, :S
 get_callbacks(ips::InteriorPointNewtonState) = ips.callbacks
 # pretty print state info
 function status_summary(ips::InteriorPointNewtonState; context::Symbol = :default)
-    i = get_count(ips, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(ips.stop) ? "Yes" : "No"
     (context === :short) && return repr(ips)
     (context === :inline) && return "A solver state for the interior point Newton method$(_iteration_suffix(ips))"
     as = _callbacks_summary(ips)
     s = """
     # Solver state for `Manopt.jl`s Interior Point Newton Method
-    $Iter
+    $(_iterations_str(ips))
     ## Parameters$(as)
     * ρ: $(ips.ρ)
     * σ: $(ips.σ)
     * retraction method: $(ips.retraction_method)
 
     ## Stepsize
-    $(_in_str(status_summary(ips.stepsize; context = context); indent = 1, headers = 1))
+    $(_in_str(status_summary(ips.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-    $(_in_str(status_summary(ips.stop; context = context); indent = 1, headers = 1))
-    The algorithm converged: $Conv"""
+    $(_in_str(status_summary(ips.stop; context = context); indent = 0, headers = 1))
+    The algorithm converged: $(_converged_str(ips))"""
     return s
 end
 function Base.show(io::IO, ipns::InteriorPointNewtonState)
@@ -454,7 +451,7 @@ function get_reason(c::StopWhenKKTResidualLess)
     return ""
 end
 function status_summary(swrr::StopWhenKKTResidualLess; context::Symbol = :default)
-    has_stopped = (swrr.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(swrr)
     s = has_stopped ? "reached" : "not reached"
     return (_is_inline(context) ? "KKT residual < ε = $(swrr.ε):$(_MANOPT_INDENT)" : "Stop when the KKT residual is less than ε = $(swrr.ε)\n$(_MANOPT_INDENT)") * s
 end
@@ -545,19 +542,12 @@ $(_args([:M, :f, :grad_f, :Hess_f, :p]))
 
 or a [`ConstrainedManifoldObjective`](@ref) `cmo` containing `f`, `grad_f`, `Hess_f`, and the constraints
 
-# Keyword arguments
+# Keyword arguments for the constraints
 
-The keyword arguments related to the constraints (`g`, `grad_g`, `Hess_g`, `h`, `grad_h`, `Hess_h`,
-`equality_constraints`, and `inequality_constraints`) are ignored if you
-pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
+These are only used to build the objective, that is if the solver is not called with a
+[`ConstrainedManifoldObjective`](@ref) `cmo`.
 
-$(_kwargs(:callbacks; add_properties = [:process_note]))
-* `centrality_condition=`[`InteriorPointCentralityCondition`](@ref)`(cmo, γ)`: an additional condition when to accept a step size.
-  This can be used to ensure that the resulting iterate is still an interior point if you provide a check `(N,q) -> true/false`,
-  where `N` is the manifold of the `step_problem`.
 * `equality_constraints=nothing`: the number ``n`` of equality constraints.
-* `γ=0.9`: the constant of the default `centrality_condition`.
-$(_kwargs(:evaluation))
 * `g=missing`: the inequality constraints
 * `grad_g=missing`: the gradient of the inequality constraints
 * `grad_h=missing`: the gradient of the equality constraints
@@ -565,6 +555,18 @@ $(_kwargs(:evaluation))
 * `Hess_g=missing`: the Hessian of the inequality constraints
 * `Hess_h=missing`: the Hessian of the equality constraints
 * `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
+
+Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be provided.
+Otherwise the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
+
+# Keyword arguments
+
+$(_kwargs(:callbacks; add_properties = [:process_note]))
+* `centrality_condition=`[`InteriorPointCentralityCondition`](@ref)`(cmo, γ)`: an additional condition when to accept a step size.
+  This can be used to ensure that the resulting iterate is still an interior point if you provide a check `(N,q) -> true/false`,
+  where `N` is the manifold of the `step_problem`.
+* `γ=0.9`: the constant of the default `centrality_condition`.
+$(_kwargs(:evaluation))
 * `λ=zeros(length(h(M, p)))`: the Lagrange multiplier with respect to the equality constraints ``h``
 * `μ=ones(length(g(M, p)))`: the Lagrange multiplier with respect to the inequality constraints ``g``
 $(_kwargs(:retraction_method))
@@ -598,8 +600,7 @@ $(_kwargs(:sub_state; default = "`[`ConjugateResidualState`](@ref)` "))
 As well as internal keywords used to set up these given keywords like `_step_M`, `_step_p`, `_sub_M`, `_sub_p`, and `_sub_X`,
 that should not be changed.
 
-All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
-[`decorate_objective!`](@ref) for objective, respectively.
+$(_note(:OtherKeywords))
 
 !!! note
 
@@ -607,10 +608,7 @@ All other keyword arguments are passed to [`decorate_state!`](@ref) for state de
     disables the check. The keyword `γ` provides its initial value. Pass `missing` to disable the
     check or a `(N,q) -> true/false` to replace it.
 
-# Output
-
-The obtained approximate constrained minimizer ``p^*``.
-To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details, especially the `return_state=` keyword.
+$(_note(:OutputSection))
 
 !!! note
     This solver requires [RecursiveArrayTools.jl](https://github.com/SciML/RecursiveArrayTools.jl) to be loaded as well.
@@ -712,7 +710,7 @@ function interior_point_Newton!(
             SymmetricLinearSystemObjective(
                 CondensedKKTVectorFieldJacobian(_ecmo, μ, s, σ * ρ),
                 CondensedKKTVectorField(_ecmo, μ, s, σ * ρ),
-            ),
+            );
             sub_kwargs...,
         ),
         sub_stopping_criterion::StoppingCriterion = StopAfterIteration(manifold_dimension(M)) |
@@ -722,7 +720,7 @@ function interior_point_Newton!(
         sub_state::St = decorate_state!(
             ConjugateResidualState(
                 TangentSpace(_sub_M, _sub_p), sub_objective;
-                X = _sub_X, stop = sub_stopping_criterion, sub_kwargs...,
+                X = _sub_X, stopping_criterion = sub_stopping_criterion, sub_kwargs...,
             );
             sub_kwargs...,
         ),
@@ -759,6 +757,7 @@ function initialize_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewton
     M = get_manifold(amp)
     cmo = get_objective(amp)
     is_feasible(M, cmo, ips.p; error = ips.is_feasible_error)
+    initialize_stepsize!(ips.stepsize)
     return ips
 end
 
@@ -858,5 +857,3 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     (n > 0) && (ips.λ .+= α .* ips.Z)
     return ips
 end
-
-get_solver_result(ips::InteriorPointNewtonState) = ips.p

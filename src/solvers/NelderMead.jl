@@ -23,9 +23,16 @@ constructed by moving by `a` in each principal direction defined by basis `B` of
 space at point `p` using retraction `retraction_method`. This works similarly to how
 the initial simplex is constructed in the Euclidean Nelder-Mead algorithm, just in
 the tangent space at point `p`.
+
+The first type parameter is the type of the points as they were passed; points that are numbers
+are stored wrapped, see [`maybe_wrap_variable`](@ref).
 """
-struct NelderMeadSimplex{TP, T <: AbstractVector{TP}}
+struct NelderMeadSimplex{TP, T <: AbstractVector}
     pts::T
+    function NelderMeadSimplex(pts::AbstractVector{TP}) where {TP}
+        pts_ = maybe_wrap_variable.(pts)
+        return new{TP, typeof(pts_)}(pts_)
+    end
 end
 function NelderMeadSimplex(M::AbstractManifold)
     return NelderMeadSimplex([rand(M) for i in 1:(manifold_dimension(M) + 1)])
@@ -125,13 +132,13 @@ mutable struct NelderMeadState{
     function NelderMeadState(
             M::AbstractManifold;
             callbacks::C = Dict{Symbol, Function}(),
-            population::NelderMeadSimplex{T} = NelderMeadSimplex(M),
+            population::NelderMeadSimplex = NelderMeadSimplex(M),
             inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(M, eltype(population.pts)),
-            p::T = copy(M, population.pts[1]),
+            p = copy(M, population.pts[1]),
             retraction_method::AbstractRetractionMethod = default_retraction_method(M, eltype(population.pts)),
             stopping_criterion::StoppingCriterion = StopAfterIteration(2000) | StopWhenPopulationConcentrated(),
             α::Real = 1.0, γ::Real = 2.0, ρ::Real = 1 / 2, σ::Real = 1 / 2,
-        ) where {T, C <: AbstractDict{Symbol}}
+        ) where {C <: AbstractDict{Symbol}}
         R = promote_type(typeof(α), typeof(γ), typeof(ρ), typeof(σ))
         α = convert(R, α); γ = convert(R, γ); ρ = convert(R, ρ); σ = convert(R, σ)
         return NelderMeadState(;
@@ -152,14 +159,11 @@ function Base.show(io::IO, nms::NelderMeadState)
 end
 function status_summary(nms::NelderMeadState; context::Symbol = :default)
     (context === :short) && return repr(nms)
-    i = get_count(nms, :Iterations)
     (context === :inline) && return "A solver state for the Nelder-Mead solver$(_iteration_suffix(nms))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(nms.stop) ? "Yes" : "No"
     as = _callbacks_summary(nms)
     s = """
     # Solver state for `Manopt.jl`s Nelder Mead Algorithm
-    $Iter
+    $(_iterations_str(nms))
     ## Parameters$(as)
     * α: $(nms.α)
     * γ: $(nms.γ)
@@ -170,7 +174,7 @@ function status_summary(nms::NelderMeadState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(nms.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(nms))"""
     return s
 end
 get_iterate(nms::NelderMeadState) = nms.p
@@ -220,7 +224,7 @@ $(_args([:M, :f]))
 # Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-$(_kwargs([:inverse_retraction_method, :retraction_method]))
+$(_kwargs([:inverse_retraction_method, :retraction_method]; p = "population.pts[1]"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()"))
 * `α=1.0`: reflection parameter, ``α > 0``
 * `γ=2.0`: expansion parameter, ``γ > 1``
@@ -237,18 +241,9 @@ NelderMead(M::AbstractManifold, args...; kwargs...)
 function NelderMead(M::AbstractManifold, f; kwargs...)
     return NelderMead(M, f, NelderMeadSimplex(M); kwargs...)
 end
-function NelderMead(
-        M::AbstractManifold, f::F, population::NelderMeadSimplex{P, V}; kwargs...
-    ) where {P <: Number, V <: AbstractVector{P}, F <: Function}
-    f_ = maybe_wrap_function(f, P; result = :Number)
-    population_ = NelderMeadSimplex([[p] for p in population.pts])
-    rs = NelderMead(M, f_, population_; kwargs...)
-    rs isa Tuple && return (rs[1], maybe_unwrap_variable(P, rs[2]))
+function NelderMead(M::AbstractManifold, f, population::NelderMeadSimplex{P}; kwargs...) where {P}
+    rs = NelderMead(M, ManifoldCostObjective(f, P), population; kwargs...)
     return maybe_unwrap_variable(P, rs)
-end
-function NelderMead(M::AbstractManifold, f, population::NelderMeadSimplex; kwargs...)
-    mco = ManifoldCostObjective(f)
-    return NelderMead(M, mco, population; kwargs...)
 end
 function NelderMead(
         M::AbstractManifold, mco::O, population::NelderMeadSimplex; kwargs...
@@ -261,9 +256,9 @@ calls_with_kwargs(::typeof(NelderMead)) = (NelderMead!,)
 
 @doc "$(_doc_NelderMead)"
 NelderMead!(M::AbstractManifold, args...; kwargs...)
-function NelderMead!(M::AbstractManifold, f, population::NelderMeadSimplex; kwargs...)
-    mco = ManifoldCostObjective(f)
-    return NelderMead!(M, mco, population; kwargs...)
+function NelderMead!(M::AbstractManifold, f, population::NelderMeadSimplex{P}; kwargs...) where {P}
+    rs = NelderMead!(M, ManifoldCostObjective(f, P), population; kwargs...)
+    return maybe_unwrap_variable(P, rs)
 end
 function NelderMead!(
         M::AbstractManifold, mco::O, population::NelderMeadSimplex;
@@ -295,7 +290,8 @@ calls_with_kwargs(::typeof(NelderMead!)) = (decorate_objective!, decorate_state!
 function initialize_solver!(mp::AbstractManoptProblem, s::NelderMeadState)
     # init cost and p
     s.costs = get_cost.(Ref(mp), s.population.pts)
-    return s.p = s.population.pts[argmin(s.costs)] # select min
+    s.p = s.population.pts[argmin(s.costs)] # select min
+    return s
 end
 function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     M = get_manifold(mp)
@@ -409,7 +405,7 @@ function get_reason(c::StopWhenPopulationConcentrated)
 end
 function status_summary(c::StopWhenPopulationConcentrated; context::Symbol = :default)
     (context === :short) && (return repr(c))
-    has_stopped = (c.at_iteration >= 0)
+    has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     head = (!_is_inline(context) ? "Stop when the population is concentrated in both function values (tolerance: $(c.tol_f)) and points (tolerance: $(c.tol_p))\n$(_MANOPT_INDENT)" : "")
     return head * "Population concentration: in f < $(c.tol_f) and in p < $(c.tol_p):$(_MANOPT_INDENT)$s"

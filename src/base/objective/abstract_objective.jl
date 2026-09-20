@@ -60,10 +60,6 @@ function ReturnManifoldObjective(
     }
     return ReturnManifoldObjective{O2, O1}(o)
 end
-# The human readable version is “transparent” by default here
-function status_summary(o::ReturnManifoldObjective; kwargs...)
-    return status_summary(o.objective; kwargs...)
-end
 function Base.show(io::IO, ro::ReturnManifoldObjective)
     print(io, "ReturnManifoldObjective(")
     show(io, ro.objective)

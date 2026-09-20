@@ -113,22 +113,19 @@ function Base.show(io::IO, drs::DouglasRachfordState)
 end
 function status_summary(drs::DouglasRachfordState; context::Symbol = :default)
     (context === :short) && return repr(drs)
-    i = get_count(drs, :Iterations)
     (context === :inline) && return "A solver state for the Douglas Rachford solver$(_iteration_suffix(drs))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(drs.stop) ? "Yes" : "No"
     as = _callbacks_summary(drs)
     P = drs.parallel ? "Parallel " : ""
     s = """
     # Solver state for `Manopt.jl`s $(P)Douglas Rachford Algorithm
-    $Iter
+    $(_iterations_str(drs))
 
     ## Parameters$(as)
     * `R! = ` $(drs.R!)
 
     ## Stopping criterion
     $(_in_str(status_summary(drs.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(drs))"""
     return s
 end
 get_iterate(drs::DouglasRachfordState) = drs.p
@@ -160,14 +157,14 @@ given the (two) proximal maps `proxes_f`, see [BergmannPerschSteidl:2016](@cite)
 
 For ``n>2`` proximal maps, the problem is reformulated using the parallel Douglas Rachford:
 a vectorial proximal map on the power manifold ``$(_math(:Manifold))^n`` is introduced as the first
-proximal map and the second proximal map is set to the [`mean`](@extref Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}) (Riemannian center of mass).
+proximal map and the second proximal map is set to the [`mean`](@extref Manifolds :jl:method:`Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}`) (Riemannian center of mass).
 This hence also boils down to two proximal maps, though each evaluates proximal maps in parallel,
 that is, component wise in a vector.
 
 !!! note
-    The parallel Douglas Rachford does not work in-place for now, since
-    while creating the new starting point `p'` on the power manifold, a copy of `p`
-    is created.
+    For the parallel Douglas Rachford the starting point `p` becomes the first
+    component of a point on the power manifold, and `DouglasRachford!` works
+    in-place of that component, that is of `p` itself.
 
 If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proximal maps are kept unchanged.
 
@@ -208,12 +205,13 @@ $(_note(:OutputSection))
 @doc "$(_doc_Douglas_Rachford)"
 DouglasRachford(::AbstractManifold, args...; kwargs...)
 function DouglasRachford(
-        M::AbstractManifold, f::TF, proxes_f::Vector{<:Any}, p;
+        M::AbstractManifold, f::TF, proxes_f::Union{Tuple, AbstractVector}, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), parallel = 0, kwargs...,
     ) where {TF}
     p_ = maybe_wrap_variable(p)
+    f_ = maybe_wrap_function(f, p; result = :Number)
     proxes_f_ = [maybe_wrap_function(prox_f, p, evaluation; result = :Point) for prox_f in proxes_f]
-    N, f__, (prox1, prox2), parallel_, q = parallel_to_alternating_DR(M, f, proxes_f_, p_, parallel)
+    N, f__, (prox1, prox2), parallel_, q = parallel_to_alternating_DR(M, f_, proxes_f_, p_, parallel)
     # we are inplace, so no need to pass it further down here
     mpo = ManifoldProximalMapObjective(f__, (prox1, prox2); evaluation = InplaceEvaluation())
     rs = DouglasRachford(N, mpo, q; evaluation = evaluation, parallel = parallel_, kwargs...)
@@ -233,7 +231,7 @@ calls_with_kwargs(::typeof(DouglasRachford)) = (DouglasRachford!,)
 @doc "$(_doc_Douglas_Rachford)"
 DouglasRachford!(::AbstractManifold, args...; kwargs...)
 function DouglasRachford!(
-        M::AbstractManifold, f::TF, proxes_f::Vector{<:Any}, p;
+        M::AbstractManifold, f::TF, proxes_f::Union{Tuple, AbstractVector}, p;
         evaluation = AllocatingEvaluation(), parallel::Integer = 0, kwargs...,
     ) where {TF}
     proxes_f_ = [maybe_wrap_function(prox_f, p, evaluation; result = :Point) for prox_f in proxes_f]
@@ -247,8 +245,8 @@ end
 function DouglasRachford!(
         M::AbstractManifold, mpo::O, p;
         callbacks = Dict{Symbol, Function}(),
-        λ::Tλ = (iter) -> 1.0,
-        α::Tα = (iter) -> 0.9,
+        λ::Tλ = k -> 1.0,
+        α::Tα = k -> 0.9,
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         inverse_retraction_method::AbstractInverseRetractionMethod = default_inverse_retraction_method(
             M, typeof(p)

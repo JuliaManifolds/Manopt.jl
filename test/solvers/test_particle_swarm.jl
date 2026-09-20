@@ -81,6 +81,10 @@ using Random
     @testset "Specific Stopping criteria" begin
         sc = StopWhenSwarmVelocityLess(1.0)
         @test !Manopt.indicates_convergence(sc)
+        # an integer tolerance is promoted, so the norms can be stored
+        sci = StopWhenSwarmVelocityLess(1)
+        @test sci.threshold === 1.0
+        @test sci.velocity_norms isa Vector{Float64}
         @test startswith(repr(sc), "StopWhenSwarmVelocityLess")
         @test get_reason(sc) == ""
         # Trigger manually

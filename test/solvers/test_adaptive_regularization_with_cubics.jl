@@ -67,8 +67,19 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         X1 = rand(M; vector_at = p1)
         set_iterate!(arcs, M, p1)
         @test arcs.p == p1
-        set_gradient!(arcs, X1)
+        set_gradient!(arcs, M, p1, X1)
         @test arcs.X == X1
+        # numeric keywords of different types are promoted
+        arcs_i = AdaptiveRegularizationState(
+            M, DefaultManoptProblem(M2, arcmo), GradientDescentState(M2; p = zero_vector(M, p0));
+            p = p0, η1 = 0, γ2 = 2, ρ_regularization = 1000,
+        )
+        @test (arcs_i.η1, arcs_i.γ2, arcs_i.ρ_regularization) === (0.0, 2.0, 1000.0)
+        # the in-place entry requires the point it works in place of
+        @test_throws MethodError adaptive_regularization_with_cubics!(M, mho)
+        q_ref = adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, p0)
+        q_int = adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, p0; γ2 = 2, θ = 1 // 2, ρ_regularization = 1000)
+        @test isapprox(M, q_ref, q_int)
         lst = LanczosState(M2; maxIterLanczos = 1)
         @test startswith(repr(lst), "LanczosState(; ")
         set_iterate!(lst, M2, X1)

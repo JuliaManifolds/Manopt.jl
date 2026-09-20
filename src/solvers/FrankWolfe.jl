@@ -58,7 +58,7 @@ _doc_FW_sub = """
 """
 
 @doc """
-    FrankWolfeState <: AbstractManoptSolverState
+    FrankWolfeState <: AbstractGradientSolverState
 
 A struct to store the current state of the [`Frank_Wolfe_method`](@ref)
 
@@ -164,21 +164,20 @@ mutable struct FrankWolfeState{
         )
     end
 end
+has_sub_problem(::Type{<:FrankWolfeState}) = true
 
 function default_stepsize(M::AbstractManifold, ::Type{FrankWolfeState})
     return DecreasingStepsize(M; length = 2.0, shift = 2.0)
 end
 get_callbacks(fws::FrankWolfeState) = fws.callbacks
-get_gradient(fws::FrankWolfeState) = fws.X
-get_iterate(fws::FrankWolfeState) = fws.p
 function get_message(fws::FrankWolfeState)
     # for now only the sub solver might have messages
     return get_message(fws.sub_state)
 end
 additional_callbacks(::Type{<:FrankWolfeState}) = [:BeforeSubsolver, :Subsolver, :Stepsize]
 
-function set_iterate!(fws::FrankWolfeState, ::AbstractManifold, p)
-    fws.p = p
+function set_iterate!(fws::FrankWolfeState, M::AbstractManifold, p)
+    copyto!(M, fws.p, p)
     return fws
 end
 function Base.show(io::IO, fws::FrankWolfeState)
@@ -191,15 +190,12 @@ function Base.show(io::IO, fws::FrankWolfeState)
 end
 function status_summary(fws::FrankWolfeState; context::Symbol = :default)
     (context === :short) && return repr(fws)
-    i = get_count(fws, :Iterations)
     (context === :inline) && return "A solver state for the Frank Wolfe algorithm$(_iteration_suffix(fws))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(fws.stop) ? "Yes" : "No"
     sub = _in_str(status_summary(fws.sub_state; context = context); indent = 1, headers = 1, indent_end = "| ")
     as = _callbacks_summary(fws)
     return """
     # Solver state for `Manopt.jl`s Frank Wolfe Method
-    $Iter
+    $(_iterations_str(fws))
     ## Parameters$(as)
     * inverse retraction method: $(fws.inverse_retraction_method)
     * retraction method: $(fws.retraction_method)
@@ -211,7 +207,7 @@ function status_summary(fws::FrankWolfeState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(fws.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(fws))"""
 end
 
 #
@@ -256,7 +252,7 @@ $(_note(:GradientObjective))
 # Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-$(_kwargs([:differential, :evaluation, :retraction_method]))
+$(_kwargs([:differential, :evaluation, :inverse_retraction_method, :retraction_method]))
 $(_kwargs(:stepsize; default = "`[`DecreasingLength`](@ref)`(; length=2.0, shift=2)"))
   which in practice yields the step size ``s_k = $(_tex(:frac, "2", "k+2"))`` mentioned above
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-8)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-8)"))
@@ -281,9 +277,7 @@ $(_note(:OtherKeywords))
 If you provide a [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword only determines how a closed form solution passed as `sub_problem` is called.
 The decorations are still applied to the objective.
 
-# Output
-
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
+$(_note(:OutputSection))
 """
 
 @doc "$_doc_Frank_Wolfe_method"
@@ -327,6 +321,7 @@ function Frank_Wolfe_method!(
         callbacks = Dict{Symbol, Function}(),
         X = zero_vector(M, p),
         evaluation = AllocatingEvaluation(),
+        inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
         objective_type = :Riemannian,
         retraction_method = default_retraction_method(M, typeof(p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(M, FrankWolfeState),
@@ -358,7 +353,6 @@ function Frank_Wolfe_method!(
                     ),
                     sub_kwargs...,
                 );
-                objective_type = objective_type,
                 sub_kwargs...,
             )
         end,
@@ -374,6 +368,7 @@ function Frank_Wolfe_method!(
         M, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, FrankWolfeState),
         p = p, X = X,
+        inverse_retraction_method = inverse_retraction_method,
         retraction_method = retraction_method,
         stepsize = _produce_type(stepsize, M, p),
         stopping_criterion = stopping_criterion,

@@ -4,6 +4,8 @@
 """
     ProximalPointState{P} <: AbstractManoptSolverState
 
+State for the [`proximal_point`](@ref) solver.
+
 # Fields
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
@@ -67,18 +69,15 @@ function Base.show(io::IO, pps::ProximalPointState)
 end
 function status_summary(pps::ProximalPointState; context::Symbol = :default)
     (context === :short) && return repr(pps)
-    i = get_count(pps, :Iterations)
     (context === :inline) && return "A solver state for the proximal point algorithm$(_iteration_suffix(pps))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(pps.stop) ? "Yes" : "No"
     as = _callbacks_summary(pps)
     (length(as) > 0) && (as = "## Parameters\n$(as)\n\n")
     s = """
     # Solver state for `Manopt.jl`s Proximal Point Method
-    $Iter$(as)
+    $(_iterations_str(pps))$(as)
     ## Stopping criterion
     $(_in_str(status_summary(pps.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(pps))"""
     return s
 end
 #

@@ -10,6 +10,17 @@ using Manifolds, Manopt, ManifoldsBase, Test
         "# Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent\n"
     )
     @test get_iterate(s) == η
+    # the iterate is written into the stored vector
+    η2 = [0.0 0.0; 0.0 0.0; 1.0 2.0]
+    stored = get_iterate(s)
+    @test set_iterate!(s, TangentSpace(M, p), η2) === s
+    @test get_iterate(s) == η2
+    @test get_iterate(s) === stored
+    set_iterate!(s, TangentSpace(M, p), η)
+    # the iterate can also be set as a parameter
+    Manopt.set_parameter!(s, :Iterate, η2)
+    @test get_iterate(s) == η2
+    set_iterate!(s, TangentSpace(M, p), η)
     # the default radius comes from the base manifold (finite here), not the flat tangent space
     @test s.trust_region_radius ≈ injectivity_radius(M) / 4
     # standalone solve with a negative-curvature model stays finite with the default radius
@@ -19,7 +30,33 @@ using Manifolds, Manopt, ManifoldsBase, Test
     )
     Yfin = truncated_conjugate_gradient_descent(TangentSpace(M, p), trmo, p, η)
     @test all(isfinite, Yfin)
+    # a nonzero start vector: the truncated step lands on the trust region boundary
+    M3 = Sphere(3)
+    B = [2.0 1.0 0.0 0.0; 1.0 -3.0 1.0 0.0; 0.0 1.0 4.0 1.0; 0.0 0.0 1.0 -1.0]
+    p3 = [1.0, 0.0, 0.0, 0.0]
+    f3(M, q) = q' * B * q
+    grad_f3(M, q) = 2 * project(M, q, B * q)
+    Hess_f3(M, q, X) = 2 * (project(M, q, B * X) - (q' * B * q) * X)
+    Δ = π / 4
+    X3 = Δ / 2 * [0.0, 1.0, 1.0, 1.0] / sqrt(3)
+    Y3 = truncated_conjugate_gradient_descent(M3, f3, grad_f3, Hess_f3, p3, X3; randomize = true, trust_region_radius = Δ)
+    @test norm(M3, p3, Y3) ≈ Δ
+    # a random start vector outside the trust region is moved to half the radius
+    X4 = 4 * Δ * [0.0, 1.0, 1.0, 1.0] / sqrt(3)
+    tcgs = TruncatedConjugateGradientState(TangentSpace(M3, p3); X = copy(X4), randomize = true, trust_region_radius = Δ)
+    trmo3 = TrustRegionModelObjective(ManifoldHessianObjective(f3, grad_f3, Hess_f3))
+    initialize_solver!(DefaultManoptProblem(TangentSpace(M3, p3), trmo3), tcgs)
+    @test tcgs.Y ≈ X4 / 8
+    # any real radius, θ and κ are accepted, an integer radius is stored as a float
+    Y5 = truncated_conjugate_gradient_descent(M3, f3, grad_f3, Hess_f3, p3, X3; trust_region_radius = 1, θ = 1, κ = 1 // 10)
+    @test Y5 == truncated_conjugate_gradient_descent(M3, f3, grad_f3, Hess_f3, p3, X3; trust_region_radius = 1.0, θ = 1.0, κ = 0.1)
+    @test TruncatedConjugateGradientState(TangentSpace(M3, p3); X = copy(X3), trust_region_radius = 1, θ = 1).trust_region_radius === 1.0
     srr = StopWhenResidualIsReducedByFactorOrPower()
+    # a mixed pair is promoted
+    srm = StopWhenResidualIsReducedByFactorOrPower(; κ = 1 // 10, θ = 1)
+    @test (srm.κ, srm.θ) === (0.1, 1.0)
+    srf = StopWhenResidualIsReducedByFactorOrPower(; κ = 0.1f0, θ = 1.0f0)
+    @test (srf.κ, srf.θ) === (0.1f0, 1.0f0)
     ssr1 = Manopt.status_summary(srr)
     @test startswith(ssr1, "A stopping criterion used within tCG to check whether the residual is reduced by factor")
     @test repr(srr) == "StopWhenResidualIsReducedByFactorOrPower(0.1, 1.0)"

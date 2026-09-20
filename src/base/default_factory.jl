@@ -117,8 +117,10 @@ function (mdf::ManifoldDefaultsFactory{T, <:AbstractManifold})() where {T}
     end
 end
 function (mdf::ManifoldDefaultsFactory{T, Nothing})() where {T}
-    (!mdf.constructor_requires_manifold) && (return T(mdf.args...; mdf.kwargs...))
-    throw(MethodError(T, mdf.args))
+    (mdf.constructor_requires_manifold || mdf.constructor_requires_point) && throw(
+        ArgumentError("The constructor of `$T` requires a manifold or a point, but this factory stores neither; call the factory with a manifold, as in `f(M)`.")
+    )
+    return T(mdf.args...; mdf.kwargs...)
 end
 """
     _produce_type(t, M::AbstractManifold)

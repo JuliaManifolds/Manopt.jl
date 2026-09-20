@@ -125,7 +125,7 @@ To refer to a certain version or the source code in general, cite for example
 <details><summary><code>Manoptjl-zenodo-mostrecent</code> (BibLaTeX) </summary>
 ```
 ```biblatex
-@software{manoptjl-zenodo-mostrecent,
+@software{Manoptjl-zenodo-mostrecent,
     Author    = {Ronny Bergmann},
     Copyright = {MIT License},
     Doi       = {10.5281/zenodo.4290905},

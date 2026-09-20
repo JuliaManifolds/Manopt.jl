@@ -22,11 +22,12 @@ Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
     PrimalDualManifoldObjective(cost, prox_f, prox_g_dual, adjoint_linearized_operator;
         linearized_forward_operator::Union{Function,Missing}=missing,
         Λ::Union{Function,Missing}=missing,
+        p=missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     )
 
 Using the `evaluation=` keyword can be used to specify that all functions work in-place instead
-of the default allocating one.
+of the default allocating one. A point `p=` wraps the cost for points that are numbers.
 """
 mutable struct PrimalDualManifoldObjective{
         TC, TP, TDP, LFO, ALFO, L,
@@ -42,9 +43,10 @@ function PrimalDualManifoldObjective(
         cost, prox_f, prox_g_dual, adjoint_linearized_operator;
         linearized_forward_operator::Union{Function, Missing} = missing,
         Λ::Union{Function, Missing} = missing,
+        p = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
     )
-    cost_ = maybe_wrap_function(cost, evaluation; result = :Number)
+    cost_ = maybe_wrap_function(cost, p; result = :Number)
     prox_f_ = maybe_wrap_function(prox_f, evaluation; result = :Point)
     prox_g_dual_ = maybe_wrap_function(prox_g_dual, evaluation; result = :TangentVector)
     linearized_forward_operator_ = ismissing(linearized_forward_operator) ? missing : maybe_wrap_function(linearized_forward_operator, evaluation; result = :SecondManifoldPoint)
@@ -126,7 +128,7 @@ the forward operator `Λ` of the objective for the algorithm to work
 
     ChambollePockState(M::AbstractManifold, N::AbstractManifold;
         kwargs...
-    ) where {P, Q, T, R <: Real}
+    )
 
 # Keyword arguments
 
@@ -223,7 +225,7 @@ function Manopt.ChambollePockState(
         p,
         copy(M, p),
         X,
-        copy(N, X),
+        copy(N, n, X),
         convert(R, primal_stepsize),
         convert(R, dual_stepsize),
         convert(R, acceleration),
@@ -260,20 +262,17 @@ function show(io::IO, cps::ChambollePockState)
 end
 function status_summary(cps::ChambollePockState; context::Symbol = :default)
     (context === :short) && return repr(cps)
-    i = get_count(cps, :Iterations)
-    (context === :inline) && return "A solver state for Chambolle-Pock algorithm$(_iteration_suffix(cps))"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = has_converged(cps.stop) ? "Yes" : "No"
+    (context === :inline) && return "A solver state for the Chambolle-Pock algorithm$(_iteration_suffix(cps))"
     as = _callbacks_summary(cps)
     s = """
     # Solver state for `Manopt.jl`s Chambolle-Pock Algorithm
-    $Iter
+    $(_iterations_str(cps))
     ## Parameters$(as)
     * primal_stepsize:  $(cps.primal_stepsize)
     * dual_stepsize:    $(cps.dual_stepsize)
     * acceleration:     $(cps.acceleration)
     * relaxation:       $(cps.relaxation)
-    * relax:            $(cps.relax)
+    * relax:            :$(cps.relax)
     * variant:          :$(cps.variant)
     * retraction_method:              $(cps.retraction_method)
     * inverse_retraction_method:      $(cps.inverse_retraction_method)
@@ -283,10 +282,9 @@ function status_summary(cps::ChambollePockState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(cps.stop; context = context); indent = 0, headers = 1))
-    The algorithm converged: $Conv"""
+    The algorithm converged: $(_converged_str(cps))"""
     return s
 end
-get_solver_result(apds::AbstractPrimalDualSolverState) = get_iterate(apds)
 get_iterate(apds::AbstractPrimalDualSolverState) = apds.p
 function set_iterate!(apds::AbstractPrimalDualSolverState, ::AbstractManifold, p)
     apds.p = p
@@ -317,16 +315,16 @@ $_doc_ChambollePock_formula
 
 This can be done inplace of ``p``.
 
- # Input parameters
+# Input
 
 $(_args(:M))
-$(_args(:M; name = "N"))
+$(_args(:M; name = "N", M = "N"))
 $(_args(:f))
 $(_args(:p))
 $(_args(:X; M = "N", p = "n"))
 $(_args(:p; name = "m"))
 $(_args(:p; name = "n", M = "N"))
-* `adjoint_linearized_operator`:  the adjoint ``DΛ^*`` of the linearized operator ``$(_tex_DΛ)``
+* `adjoint_linear_operator`:      the adjoint ``DΛ^*`` of the linearized operator ``$(_tex_DΛ)``
 * `prox_F, prox_G_dual`:          the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 
 If the forward operator `Λ` is provided, this performs the exact Riemannian Chambolle Pock algorithm;
@@ -334,7 +332,7 @@ see the optional keyword `linearized_forward_operator=` for the linearized varia
 
 For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021](@cite).
 
-# Keyword Arguments
+# Keyword arguments
 
 * `acceleration=0.05`: acceleration parameter
 $(_kwargs(:callbacks; add_properties = [:process_note]))
@@ -353,6 +351,8 @@ $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)"))
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
 $(_kwargs([:retraction_method, :vector_transport_method]))
 $(_kwargs(:vector_transport_method; name = "vector_transport_method_dual", M = "N", p = "n"))
+
+$(_note(:OtherKeywords))
 
 $(_note(:OutputSection))
 """
@@ -409,6 +409,12 @@ function ChambollePock!(
         evaluation = evaluation
     )
     keywords_accepted(ChambollePock!; kwargs...)
+    (variant in (:exact, :linearized)) || throw(
+        DomainError(variant, "The variant has to be one of :exact or :linearized.")
+    )
+    (relax in (:primal, :dual)) || throw(
+        DomainError(relax, "The relaxation has to be one of :primal or :dual.")
+    )
     (variant === :exact && ismissing(Λ)) &&
         throw(ArgumentError("The `:exact` variant requires the forward operator `Λ`."))
     (variant === :linearized && ismissing(linearized_forward_operator)) &&

@@ -1,5 +1,5 @@
 ---
-title: How to run stochastic gradient descent
+title: "How to run stochastic gradient descent"
 author: Ronny Bergmann
 ---
 
@@ -71,6 +71,7 @@ either as one function returning all gradients as a vector (see `gradF`), or, ma
 F(M, p) = 1 / (2 * n) * sum(map(q -> distance(M, p, q)^2, data))
 gradF(M, p) = [grad_distance(M, q, p) for q in data]
 gradf = [(M, p) -> grad_distance(M, q, p) for q in data];
+DL = DecreasingLength(M; length = 1.0) # stochastic gradient descent needs a decreasing step size
 p0 = 1 / sqrt(3) * [1.0, 1.0, 1.0]
 ```
 
@@ -80,46 +81,47 @@ of the functions in the second array of functions.
 So while you can use both `gradF` and `gradf` in the following call, the second one is (much) faster:
 
 ```{julia}
-p_opt1 = stochastic_gradient_descent(M, gradF, p0)
+p_opt1 = stochastic_gradient_descent(M, gradF, p0; stepsize = DL)
 ```
 ```{julia}
-@benchmark stochastic_gradient_descent($M, $gradF, $p0)
+@benchmark stochastic_gradient_descent($M, $gradF, $p0; stepsize = $DL)
 ```
 ```{julia}
-p_opt2 = stochastic_gradient_descent(M, gradf, p0)
+p_opt2 = stochastic_gradient_descent(M, gradf, p0; stepsize = DL)
 ```
 ```{julia}
-@benchmark stochastic_gradient_descent($M, $gradf, $p0)
+@benchmark stochastic_gradient_descent($M, $gradf, $p0; stepsize = $DL)
 ```
 
 
 This result is reasonably close. We can also modify the search direction by using a [`DirectionUpdateRule`](@ref), namely:
 
-On the one hand [`MomentumGradient`](@ref), which keeps track of the iterate and parallel transports the last direction to the current iterate.
+On the one hand [`MomentumGradient`](@ref), which keeps track of the iterate and vector transports the last direction to the current iterate.
 The necessary `vector_transport_method=` keyword is set to a suitable default on every manifold,
 see ``[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)``{=commonmark}. We get
 
 ```{julia}
 p_opt3 = stochastic_gradient_descent(
-    M, gradf, p0; direction = MomentumGradient(; direction = StochasticGradient())
+    M, gradf, p0; stepsize = DL, direction = MomentumGradient(; direction = StochasticGradient())
 )
 ```
 
 ```{julia}
 MG = MomentumGradient(; direction = StochasticGradient());
-@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction = $MG)
+@benchmark stochastic_gradient_descent($M, $gradf, $p0; stepsize = $DL, direction = $MG)
 ```
 
 And on the other hand the [`AverageGradient`](@ref) computes an average of the last `n` gradients. This is done by
 
 ```{julia}
 p_opt4 = stochastic_gradient_descent(
-    M, gradf, p0; direction = AverageGradient(; n = 10, direction = StochasticGradient()),
+    M, gradf, p0; stepsize = DL,
+    direction = AverageGradient(; n = 10, direction = StochasticGradient()),
 )
 ```
 ```{julia}
 AG = AverageGradient(; n = 10, direction = StochasticGradient());
-@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction = $AG)
+@benchmark stochastic_gradient_descent($M, $gradf, $p0; stepsize = $DL, direction = $AG)
 ```
 
 Note that the default [`StoppingCriterion`](@ref) here is [`StopAfterIteration`](@ref)`(10000)` combined with [`StopWhenGradientNormLess`](@ref)`(1e-9)`.

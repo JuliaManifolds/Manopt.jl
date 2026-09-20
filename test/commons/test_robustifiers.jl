@@ -42,6 +42,7 @@ using Manopt, Test
         s = 1.5
         r = CauchyRobustifier()
         sr = ScaledRobustifierFunction(r, s)
+        @test_throws ArgumentError ScaledRobustifierFunction(r, 0.0)
         @test sr.scale == (s ∘ r).scale
         @test (s ∘ sr).scale == s^2
         x = 0.5
@@ -56,6 +57,7 @@ using Manopt, Test
     end
     @testset "Tolerant robustifier" begin
         @test_throws ArgumentError TolerantRobustifier(1.0, 0.0)
+        @test TolerantRobustifier(1, 0.5) isa TolerantRobustifier{Float64}
         a = 1.0
         b = 0.5
         x = 1.5
@@ -66,7 +68,7 @@ using Manopt, Test
         a1 = b * (s1 - s2)
         b1 = 1 / (1 + exp((a - x) / b))
         c1 = 1 / (4 * b * cosh((a - x) / (2b))^2)
-        @test Manopt.get_robustifier_values(TolerantRobustifier(a, b), x) == (a1, b1, c1)
+        @test all(Manopt.get_robustifier_values(TolerantRobustifier(a, b), x) .≈ (a1, b1, c1))
     end
     @testset "Tukey robustifier" begin
         @test Manopt.get_robustifier_values(TukeyRobustifier(), 0.0) == (0.0, 1.0, -2.0)
@@ -76,6 +78,9 @@ using Manopt, Test
         c = 2 * (x - 1)
         @test Manopt.get_robustifier_values(TukeyRobustifier(), x) == (a, b, c)
         @test Manopt.get_robustifier_values(TukeyRobustifier(), 1.5) == (1 / 3, 0.0, 0.0)
+        # beyond the cut-off both derivatives vanish and the Levenberg-Marquardt block is switched off
+        @test Manopt.get_LevenbergMarquardt_scaling(0.0, 0.0, 2.0, 1.0e-4, :Strict) == (0.0, 0.0)
+        @test Manopt.get_LevenbergMarquardt_scaling(0.0, 0.0, 2.0, 1.0e-4, :Normal) == (0.0, 0.0)
     end
     @testset "RobustifierFunction" begin
         # Manual functions

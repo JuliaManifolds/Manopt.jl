@@ -24,19 +24,30 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         eo3 = EmbeddedManifoldObjective(o, copy(p), missing)
         eo4 = EmbeddedManifoldObjective(o)
 
-        for eo in [eo1, eo2, eo3, eo4]
-            @testset "$(split(repr(eo), " ")[1])" begin
+        for (i, eo) in enumerate([eo1, eo2, eo3, eo4])
+            @testset "$(nameof(typeof(eo))) $i" begin
                 @test get_cost(M, eo, p) == f(E, p)
                 @test get_gradient(E, o, p) == ∇f(E, p)
                 @test get_gradient(M, eo, p) == grad_f(M, p)
                 Y = zero_vector(M, p)
                 get_gradient!(M, Y, eo, p)
                 @test Y == grad_f(M, p)
+                # the pair converts the gradient as well
+                @test Manopt.get_cost_and_gradient(M, eo, p) == (f(E, p), grad_f(M, p))
+                @test Manopt.get_cost_and_gradient!(M, Y, eo, p) == (f(E, p), grad_f(M, p))
                 @test get_hessian(M, o, p, X) == ∇²f(M, p, X)
                 @test get_hessian(M, eo, p, X) == Hess_f(M, p, X)
                 get_hessian!(M, Y, eo, p, X)
                 @test Y == Hess_f(M, p, X)
             end
+        end
+        # a subgradient is converted like a gradient
+        so = ManifoldSubgradientObjective(f, ∇f)
+        for eso in [EmbeddedManifoldObjective(M, so), EmbeddedManifoldObjective(so, missing, copy(X)), EmbeddedManifoldObjective(so, copy(p), missing), EmbeddedManifoldObjective(so)]
+            @test get_subgradient(M, eso, p) == grad_f(M, p)
+            Y = zero_vector(M, p)
+            get_subgradient!(M, Y, eso, p)
+            @test Y == grad_f(M, p)
         end
         # Without interim caches for p and X
         eo4repr = repr(eo4)
@@ -51,8 +62,8 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         eco2 = EmbeddedManifoldObjective(o2, missing, copy(X))
         eco3 = EmbeddedManifoldObjective(o2, copy(p), missing)
         eco4 = EmbeddedManifoldObjective(o2)
-        for eco in [eco1, eco2, eco3, eco4]
-            @testset "$(split(repr(eco), " ")[1])" begin
+        for (i, eco) in enumerate([eco1, eco2, eco3, eco4])
+            @testset "$(nameof(typeof(eco))) $i" begin
                 @test get_constraints(M, eco, p) == [[f(E, p)], [f(E, p)]]
                 @test get_equality_constraint(M, eco, p, :) == [f(E, p)]
                 @test get_equality_constraint(M, eco, p, 1) == f(E, p)
@@ -83,6 +94,15 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
                 @test get_hess_inequality_constraint(M, eco, p, X, :) == [HX]
                 @test get_hess_inequality_constraint!(M, Y, eco, p, X, 1) == HX
                 @test get_hess_inequality_constraint!(M, Z, eco, p, X, :) == [HX]
+                # leaving the index out is the same as passing the full range
+                @test get_grad_equality_constraint(M, eco, p) == get_grad_equality_constraint(M, eco, p, :)
+                @test get_grad_equality_constraint!(M, Z, eco, p) == get_grad_equality_constraint(M, eco, p, :)
+                @test get_grad_inequality_constraint(M, eco, p) == get_grad_inequality_constraint(M, eco, p, :)
+                @test get_grad_inequality_constraint!(M, Z, eco, p) == get_grad_inequality_constraint(M, eco, p, :)
+                @test get_hess_equality_constraint(M, eco, p, X) == [HX]
+                @test get_hess_equality_constraint!(M, Z, eco, p, X) == [HX]
+                @test get_hess_inequality_constraint(M, eco, p, X) == [HX]
+                @test get_hess_inequality_constraint!(M, Z, eco, p, X) == [HX]
             end
         end
         # the trailing range keeps the problem level calls on these methods

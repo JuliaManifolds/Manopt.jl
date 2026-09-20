@@ -1,8 +1,4 @@
 using Manifolds, Manopt, Test, ManifoldsBase, RecursiveArrayTools
-using LinearAlgebra: I
-
-using Random
-Random.seed!(42)
 # Test the additional manifold functions
 #
 @testset "Additional Manifold functions" begin
@@ -122,6 +118,11 @@ Random.seed!(42)
 
         M = ProbabilitySimplex(3)
         @test Manopt.max_stepsize(M) == 1.0
+
+        Mspd = SymmetricPositiveDefinite(2)
+        pspd = [2.0 0.0; 0.0 0.5]
+        @test Manopt.max_stepsize(Mspd, pspd) == log(floatmax(Float64))
+        @test Manopt.max_stepsize(Mspd) == Manopt.max_stepsize(Mspd, pspd)
     end
     @testset "Vector space default" begin
         @test Manopt.Rn(Val(:Manopt), 3) isa ManifoldsBase.DefaultManifold

@@ -37,8 +37,11 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
         @test startswith(repr(s), "FrankWolfeState(")
         # Manifold+State errors since problem is missing
         @test_throws ErrorException FrankWolfeState(M, Manopt.Test.DummyState())
-        set_iterate!(s, M, 2 .* p)
-        @test get_iterate(s) == 2 .* p
+        q = 2 .* p
+        stored = get_iterate(s)
+        set_iterate!(s, M, q)
+        @test get_iterate(s) == q
+        @test get_iterate(s) === stored
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(FC, FG))
         gds = GradientDescentState(M)
         s2 = FrankWolfeState(M, dmp, gds; p = p)
@@ -62,6 +65,13 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
             )
             sub_o = Manopt.get_objective(Manopt.get_state(s2e).sub_problem, false)
             @test !(sub_o isa Manopt.EmbeddedManifoldObjective)
+            # both retraction selectors reach the state
+            s2r = Frank_Wolfe_method(
+                M, f, grad_f, p; sub_problem = oracle, stopping_criterion = StopAfterIteration(0), return_state = true,
+                retraction_method = ProjectionRetraction(), inverse_retraction_method = ProjectionInverseRetraction(),
+            )
+            @test Manopt.get_state(s2r).inverse_retraction_method == ProjectionInverseRetraction()
+            @test Manopt.get_state(s2r).retraction_method == ProjectionRetraction()
         end
         @testset "Callbacks" begin
             sk_record = Tuple{Symbol, Int}[]
@@ -96,6 +106,7 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
                 p;
                 evaluation = InplaceEvaluation(),
                 stopping_criterion = StopAfterIteration(1),
+                sub_stopping_criterion = StopAfterIteration(1),
             )
             @test is_point(M, p3)
             p3b = Frank_Wolfe_method(
@@ -105,9 +116,12 @@ using ManifoldsBase, Manifolds, Manopt, Random, Test, LinearAlgebra
                 p;
                 evaluation = AllocatingEvaluation(),
                 stopping_criterion = StopAfterIteration(1),
+                sub_stopping_criterion = StopAfterIteration(1),
             )
             #test that the subproblem is delivering a point.
             @test is_point(M, p3b)
+            @test all(isfinite, p3)
+            @test p3 == p3b
         end
         @testset "Number test" begin
             M = Euclidean()

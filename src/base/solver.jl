@@ -7,7 +7,7 @@ Subsolver state indicating that a closed-form solution is available.
 
     ClosedFormSubSolverState()
 """
-struct ClosedFormSubSolverState{} <: AbstractManoptSolverState end
+struct ClosedFormSubSolverState <: AbstractManoptSolverState end
 Base.show(io::IO, ::ClosedFormSubSolverState) = print(io, "ClosedFormSubSolverState()")
 # a closed form sub solver has no iterate to set
 set_iterate!(cfss::ClosedFormSubSolverState, ::AbstractManifold, p) = cfss
@@ -43,7 +43,7 @@ function get_parameter(rst::ReturnSolverState, v::Val{T}, args...) where {T}
     return get_parameter(rst.state, v, args...)
 end
 
-doc_get_solver_return = """
+_doc_get_solver_return = """
     get_solver_return(s::ReturnSolverState)
     get_solver_return(o::AbstractManifoldObjective, s::ReturnSolverState)
 
@@ -54,7 +54,7 @@ Return the internally stored state of the [`ReturnSolverState`](@ref) instead of
 Since a solver might return both a state and an objective in a tuple, this then re-iterates on the second argument.
 """
 
-@doc "$(doc_get_solver_return)"
+@doc "$(_doc_get_solver_return)"
 get_solver_return(s::ReturnSolverState) = s.state
 
 function decorate_state! end
@@ -158,7 +158,8 @@ providing one of them activates the corresponding decorator.
   For example `(:LRU, [:Cost, :Gradient], 10)` states that the last 10 used cost function
   evaluations and gradient evaluations should be stored. See [`objective_cache_factory`](@ref) for details.
 * `count=missing`: specify which calls to the objective should be counted, see [`ManifoldCountObjective`](@ref) for the full list.
-* `objective_type=:Riemannian`: specify that an objective is `:Riemannian` or `:Euclidean`.
+* `objective_type=:Riemannian`: specify that an objective is `:Riemannian`, `:Embedding` or `:Euclidean`.
+  All other values are treated as `:Riemannian`.
   The `:Euclidean` symbol is equivalent to specifying it as `:Embedding`, since in the end,
   both refer to converting an objective from the embedding (whether it is Euclidean or not)
   to the Riemannian one.
@@ -178,9 +179,9 @@ function decorate_objective!(
         } = missing,
         count::Union{Missing, AbstractVector{<:Symbol}} = missing,
         objective_type::Symbol = :Riemannian,
-        _p = objective_type == :Riemannian ? missing : rand(M),
-        _embedded_p = objective_type == :Riemannian ? missing : embed(M, _p),
-        _embedded_X = objective_type == :Riemannian ? missing : embed(M, _p, zero_vector(M, _p)),
+        _p = objective_type ∈ (:Embedding, :Euclidean) ? rand(M) : missing,
+        _embedded_p = objective_type ∈ (:Embedding, :Euclidean) ? embed(M, _p) : missing,
+        _embedded_X = objective_type ∈ (:Embedding, :Euclidean) ? embed(M, _p, zero_vector(M, _p)) : missing,
         return_objective = false,
         kwargs...,
     ) where {O <: AbstractManifoldObjective}

@@ -31,7 +31,7 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```{julia}
 #| output: false
 using Manifolds, Manopt, ManifoldDiff
-using LinearAlgebra, Random, Colors, Plots
+using LinearAlgebra, Random, Plots
 Random.seed!(123)
 ```
 
@@ -86,7 +86,7 @@ check_Hessian(M, f, grad_f, Hess_f; plot = true, error = :error, atol = 1.0e-15)
 While they look reasonable here and were already derived, for the general case this derivation
 might be more complicated.
 
-Luckily there exist two functions in [`ManifoldDiff.jl`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/) that are implemented for several
+Luckily there exist two functions in ``[`ManifoldDiff.jl`](@extref ManifoldDiff :std:doc:`index`)``{=commonmark} that are implemented for several
 manifolds from ``[`Manifolds.jl`](@extref Manifolds :std:doc:`index`)``{=commonmark}, namely ``[`riemannian_gradient`](@extref ManifoldDiff :jl:function:`ManifoldDiff.riemannian_gradient`)``{=commonmark}`(M, p, eG)` that converts a Euclidean gradient
 `eG=`$\nabla \tilde f(p)$ into the Riemannian one $\operatorname{grad} f(p)$
  and ``[`riemannian_Hessian`](@extref ManifoldDiff :jl:function:`ManifoldDiff.riemannian_Hessian`)``{=commonmark}`(M, p, eG, eH, X)`

@@ -7,7 +7,7 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
     q0 = [10.0, 5.0]
     sc = StopAfterIteration(200)
     sgs = SubGradientMethodState(
-        M; p = p0, stopping_criterion = sc, stepsize = Manopt.ConstantStepsize(M),
+        M; p = copy(M, p0), stopping_criterion = sc, stepsize = Manopt.ConstantStepsize(M),
     )
     sgs_ac = SubGradientMethodState(
         M; p = q0, stopping_criterion = sc, stepsize = Manopt.ConstantStepsize(M, 1.0; type = :absolute),
@@ -19,14 +19,16 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
     @test startswith(repr(sgs), "SubGradientMethodState(; ")
     @test get_iterate(sgs) == p0
     sgs.X = [1.0, 0.0]
-    f(M, q) = distance(M, q, p)
+    f, ∂f, ∂f! = Manopt.Test.distance_task(M, p)
+    @testset "The tangent vector memory is kept" begin
+        X0 = [7.0, 7.0]
+        sgs_X = SubGradientMethodState(M; p = copy(p0), X = X0, stopping_criterion = StopAfterIteration(1))
+        dmp_X = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, (M, q) -> q - p))
+        initialize_solver!(dmp_X, sgs_X)
+        @test sgs_X.X === X0
+        @test X0 == [0.0, 0.0]
+    end
     @testset "Allocating Subgradient" begin
-        function ∂f(M, q)
-            if distance(M, p, q) == 0
-                return zero_vector(M, q)
-            end
-            return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
-        end
         o = ManifoldSubgradientObjective(f, ∂f)
         @test startswith(repr(o), "ManifoldSubgradientObjective(")
         @test startswith(Manopt.status_summary(o), "A subgradient objective")
@@ -64,23 +66,13 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
         @test_throws MethodError get_proximal_map!(mp, X, 1.0, sgs.p)
         sgs2 = subgradient_method(M, f, ∂f, p0; return_state = true)
         p_star2 = get_solver_result(sgs2)
-        @test get_subgradient(sgs2) == -∂f(M, p_star2)
+        @test get_subgradient(sgs2) == ∂f(M, p_star2)
         @test f(M, p_star2) <= f(M, p0)
         set_iterate!(sgs2, M, p)
         @test get_iterate(sgs2) == p
     end
 
     @testset "Mutating Subgradient" begin
-        function ∂f!(M, X, q)
-            d = distance(M, p, q)
-            if d == 0
-                zero_vector!(M, X, q)
-                return X
-            end
-            log!(M, X, q, p)
-            X ./= -max(10 * eps(Float64), d)
-            return X
-        end
         sgom = ManifoldSubgradientObjective(f, ∂f!; evaluation = InplaceEvaluation())
         mp = DefaultManoptProblem(M, sgom)
         X = zero_vector(M, p)

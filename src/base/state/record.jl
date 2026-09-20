@@ -83,12 +83,11 @@ function status_summary(rst::RecordSolverState; context::Symbol = :default)
     (context === :short) && return repr(rst)
     (context === :inline) && (return "A RecordSolverState for $(status_summary(rst.state; context = context))")
     if length(rst.recordDictionary) > 0
-        return """
-        $(status_summary(rst.state; context = context))
-
-        ## Record
-        $(rst.recordDictionary)
-        """
+        s = ""
+        for (key, r) in pairs(rst.recordDictionary)
+            s = "$s\n    :$key = $(status_summary(r; context = context))"
+        end
+        return "$(status_summary(rst.state; context = context))\n\n## Record$s"
     else # We indicate there is a record but no registered recordings
         return """
         $(status_summary(rst.state; context = context))
@@ -260,6 +259,7 @@ mutable struct RecordEvery <: RecordAction
     every::Int
     always_update::Bool
     function RecordEvery(r::RecordAction, every::Int = 1, always_update::Bool = true)
+        (every < 1) && throw(DomainError(every, "RecordEvery requires a positive `every`."))
         return new(r, every, always_update)
     end
 end
