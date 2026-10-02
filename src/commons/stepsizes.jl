@@ -277,13 +277,14 @@ default retraction on `M`.
 ## Keyword arguments
 
 * `candidate_point=allocate_result(M, rand)`
-* `initial_stepsize=1.0`
+* `initial_stepsize=number_type(1.0)`
 $(_kwargs(:retraction_method))
-* `contraction_factor=0.95`
-* `sufficient_decrease=0.1`
+* `contraction_factor=number_type(0.95)`
+* `sufficient_decrease=number_type(0.1)`
 * `last_stepsize=initial_stepsize`
 * `initial_guess=`[`ArmijoInitialGuess`](@ref)`()`
-* `stop_when_stepsize_less=0.0`: stop when the stepsize decreased below this value.
+$(_kwargs(:number_type; p = "candidate_point"))
+* `stop_when_stepsize_less=number_type(0.0)`: stop when the stepsize decreased below this value.
 * `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M)`: provide an absolute maximal step size.
 * `stop_increasing_at_step=100`: for the initial increase test, stop after these many steps
 * `stop_decreasing_at_step=1000`: in the backtrack, stop after these many steps
@@ -322,11 +323,12 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
             M::AbstractManifold;
             additional_decrease_condition::DF = (M, p) -> true, additional_increase_condition::IF = (M, p) -> true,
             candidate_point::P = allocate_result(M, rand),
-            contraction_factor::Real = 0.95, initial_stepsize::Real = 1.0, last_stepsize::Real = initial_stepsize,
+            number_type::Type = real(float(number_eltype(candidate_point))),
+            contraction_factor::Real = number_type(0.95), initial_stepsize::Real = number_type(1.0), last_stepsize::Real = initial_stepsize,
             initial_guess::IGF = ArmijoInitialGuess(), retraction_method::TRM = default_retraction_method(M, typeof(candidate_point)),
-            stop_when_stepsize_less::Real = 0.0, stop_when_stepsize_exceeds::Real = max_stepsize(M),
+            stop_when_stepsize_less::Real = number_type(0.0), stop_when_stepsize_exceeds::Real = number_type(max_stepsize(M)),
             stop_increasing_at_step::Integer = 100, stop_decreasing_at_step::Integer = 1000,
-            sufficient_decrease::Real = 0.1,
+            sufficient_decrease::Real = number_type(0.1),
         ) where {TRM <: AbstractRetractionMethod, P, IGF, DF, IF}
         R = promote_type(
             typeof(contraction_factor), typeof(initial_stepsize), typeof(last_stepsize),
@@ -467,16 +469,17 @@ Overall, a step size is sought that provides _enough decrease_, see
   specify an additional criterion that has to be met to accept a step size in the (initial) increase loop
 * `candidate_point=allocate_result(M, rand)`:
   specify a point to be used as memory for the candidate points.
-* `contraction_factor=0.95`: how to update ``s`` in the decrease step
-* `initial_stepsize=1.0`: specify an initial step size
+* `contraction_factor=number_type(0.95)`: how to update ``s`` in the decrease step
+* `initial_stepsize=number_type(1.0)`: specify an initial step size
 * `initial_guess=`[`ArmijoInitialGuess`](@ref)`()`: Compute the initial step size of
   a line search based on this function. See [`AbstractInitialLinesearchGuess`](@ref) for details.
+$(_kwargs(:number_type; p = "candidate_point"))
 $(_kwargs(:retraction_method))
-* `stop_when_stepsize_less=0.0`: a safeguard, stop when the decreasing step is below this (nonnegative) bound.
+* `stop_when_stepsize_less=number_type(0.0)`: a safeguard, stop when the decreasing step is below this (nonnegative) bound.
 * `stop_when_stepsize_exceeds=max_stepsize(M)`: a safeguard to not choose a too long step size when initially increasing
 * `stop_increasing_at_step=100`: stop the initial increasing loop after this amount of steps. Set to `0` to never increase in the beginning
 * `stop_decreasing_at_step=1000`: maximal number of Armijo decreases / tests to perform
-* `sufficient_decrease=0.1`: the sufficient decrease parameter ``τ``
+* `sufficient_decrease=number_type(0.1)`: the sufficient decrease parameter ``τ``
 
 For the stop safe guards you can pass `:Messages` to a `debug=` to see `@info` messages when these happen.
 

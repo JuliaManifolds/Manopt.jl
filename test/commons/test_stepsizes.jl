@@ -1262,4 +1262,20 @@ end
             @test isapprox(M, q, Float32[1, 1]; atol = 1.0f-3)
         end
     end
+    @testset "Armijo parameters are set according to its number_type" begin
+        # Real Float32 yields FLoat32 types
+        M = Euclidean(2)
+        p = Float32.([1.0, 0.1])
+        s = ArmijoLinesearch(M; candidate_point = p)()
+        @test s.initial_stepsize isa Float32
+        # Complex case
+        Mc = Euclidean(2; field = ℂ)
+        pc = ComplexF32.([1.0, 1.0im])
+        sc = ArmijoLinesearch(M; candidate_point = pc)()
+        # This still yields real parameters
+        @test sc.initial_stepsize isa Float32
+        # Manually
+        sn = ArmijoLinesearch(M; number_type = Float32)()
+        @test sn.initial_stepsize isa Float32
+    end
 end
