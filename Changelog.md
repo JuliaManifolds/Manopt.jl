@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* a `number_type=` keyword for the `ArmijoLinesearch` to set the default number type for the stored paramaters. By default it uses the `candidate_point`s `number_eltype`.
+* a `number_type=` keyword for the `ArmijoLinesearch` to set the default number type for the stored parameters. By default it uses the `candidate_point`s `number_eltype`.
 
 ## [0.6.8] September 20, 2026
 
