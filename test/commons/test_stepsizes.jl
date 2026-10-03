@@ -170,6 +170,18 @@ end
     @test f3(M, q4) <= f3(M, gds3.p) + 1.0e-4 * α4 * d0
     @test -grad_f3(M, q4)' * gds3.X >= 0.999 * d0
     @test get_last_stepsize(s4) == α4
+    p4f = Float32[1.0, 1.0]
+    s4f = WolfePowellLinesearch()(M, p4f)
+    @test s4f.candidate_point isa Vector{Float32}
+    @test s4f.last_stepsize isa Float32
+    @test s4f.max_stepsize isa Float32
+    @test s4f.sufficient_decrease isa Float32
+    @test s4f.sufficient_curvature isa Float32
+    @test s4f.stop_when_stepsize_less isa Float32
+    gds4f = GradientDescentState(M; p = p4f)
+    gds4f.X = grad_f3(M, p4f)
+    α4f = s4f(dmp3, gds4f, 1, -gds4f.X)
+    @test α4f isa Float32
     @testset "Armijo setter / getters" begin
         # Check that the passdowns work, though; since the defaults are functions, they return nothing
         @test isnothing(Manopt.get_parameter(s, :IncreaseCondition, :Dummy))

@@ -2235,13 +2235,14 @@ mutable struct WolfePowellLinesearchStepsize{
             M::AbstractManifold;
             p::P = allocate_result(M, rand),
             X::T = zero_vector(M, p),
-            max_stepsize::Real = max_stepsize(M),
+            number_type::Type = real(float(number_eltype(p))),
+            max_stepsize::Real = number_type(max_stepsize(M)),
             retraction_method::TRM = default_retraction_method(M),
-            sufficient_decrease::Real = 1.0e-4,
-            sufficient_curvature::Real = 0.999,
-            initial_guess = ConstantInitialGuess(1.0),
+            sufficient_decrease::Real = number_type(1.0e-4),
+            sufficient_curvature::Real = number_type(0.999),
+            initial_guess = ConstantInitialGuess(number_type(1.0)),
             vector_transport_method::VTM = default_vector_transport_method(M),
-            stop_when_stepsize_less::Real = 0.0,
+            stop_when_stepsize_less::Real = number_type(0.0),
             stop_increasing_at_step::Integer = 100,
             stop_decreasing_at_step::Integer = 1000,
         ) where {TRM, VTM, P, T}
@@ -2285,13 +2286,14 @@ function (a::WolfePowellLinesearchStepsize)(
     l = isnothing(gradient) ? get_differential(mp, p, η) :
         get_differential(mp, p, η; gradient = gradient, evaluated = true)
     grad_norm = norm(M, p, η)
+    R = typeof(a.last_stepsize)
     max_step_increase = ifelse(
-        isfinite(a.max_stepsize), min(1.0e9, a.max_stepsize / grad_norm), 1.0e9
+        isfinite(a.max_stepsize), min(R(1.0e9), a.max_stepsize / grad_norm), R(1.0e9)
     )
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_step_increase = min(max_step_increase, kwargs[:stop_when_stepsize_exceeds])
     end
-    step = min(a.initial_guess(mp, ams, k, a.last_stepsize, η), max_step_increase)
+    step = min(R(a.initial_guess(mp, ams, k, a.last_stepsize, η)), max_step_increase)
     s_plus = step
     s_minus = step
     # clear messages
@@ -2304,8 +2306,8 @@ function (a::WolfePowellLinesearchStepsize)(
     Y = zero_vector(M, a.candidate_point)
     if fNew > f0 + a.sufficient_decrease * step * l
         i = 0
-        while (fNew > f0 + a.sufficient_decrease * step * l) && (s_minus > 10^(-9)) # decrease
-            s_minus = s_minus * 0.5
+        while (fNew > f0 + a.sufficient_decrease * step * l) && (s_minus > R(1.0e-9)) # decrease
+            s_minus = s_minus * R(0.5)
             step = s_minus
             ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
             fNew = get_cost(mp, a.candidate_point)
@@ -2315,14 +2317,14 @@ function (a::WolfePowellLinesearchStepsize)(
                 break
             end
         end
-        s_plus = min(2.0 * s_minus, max_step_increase)
+        s_plus = min(R(2) * s_minus, max_step_increase)
     else
         vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
         if get_differential(mp, a.candidate_point, a.candidate_direction; gradient = Y) < a.sufficient_curvature * l
             i = 0
             while fNew <= f0 + a.sufficient_decrease * step * l && (s_plus < max_step_increase)
                 # increase
-                s_plus = min(s_plus * 2.0, max_step_increase)
+                s_plus = min(s_plus * R(2), max_step_increase)
                 step = s_plus
                 ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
                 fNew = get_cost(mp, a.candidate_point)
@@ -2332,13 +2334,13 @@ function (a::WolfePowellLinesearchStepsize)(
                     break
                 end
             end
-            s_minus = s_plus / 2.0
+            s_minus = s_plus / R(2)
         end
     end
     ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
     vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
     while get_differential(mp, a.candidate_point, a.candidate_direction; gradient = Y) < a.sufficient_curvature * l
-        step = (s_minus + s_plus) / 2
+        step = (s_minus + s_plus) / R(2)
         # the bisection interval collapsed to two adjacent floats, so it cannot shrink further
         ((step == s_minus) || (step == s_plus)) && break
         ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)

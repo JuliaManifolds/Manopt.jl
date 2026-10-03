@@ -3,9 +3,7 @@ function default_stepsize(
         retraction_method = default_retraction_method(M),
     )
     # take a default with a slightly defensive initial step size.
-    return ArmijoLinesearch(
-        M; retraction_method = retraction_method, initial_stepsize = 1.0
-    )
+    return ArmijoLinesearch(M; retraction_method = retraction_method)
 end
 function status_summary(cgds::ConjugateGradientDescentState; context::Symbol = :default)
     (context === :short) && (return repr(cgds))
