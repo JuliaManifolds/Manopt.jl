@@ -182,6 +182,11 @@ end
     gds4f.X = grad_f3(M, p4f)
     α4f = s4f(dmp3, gds4f, 1, -gds4f.X)
     @test α4f isa Float32
+    s4mixed = WolfePowellLinesearch(;
+        initial_guess = Manopt.ConstantInitialGuess(1.0)
+    )(M, p4f)
+    α4mixed = s4mixed(dmp3, gds4f, 1, -gds4f.X)
+    @test α4mixed isa Float64
     @testset "Armijo setter / getters" begin
         # Check that the passdowns work, though; since the defaults are functions, they return nothing
         @test isnothing(Manopt.get_parameter(s, :IncreaseCondition, :Dummy))

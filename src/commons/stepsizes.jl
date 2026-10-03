@@ -2286,14 +2286,16 @@ function (a::WolfePowellLinesearchStepsize)(
     l = isnothing(gradient) ? get_differential(mp, p, η) :
         get_differential(mp, p, η; gradient = gradient, evaluated = true)
     grad_norm = norm(M, p, η)
-    R = typeof(a.last_stepsize)
+    finite_step_limit = oftype(a.max_stepsize, 1.0e9)
     max_step_increase = ifelse(
-        isfinite(a.max_stepsize), min(R(1.0e9), a.max_stepsize / grad_norm), R(1.0e9)
+        isfinite(a.max_stepsize),
+        min(finite_step_limit, a.max_stepsize / grad_norm),
+        finite_step_limit,
     )
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_step_increase = min(max_step_increase, kwargs[:stop_when_stepsize_exceeds])
     end
-    step = min(R(a.initial_guess(mp, ams, k, a.last_stepsize, η)), max_step_increase)
+    step = min(a.initial_guess(mp, ams, k, a.last_stepsize, η), max_step_increase)
     s_plus = step
     s_minus = step
     # clear messages
@@ -2306,8 +2308,9 @@ function (a::WolfePowellLinesearchStepsize)(
     Y = zero_vector(M, a.candidate_point)
     if fNew > f0 + a.sufficient_decrease * step * l
         i = 0
-        while (fNew > f0 + a.sufficient_decrease * step * l) && (s_minus > R(1.0e-9)) # decrease
-            s_minus = s_minus * R(0.5)
+        while (fNew > f0 + a.sufficient_decrease * step * l) &&
+                (s_minus > oftype(s_minus, 1.0e-9)) # decrease
+            s_minus /= 2
             step = s_minus
             ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
             fNew = get_cost(mp, a.candidate_point)
@@ -2317,14 +2320,14 @@ function (a::WolfePowellLinesearchStepsize)(
                 break
             end
         end
-        s_plus = min(R(2) * s_minus, max_step_increase)
+        s_plus = min(2 * s_minus, max_step_increase)
     else
         vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
         if get_differential(mp, a.candidate_point, a.candidate_direction; gradient = Y) < a.sufficient_curvature * l
             i = 0
             while fNew <= f0 + a.sufficient_decrease * step * l && (s_plus < max_step_increase)
                 # increase
-                s_plus = min(s_plus * R(2), max_step_increase)
+                s_plus = min(2 * s_plus, max_step_increase)
                 step = s_plus
                 ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
                 fNew = get_cost(mp, a.candidate_point)
@@ -2334,13 +2337,13 @@ function (a::WolfePowellLinesearchStepsize)(
                     break
                 end
             end
-            s_minus = s_plus / R(2)
+            s_minus = s_plus / 2
         end
     end
     ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
     vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
     while get_differential(mp, a.candidate_point, a.candidate_direction; gradient = Y) < a.sufficient_curvature * l
-        step = (s_minus + s_plus) / R(2)
+        step = (s_minus + s_plus) / 2
         # the bisection interval collapsed to two adjacent floats, so it cannot shrink further
         ((step == s_minus) || (step == s_plus)) && break
         ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
