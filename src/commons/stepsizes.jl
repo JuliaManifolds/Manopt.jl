@@ -2189,14 +2189,15 @@ $(_fields(:vector_transport_method))
 
 ## Keyword arguments
 
-* `sufficient_decrease=1e-4`
-* `sufficient_curvature=0.999`
-* `initial_guess=`[`ConstantInitialGuess`](@ref)`(1.0)`: the first trial step, clamped to `max_stepsize`
+* `sufficient_decrease=number_type(1e-4)`
+* `sufficient_curvature=number_type(0.999)`
+* `initial_guess=`[`ConstantInitialGuess`](@ref)`(number_type(1.0))`: the first trial step, clamped to `max_stepsize`
 $(_kwargs(:p)) to store an interim result
 $(_kwargs(:X)) as type of memory allocated for the candidate direction
-* `max_stepsize=`[`max_stepsize`](@ref)`(M)`: largest stepsize allowed here.
+$(_kwargs(:number_type; p = "p"))
+* `max_stepsize=number_type(`[`max_stepsize`](@ref)`(M))`: largest stepsize allowed here.
 $(_kwargs(:retraction_method))
-* `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
+* `stop_when_stepsize_less=number_type(0.0)`: smallest stepsize when to stop (the last one before is taken)
 * `stop_increasing_at_step=100`: for the initial increase test (s_plus), stop after these many steps
 * `stop_decreasing_at_step=1000`: for the initial decrease test (s_minus), stop after these many steps
 $(_kwargs(:vector_transport_method))
@@ -2419,14 +2420,15 @@ This is adopted from [NocedalWright:2006; Section 3.1](@cite)
 
 # Keyword arguments
 
-* `sufficient_decrease=1e-4`
-* `sufficient_curvature=0.999`
-* `initial_guess=`[`ConstantInitialGuess`](@ref)`(1.0)`: the first trial step, clamped to `max_stepsize`
+* `sufficient_decrease=number_type(1e-4)`
+* `sufficient_curvature=number_type(0.999)`
+* `initial_guess=`[`ConstantInitialGuess`](@ref)`(number_type(1.0))`: the first trial step, clamped to `max_stepsize`
 $(_kwargs(:p)) as temporary storage for candidates
 $(_kwargs(:X)) as type of memory allocated for the candidate direction
-* `max_stepsize=`[`max_stepsize`](@ref)`(M)`: largest stepsize allowed here.
+$(_kwargs(:number_type; p = "p"))
+* `max_stepsize=number_type(`[`max_stepsize`](@ref)`(M))`: largest stepsize allowed here.
 $(_kwargs(:retraction_method))
-* `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
+* `stop_when_stepsize_less=number_type(0.0)`: smallest stepsize when to stop (the last one before is taken)
 * `stop_increasing_at_step=100`: for the initial increase test (s_plus), stop after these many steps
 * `stop_decreasing_at_step=1000`: for the initial decrease test (s_minus), stop after these many steps
 $(_kwargs(:vector_transport_method))
