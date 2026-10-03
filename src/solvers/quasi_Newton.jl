@@ -89,6 +89,7 @@ mutable struct QuasiNewtonState{
             retraction_method::RM = default_retraction_method(M, typeof(p)),
             stepsize::S = default_stepsize(
                 M, QuasiNewtonState;
+                p = p,
                 retraction_method = retraction_method, vector_transport_method = vector_transport_method,
             ),
             nondescent_direction_behavior::Symbol = :reinitialize_direction_update,
@@ -179,8 +180,11 @@ function set_gradient!(qns::QuasiNewtonState, M, p, X)
     copyto!(M, qns.X, p, X)
     return qns
 end
-function default_stepsize(M::AbstractManifold, ::Type{QuasiNewtonState}; kwargs...)
-    return Manopt.WolfePowellLinesearchStepsize(M; stop_when_stepsize_less = 1.0e-10, kwargs...)
+function default_stepsize(M::AbstractManifold, ::Type{QuasiNewtonState}; p = rand(M), kwargs...)
+    R = real(float(number_eltype(p)))
+    return Manopt.WolfePowellLinesearchStepsize(
+        M, p; stop_when_stepsize_less = R(1.0e-10), kwargs...
+    )
 end
 _doc_QN_init_scaling = raw"``\frac{s⟨s_k,y_k⟩_{p_k}}{\lVert y_k\rVert_{p_k}^2}``"
 _doc_QN = """
@@ -320,6 +324,7 @@ function quasi_Newton!(
         initial_scale::Union{<:Real, Nothing} = ismissing(preconditioner) ? 1.0 : nothing,
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
             M, QuasiNewtonState;
+            p = p,
             retraction_method = retraction_method,
             vector_transport_method = vector_transport_method,
         ),

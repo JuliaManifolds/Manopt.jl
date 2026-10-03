@@ -31,7 +31,18 @@ using ManifoldDiff: grad_distance
         # the default stepsize factory is produced into a Stepsize
         @test ConjugateGradientDescentState(M) isa ConjugateGradientDescentState
         @test s1.coefficient(dmp, s1, 1) == 0
-        @test default_stepsize(M, typeof(s1)) isa Manopt.ManifoldDefaultsFactory{Manopt.ArmijoLinesearchStepsize}
+        default_stepsize_factory = default_stepsize(M, typeof(s1))
+        @test default_stepsize_factory isa Manopt.ManifoldDefaultsFactory{Manopt.ArmijoLinesearchStepsize}
+        p_float32 = Float32[0.0, 1.0]
+        default_stepsize_float32 =
+            default_stepsize(M, typeof(s1); p = p_float32)(M, p_float32)
+        @test default_stepsize_float32.candidate_point isa Vector{Float32}
+        @test default_stepsize_float32.initial_stepsize === 1.0f0
+        @test default_stepsize_float32.last_stepsize isa Float32
+        p_float64 = Float64[0.0, 1.0]
+        default_stepsize_float64 =
+            default_stepsize(M, typeof(s1); p = p_float64)(M, p_float64)
+        @test default_stepsize_float64.initial_stepsize === 1.0
         @test Manopt.get_message(s1) == ""
 
         dU = Manopt.ConjugateDescentCoefficient()
