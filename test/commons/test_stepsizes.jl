@@ -1295,7 +1295,7 @@ end
         grad_f(M, p) = 2.0f0 .* (p .- 1.0f0)
         mgo = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, mgo)
-        gds = GradientDescentState(M; p=p)
+        gds = GradientDescentState(M; p = p)
         step = s(mp, gds, 1)
         @test step isa Float32
     end
