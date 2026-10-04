@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Extensions · Manopt.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.png" alt="Manopt.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">Manopt.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../about/">About</a></li><li><span class="tocitem">How to...</span><ul><li><a class="tocitem" href="../tutorials/Optimize!/">Get started: Optimize!</a></li><li><a class="tocitem" href="../tutorials/InplaceGradient/">Speedup using Inplace computations</a></li><li><a class="tocitem" href="../tutorials/AutomaticDifferentiation/">Use Automatic Differentiation</a></li><li><a class="tocitem" href="../tutorials/CountAndCache/">Count and use a Cache</a></li><li><a class="tocitem" href="../tutorials/HowToRecord/">Record values</a></li><li><a class="tocitem" href="../tutorials/ConstrainedOptimization/">Do Contrained Optimization</a></li><li><a class="tocitem" href="../tutorials/GeodesicRegression/">Do Geodesic Regression</a></li></ul></li><li><span class="tocitem">Solvers</span><ul><li><a class="tocitem" href="../solvers/">Introduction</a></li><li><a class="tocitem" href="../solvers/alternating_gradient_descent/">Alternating Gradient Descent</a></li><li><a class="tocitem" href="../solvers/augmented_Lagrangian_method/">Augmented Lagrangian Method</a></li><li><a class="tocitem" href="../solvers/ChambollePock/">Chambolle-Pock</a></li><li><a class="tocitem" href="../solvers/conjugate_gradient_descent/">Conjugate gradient descent</a></li><li><a class="tocitem" href="../solvers/cyclic_proximal_point/">Cyclic Proximal Point</a></li><li><a class="tocitem" href="../solvers/difference_of_convex/">Difference of Convex</a></li><li><a class="tocitem" href="../solvers/DouglasRachford/">Douglas–Rachford</a></li><li><a class="tocitem" href="../solvers/exact_penalty_method/">Exact Penalty Method</a></li><li><a class="tocitem" href="../solvers/FrankWolfe/">Frank-Wolfe</a></li><li><a class="tocitem" href="../solvers/gradient_descent/">Gradient Descent</a></li><li><a class="tocitem" href="../solvers/LevenbergMarquardt/">Levenberg–Marquardt</a></li><li><a class="tocitem" href="../solvers/NelderMead/">Nelder–Mead</a></li><li><a class="tocitem" href="../solvers/particle_swarm/">Particle Swarm Optimization</a></li><li><a class="tocitem" href="../solvers/primal_dual_semismooth_Newton/">Primal-dual Riemannian semismooth Newton</a></li><li><a class="tocitem" href="../solvers/quasi_Newton/">Quasi-Newton</a></li><li><a class="tocitem" href="../solvers/stochastic_gradient_descent/">Stochastic Gradient Descent</a></li><li><a class="tocitem" href="../solvers/subgradient/">Subgradient method</a></li><li><a class="tocitem" href="../solvers/truncated_conjugate_gradient_descent/">Steihaug-Toint TCG Method</a></li><li><a class="tocitem" href="../solvers/trust_regions/">Trust-Regions Solver</a></li></ul></li><li><span class="tocitem">Plans</span><ul><li><a class="tocitem" href="../plans/">Specify a Solver</a></li><li><a class="tocitem" href="../plans/problem/">Problem</a></li><li><a class="tocitem" href="../plans/objective/">Objective</a></li><li><a class="tocitem" href="../plans/state/">Solver State</a></li><li><a class="tocitem" href="../plans/stepsize/">Stepsize</a></li><li><a class="tocitem" href="../plans/stopping_criteria/">Stopping Criteria</a></li><li><a class="tocitem" href="../plans/debug/">Debug Output</a></li><li><a class="tocitem" href="../plans/record/">Recording values</a></li></ul></li><li><span class="tocitem">Functions</span><ul><li><a class="tocitem" href="../functions/">Introduction</a></li><li><a class="tocitem" href="../functions/bezier/">Bézier curves</a></li><li><a class="tocitem" href="../functions/costs/">Cost functions</a></li><li><a class="tocitem" href="../functions/differentials/">Differentials</a></li><li><a class="tocitem" href="../functions/adjointdifferentials/">Adjoint Differentials</a></li><li><a class="tocitem" href="../functions/gradients/">Gradients</a></li><li><a class="tocitem" href="../functions/proximal_maps/">Proximal Maps</a></li><li><a class="tocitem" href="../functions/manifold/">Specific Manifold Functions</a></li></ul></li><li><span class="tocitem">Helpers</span><ul><li><a class="tocitem" href="../helpers/checks/">Checks</a></li><li><a class="tocitem" href="../helpers/data/">Data</a></li><li><a class="tocitem" href="../helpers/errorMeasures/">Error Measures</a></li><li><a class="tocitem" href="../helpers/exports/">Exports</a></li></ul></li><li><a class="tocitem" href="../contributing/">Contributing to Manopt.jl</a></li><li><a class="tocitem" href="../notation/">Notation</a></li><li class="is-active"><a class="tocitem" href>Extensions</a><ul class="internal"><li><a class="tocitem" href="#LineSearches.jl"><span>LineSearches.jl</span></a></li></ul></li><li><a class="tocitem" href="../list/">Function Index</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Extensions</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Extensions</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaManifolds/Manopt.jl/blob/master/docs/src/extensions.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Extensions"><a class="docs-heading-anchor" href="#Extensions">Extensions</a><a id="Extensions-1"></a><a class="docs-heading-anchor-permalink" href="#Extensions" title="Permalink"></a></h1><h2 id="LineSearches.jl"><a class="docs-heading-anchor" href="#LineSearches.jl">LineSearches.jl</a><a id="LineSearches.jl-1"></a><a class="docs-heading-anchor-permalink" href="#LineSearches.jl" title="Permalink"></a></h2><p>Manopt can be used with line search algorithms implemented in <a href="https://github.com/JuliaNLSolvers/LineSearches.jl">LineSearches.jl</a>. This can be illustrated by the following example of optimizing Rosenbrock function constrained to the unit sphere.</p><pre><code class="language-julia hljs">using Manopt, Manifolds, LineSearches
+
+# define objective function and its gradient
+p = [1.0, 100.0]
+function rosenbrock(::AbstractManifold, x)
+    val = zero(eltype(x))
+    for i in 1:(length(x) - 1)
+        val += (p[1] - x[i])^2 + p[2] * (x[i + 1] - x[i]^2)^2
+    end
+    return val
+end
+function rosenbrock_grad!(M::AbstractManifold, storage, x)
+    storage .= 0.0
+    for i in 1:(length(x) - 1)
+        storage[i] += -2.0 * (p[1] - x[i]) - 4.0 * p[2] * (x[i + 1] - x[i]^2) * x[i]
+        storage[i + 1] += 2.0 * p[2] * (x[i + 1] - x[i]^2)
+    end
+    project!(M, storage, x, storage)
+    return storage
+end
+# define constraint
+n_dims = 5
+M = Manifolds.Sphere(n_dims)
+# set initial point
+x0 = vcat(zeros(n_dims - 1), 1.0)
+# use LineSearches.jl HagerZhang method with Manopt.jl quasiNewton solver
+ls_hz = Manopt.LineSearchesStepsize(M, LineSearches.HagerZhang())
+x_opt = quasi_Newton(
+    M,
+    rosenbrock,
+    rosenbrock_grad!,
+    x0;
+    stepsize=ls_hz,
+    evaluation=InplaceEvaluation(),
+    stopping_criterion=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
+    return_state=true,
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"># Solver state for `Manopt.jl`s Quasi Newton Method
+After 30 iterations
+
+## Parameters
+* direction update:        limited memory InverseBFGS (size 5), projections, and ParallelTransport() as vector transport.
+* retraction method:       ExponentialRetraction()
+* vector trnasport method: ParallelTransport()
+
+## Stepsize
+LineSearchesStepsize(HagerZhang{Float64, Base.RefValue{Bool}}
+  delta: Float64 0.1
+  sigma: Float64 0.9
+  alphamax: Float64 Inf
+  rho: Float64 5.0
+  epsilon: Float64 1.0e-6
+  gamma: Float64 0.66
+  linesearchmax: Int64 50
+  psi3: Float64 0.1
+  display: Int64 0
+  mayterminate: Base.RefValue{Bool}
+; retraction_method=ExponentialRetraction(), vector_transport_method=ParallelTransport())
+
+## Stopping Criterion
+Stop When _one_ of the following are fulfilled:
+    Max Iteration 1000:	not reached
+    |grad f| &lt; 1.0e-6: reached
+Overall: reached
+This indicates convergence: Yes</code></pre><article class="docstring"><header><a class="docstring-binding" id="Manopt.LineSearchesStepsize" href="#Manopt.LineSearchesStepsize"><code>Manopt.LineSearchesStepsize</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia hljs">LineSearchesStepsize &lt;: Stepsize</code></pre><p>Wrapper for line searches available in the <code>LineSearches.jl</code> library.</p><p><strong>Constructors</strong></p><pre><code class="nohighlight hljs">LineSearchesStepsize(
+    M::AbstractManifold,
+    linesearch;
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(M),
+)
+LineSearchesStepsize(
+    linesearch;
+    retraction_method::AbstractRetractionMethod=ExponentialRetraction(),
+    vector_transport_method::AbstractVectorTransportMethod=ParallelTransport(),
+)</code></pre><p>Wrap <code>linesearch</code> (for example <a href="https://julianlsolvers.github.io/LineSearches.jl/latest/reference/linesearch.html#LineSearches.HagerZhang"><code>HagerZhang</code></a> or <a href="https://julianlsolvers.github.io/LineSearches.jl/latest/reference/linesearch.html#LineSearches.MoreThuente"><code>MoreThuente</code></a>). The initial step selection from Lineseaches.jl is not yet supported and the value 1.0 is used. The retraction used for determining the line along which the search is performed can be  provided as <code>retraction_method</code>. Gradient vectors are transported between points using <code>vector_transport_method</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaManifolds/Manopt.jl/blob/b3c826e0ec086873ea43a06a40a1c15567c902f0/src/helpers/LineSearchesTypes.jl#L2-L27">source</a></section></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../notation/">« Notation</a><a class="docs-footer-nextpage" href="../list/">Function Index »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Monday 22 May 2023 09:32">Monday 22 May 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

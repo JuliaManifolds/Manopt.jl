@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Record values · Manopt.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../index.html"><img src="../assets/logo.png" alt="Manopt.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">Manopt.jl</span></div><form class="docs-search" action="../search.html"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../index.html">Home</a></li><li><a class="tocitem" href="../about.html">About</a></li><li><span class="tocitem">How to...</span><ul><li><a class="tocitem" href="MeanAndMedian.html">get Started: Optimize!</a></li><li><a class="tocitem" href="Benchmark.html">speed up! using <code>gradF!</code></a></li><li><a class="tocitem" href="GeodesicRegression.html">Do Geodesic regression</a></li><li class="is-active"><a class="tocitem" href="HowToRecord.html">Record values</a><ul class="internal"><li><a class="tocitem" href="#Plain-examples-1"><span>Plain examples</span></a></li><li><a class="tocitem" href="#A-more-complex-example-1"><span>A more complex example</span></a></li><li><a class="tocitem" href="#Writing-an-own-[RecordAction](@ref)s-1"><span>Writing an own <code>RecordAction</code>s</span></a></li></ul></li><li><a class="tocitem" href="StochasticGradientDescent.html">do stochastic gradient descent</a></li><li><a class="tocitem" href="BezierCurves.html">work with Bézier curves</a></li><li><a class="tocitem" href="GradientOfSecondOrderDifference.html">see the gradient of <span>$d_2$</span></a></li><li><a class="tocitem" href="JacobiFields.html">use Jacobi Fields</a></li><li><a class="tocitem" href="../pluto/AutomaticDifferentiation.html">AD in Manopt</a></li></ul></li><li><a class="tocitem" href="../plans/index.html">Plans</a></li><li><span class="tocitem">Solvers</span><ul><li><a class="tocitem" href="../solvers/index.html">Introduction</a></li><li><a class="tocitem" href="../solvers/alternating_gradient_descent.html">Alternating Gradient Descent</a></li><li><a class="tocitem" href="../solvers/ChambollePock.html">Chambolle-Pock</a></li><li><a class="tocitem" href="../solvers/conjugate_gradient_descent.html">Conjugate gradient descent</a></li><li><a class="tocitem" href="../solvers/cyclic_proximal_point.html">Cyclic Proximal Point</a></li><li><a class="tocitem" href="../solvers/DouglasRachford.html">Douglas–Rachford</a></li><li><a class="tocitem" href="../solvers/gradient_descent.html">Gradient Descent</a></li><li><a class="tocitem" href="../solvers/NelderMead.html">Nelder–Mead</a></li><li><a class="tocitem" href="../solvers/particle_swarm.html">Particle Swarm Optimization</a></li><li><a class="tocitem" href="../solvers/quasi_Newton.html">Quasi-Newton</a></li><li><a class="tocitem" href="../solvers/stochastic_gradient_descent.html">Stochastic Gradient Descent</a></li><li><a class="tocitem" href="../solvers/subgradient.html">Subgradient method</a></li><li><a class="tocitem" href="../solvers/truncated_conjugate_gradient_descent.html">Steihaug-Toint TCG Method</a></li><li><a class="tocitem" href="../solvers/trust_regions.html">Trust-Regions Solver</a></li></ul></li><li><span class="tocitem">Functions</span><ul><li><a class="tocitem" href="../functions/index.html">Introduction</a></li><li><a class="tocitem" href="../functions/bezier.html">Bézier curves</a></li><li><a class="tocitem" href="../functions/costs.html">Cost functions</a></li><li><a class="tocitem" href="../functions/differentials.html">Differentials</a></li><li><a class="tocitem" href="../functions/adjointdifferentials.html">Adjoint Differentials</a></li><li><a class="tocitem" href="../functions/gradients.html">Gradients</a></li><li><a class="tocitem" href="../functions/Jacobi_fields.html">Jacobi Fields</a></li><li><a class="tocitem" href="../functions/proximal_maps.html">Proximal Maps</a></li><li><a class="tocitem" href="../functions/manifold.html">Specific Manifold Functions</a></li></ul></li><li><span class="tocitem">Helpers</span><ul><li><a class="tocitem" href="../helpers/data.html">Data</a></li><li><a class="tocitem" href="../helpers/errorMeasures.html">Error Measures</a></li><li><a class="tocitem" href="../helpers/exports.html">Exports</a></li></ul></li><li><a class="tocitem" href="../contributing.html">Contributing to Manopt.jl</a></li><li><a class="tocitem" href="../notation.html">Notation</a></li><li><a class="tocitem" href="../list.html">Function Index</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">How to...</a></li><li class="is-active"><a href="HowToRecord.html">Record values</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href="HowToRecord.html">Record values</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaManifolds/Manopt.jl/blob/master/src/tutorials/HowToRecord.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="RecordingTutorial-1"><a class="docs-heading-anchor" href="#RecordingTutorial-1">Advanced Recording Example</a><a class="docs-heading-anchor-permalink" href="#RecordingTutorial-1" title="Permalink"></a></h1><p>The recording and debug possiblities make it possible to record nearly any data during the iterations. This tutorial illustrates how to</p><ul><li>record one value during the iterations</li><li>record multiple values during the iterations and access them afterwards</li><li>define an own <a href="../plans/index.html#Manopt.RecordAction"><code>RecordAction</code></a> to perform individual recordings.</li></ul><p>Several predefined recordings exist, for example <a href="../plans/index.html#Manopt.RecordCost"><code>RecordCost</code></a> or <a href="../solvers/gradient_descent.html#Manopt.RecordGradient"><code>RecordGradient</code></a>, depending on the solver used. For fields of the <a href="../plans/index.html#Manopt.Options"><code>Options</code></a> this can be directly done using the <a href="../plans/index.html#Manopt.RecordEntry"><code>RecordEntry</code></a>. For others, an own <a href="../plans/index.html#Manopt.RecordAction"><code>RecordAction</code></a> can be defined.</p><p>We illustrate these using the gradient descent used in the introductionary <a href="MeanAndMedian.html#Optimize-1">Get Started: Optimize!</a> tutorial example of computing the Riemannian Center of mass and refer to that tutorial for the mathematical details.</p><pre><code class="language-julia">using Manopt, Manifolds, Random
+Random.seed!(42)
+m = 30
+M = Sphere(m)
+n = 800
+σ = π / 8
+x = zeros(Float64, m + 1)
+x[2] = 1.0
+data = [exp(M, x, random_tangent(M, x, Val(:Gaussian), σ)) for i in 1:n];
+F(M, y) = sum(1 / (2 * n) * distance.(Ref(M), Ref(y), data) .^ 2)
+gradF(M, y) = sum(1 / n * grad_distance.(Ref(M), data, Ref(y)))</code></pre><h2 id="Plain-examples-1"><a class="docs-heading-anchor" href="#Plain-examples-1">Plain examples</a><a class="docs-heading-anchor-permalink" href="#Plain-examples-1" title="Permalink"></a></h2><p>For the high level interfaces of the solvers, like <a href="../solvers/gradient_descent.html#Manopt.gradient_descent"><code>gradient_descent</code></a> we have to set <code>return_options</code> to <code>true</code> to obtain the whole options structure and not only the resulting resulting minimizer.</p><pre><code class="language-julia">R = gradient_descent(M, F, gradF, data[1]; record=:Cost, return_options=true)</code></pre><pre><code class="language-none">RecordOptions{GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize, ExponentialRetraction}, NamedTuple{(:Iteration,), Tuple{RecordCost}}}(GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize, ExponentialRetraction}([-0.019726443316661877, -0.9981026595386627, 0.01955658867659334, 0.012841365119213698, 0.006886034463205455, -0.002575547367871232, 0.008364897314973115, -0.00879174612335158, -0.026238052383071163, 0.002958797733785121  …  -0.0020583455995372394, 0.0015537606468123669, -0.0030191692672922052, -0.01633880189330779, -0.0007654986229716712, 0.01205846081682446, 0.013875198858606443, -0.013075915829476342, -0.012082061386298401, 0.0071236850703163945], IdentityUpdateRule(), StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}((StopAfterIteration(200, &quot;&quot;), StopWhenGradientNormLess(1.0e-8, &quot;The algorithm reached approximately critical point after 20 iterations; the gradient norm (4.0685524938387935e-9) is less than 1.0e-8.\n&quot;)), &quot;The algorithm reached approximately critical point after 20 iterations; the gradient norm (4.0685524938387935e-9) is less than 1.0e-8.\n&quot;), ConstantStepsize(1.0), [-1.4276010178107336e-10, 7.451576365038196e-11, 2.2281392924011333e-11, -3.495999269698298e-10, 1.1116534720198058e-9, -6.117073198750591e-10, -3.98418127211652e-10, 2.0923500106996562e-10, -1.5131837955773605e-9, 5.265178595849004e-10  …  4.1941564560580777e-10, -3.7090792459962274e-11, -2.7207815357253515e-10, -2.5713063498615345e-9, 2.1438278940705963e-10, 5.649575485168132e-11, 7.484010481652315e-11, -9.296560752794893e-10, -1.661503171103331e-11, 2.2863057034063806e-10], ExponentialRetraction()), (Iteration = RecordCost([0.5483548369809805, 0.5381086420978917, 0.5365926945484399, 0.5363693521566143, 0.5363364424922269, 0.5363315909736714, 0.5363308754910993, 0.5363307699403789, 0.5363307543645233, 0.5363307520653806, 0.5363307517259109, 0.5363307516757745, 0.5363307516683673, 0.5363307516672731, 0.5363307516671113, 0.5363307516670872, 0.5363307516670837, 0.5363307516670831, 0.536330751667083, 0.5363307516670831]),))</code></pre><p>You can attach different recorders to some operations (<code>:Start</code>. <code>:Stop</code>, <code>:Iteration</code> at time of writing), where <code>:Iteration</code> is the default, so the following is the same as <code>get_record(R, :Iteration)</code>. We get</p><pre><code class="language-julia">get_record(R)</code></pre><pre><code class="language-none">20-element Vector{Float64}:
+ 0.5483548369809805
+ 0.5381086420978917
+ 0.5365926945484399
+ 0.5363693521566143
+ 0.5363364424922269
+ 0.5363315909736714
+ 0.5363308754910993
+ 0.5363307699403789
+ 0.5363307543645233
+ 0.5363307520653806
+ 0.5363307517259109
+ 0.5363307516757745
+ 0.5363307516683673
+ 0.5363307516672731
+ 0.5363307516671113
+ 0.5363307516670872
+ 0.5363307516670837
+ 0.5363307516670831
+ 0.536330751667083
+ 0.5363307516670831</code></pre><p>To record more than one value, you can pass a array of a mix of symbols and <a href="../plans/index.html#Manopt.RecordAction"><code>RecordAction</code></a> which gets mapped to a <a href="../plans/index.html#Manopt.RecordGroup"><code>RecordGroup</code></a></p><pre><code class="language-julia">R = gradient_descent(M, F, gradF, data[1]; record=[:Iteration, :Cost], return_options=true)</code></pre><pre><code class="language-none">RecordOptions{GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize, ExponentialRetraction}, NamedTuple{(:Iteration,), Tuple{RecordGroup}}}(GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize, ExponentialRetraction}([-0.019726443316661877, -0.9981026595386627, 0.01955658867659334, 0.012841365119213698, 0.006886034463205455, -0.002575547367871232, 0.008364897314973115, -0.00879174612335158, -0.026238052383071163, 0.002958797733785121  …  -0.0020583455995372394, 0.0015537606468123669, -0.0030191692672922052, -0.01633880189330779, -0.0007654986229716712, 0.01205846081682446, 0.013875198858606443, -0.013075915829476342, -0.012082061386298401, 0.0071236850703163945], IdentityUpdateRule(), StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}((StopAfterIteration(200, &quot;&quot;), StopWhenGradientNormLess(1.0e-8, &quot;The algorithm reached approximately critical point after 20 iterations; the gradient norm (4.0685524938387935e-9) is less than 1.0e-8.\n&quot;)), &quot;The algorithm reached approximately critical point after 20 iterations; the gradient norm (4.0685524938387935e-9) is less than 1.0e-8.\n&quot;), ConstantStepsize(1.0), [-1.4276010178107336e-10, 7.451576365038196e-11, 2.2281392924011333e-11, -3.495999269698298e-10, 1.1116534720198058e-9, -6.117073198750591e-10, -3.98418127211652e-10, 2.0923500106996562e-10, -1.5131837955773605e-9, 5.265178595849004e-10  …  4.1941564560580777e-10, -3.7090792459962274e-11, -2.7207815357253515e-10, -2.5713063498615345e-9, 2.1438278940705963e-10, 5.649575485168132e-11, 7.484010481652315e-11, -9.296560752794893e-10, -1.661503171103331e-11, 2.2863057034063806e-10], ExponentialRetraction()), (Iteration = RecordGroup(RecordAction[RecordIteration([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]), RecordCost([0.5483548369809805, 0.5381086420978917, 0.5365926945484399, 0.5363693521566143, 0.5363364424922269, 0.5363315909736714, 0.5363308754910993, 0.5363307699403789, 0.5363307543645233, 0.5363307520653806, 0.5363307517259109, 0.5363307516757745, 0.5363307516683673, 0.5363307516672731, 0.5363307516671113, 0.5363307516670872, 0.5363307516670837, 0.5363307516670831, 0.536330751667083, 0.5363307516670831])], Dict(:Iteration =&gt; 1, :Cost =&gt; 2)),))</code></pre><p>Here, the Symbol <code>:Cost</code> is mapped to using the <a href="../plans/index.html#Manopt.RecordCost"><code>RecordCost</code></a> action. The same holds for <code>:Iteration</code> and <code>:Iterate</code> and any member field of the current <a href="../plans/index.html#Manopt.Options"><code>Options</code></a>. To access these you can first extract the group of records (of the <code>:Iteration</code> action) and then access the <code>:Cost</code></p><pre><code class="language-julia">ra = get_record_action(R)[:Cost]</code></pre><pre><code class="language-none">20-element Vector{Float64}:
+ 0.5483548369809805
+ 0.5381086420978917
+ 0.5365926945484399
+ 0.5363693521566143
+ 0.5363364424922269
+ 0.5363315909736714
+ 0.5363308754910993
+ 0.5363307699403789
+ 0.5363307543645233
+ 0.5363307520653806
+ 0.5363307517259109
+ 0.5363307516757745
+ 0.5363307516683673
+ 0.5363307516672731
+ 0.5363307516671113
+ 0.5363307516670872
+ 0.5363307516670837
+ 0.5363307516670831
+ 0.536330751667083
+ 0.5363307516670831</code></pre><p>Or similarly</p><pre><code class="language-julia">get_record(R, :Iteration, :Cost)</code></pre><pre><code class="language-none">20-element Vector{Float64}:
+ 0.5483548369809805
+ 0.5381086420978917
+ 0.5365926945484399
+ 0.5363693521566143
+ 0.5363364424922269
+ 0.5363315909736714
+ 0.5363308754910993
+ 0.5363307699403789
+ 0.5363307543645233
+ 0.5363307520653806
+ 0.5363307517259109
+ 0.5363307516757745
+ 0.5363307516683673
+ 0.5363307516672731
+ 0.5363307516671113
+ 0.5363307516670872
+ 0.5363307516670837
+ 0.5363307516670831
+ 0.536330751667083
+ 0.5363307516670831</code></pre><p>Note that the first symbol again refers to the point where we record (not to the thing we record). We can also pass a Tuple as second argument to have our own order (not that now the second <code>:Iteration</code> refers to the recorded iteratons)</p><pre><code class="language-julia">get_record(R, :Iteration, (:Cost, :Iteration))</code></pre><pre><code class="language-none">20-element Vector{Tuple{Float64, Int64}}:
+ (0.5483548369809805, 1)
+ (0.5381086420978917, 2)
+ (0.5365926945484399, 3)
+ (0.5363693521566143, 4)
+ (0.5363364424922269, 5)
+ (0.5363315909736714, 6)
+ (0.5363308754910993, 7)
+ (0.5363307699403789, 8)
+ (0.5363307543645233, 9)
+ (0.5363307520653806, 10)
+ (0.5363307517259109, 11)
+ (0.5363307516757745, 12)
+ (0.5363307516683673, 13)
+ (0.5363307516672731, 14)
+ (0.5363307516671113, 15)
+ (0.5363307516670872, 16)
+ (0.5363307516670837, 17)
+ (0.5363307516670831, 18)
+ (0.536330751667083, 19)
+ (0.5363307516670831, 20)</code></pre><h2 id="A-more-complex-example-1"><a class="docs-heading-anchor" href="#A-more-complex-example-1">A more complex example</a><a class="docs-heading-anchor-permalink" href="#A-more-complex-example-1" title="Permalink"></a></h2><p>To illustrate a complicated example let&#39;s record</p><ul><li>the iteration number, cost and gradient field, but only every sixth iteration</li><li>the iteration at which we stop</li></ul><p>We first generate the problem and the options</p><pre><code class="language-julia">p = GradientProblem(M, F, gradF)
+o = GradientDescentOptions(
+    M,
+    copy(data[1]);
+    stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(10.0^-9),
+)</code></pre><pre><code class="language-none">GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize, ExponentialRetraction}([-0.04212873279875011, -0.8635968235645907, 0.002057490434595255, -0.022691142751318387, 0.13470398350606114, -0.08674625774453522, -0.03550506791072288, 0.011830590387022107, -0.2001768943389432, 0.0760182224389436  …  0.03804127501994119, -0.016384557851231208, -0.05352395843234491, -0.32167568658089696, 0.01275478671203627, 0.021537581713645372, 0.04317445778410474, -0.10774576265218669, -0.028215860892348097, 0.027958964475994337], IdentityUpdateRule(), StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}((StopAfterIteration(200, &quot;&quot;), StopWhenGradientNormLess(1.0e-9, &quot;&quot;)), #undef), ConstantStepsize(1.0), [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  …  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], ExponentialRetraction())</code></pre><p>and now decorate these with <a href="../plans/index.html#Manopt.RecordOptions"><code>RecordOptions</code></a></p><pre><code class="language-julia">rI = RecordEvery(
+    RecordGroup([
+        :Iteration =&gt; RecordIteration(),
+        :Cost =&gt; RecordCost(),
+        :Gradient =&gt; RecordEntry(similar(data[1]), :gradient),
+    ]),
+    6,
+)
+sI = RecordIteration()
+r = RecordOptions(o, Dict(:Iteration =&gt; rI, :Stop =&gt; sI))
+r2 = solve(p, r)</code></pre><pre><code class="language-none">RecordOptions{GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize, ExponentialRetraction}, NamedTuple{(:Iteration, :Stop), Tuple{RecordEvery, RecordIteration}}}(GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize, ExponentialRetraction}([-0.019726443242656478, -0.9981026595782577, 0.01955658865909005, 0.01284136530699147, 0.006886033870099039, -0.00257554704588227, 0.00836489752814526, -0.008791746236551944, -0.02623805157677355, 0.002958797456906779  …  -0.002058345826372028, 0.0015537606627842528, -0.0030191691278792492, -0.016338800524635495, -0.0007654987407232315, 0.012058460787588947, 0.01387519882547504, -0.013075915329928082, -0.01208206138238119, 0.007123684946969769], IdentityUpdateRule(), StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}((StopAfterIteration(200, &quot;&quot;), StopWhenGradientNormLess(1.0e-9, &quot;The algorithm reached approximately critical point after 22 iterations; the gradient norm (6.023948123056778e-10) is less than 1.0e-9.\n&quot;)), &quot;The algorithm reached approximately critical point after 22 iterations; the gradient norm (6.023948123056778e-10) is less than 1.0e-9.\n&quot;), ConstantStepsize(1.0), [-2.0244094836728265e-11, 1.098540363357733e-11, 5.747601925106503e-12, -5.240549876375008e-11, 1.6493117738517957e-10, -8.884978602190837e-11, -5.936915363621495e-11, 3.1725402754628935e-11, -2.240500135408923e-10, 7.635936582475397e-11  …  6.356206658014382e-11, -3.849237226703772e-12, -3.787031411660487e-11, -3.800972999887242e-10, 3.326979815775066e-11, 7.990584376896953e-12, 8.15080544291219e-12, -1.3946886358209409e-10, -3.11132087975341e-13, 3.4513017986050054e-11], ExponentialRetraction()), (Iteration = RecordEvery(RecordGroup(RecordAction[RecordIteration([6, 12, 18]), RecordCost([0.5363315909736714, 0.5363307516757745, 0.5363307516670831]), RecordEntry{Vector{Float64}}([[-0.00012277887133171092, 6.114386800772579e-5, -6.0625679757341415e-5, -0.0001988315013940286, 0.0007078595202252684, -0.0004454101722301678, -0.00024232068574758792, 0.00011343500740630337, -0.0009748330015168162, 0.00038700419735796876  …  0.0002297320393751911, -7.972471678754147e-5, -0.00025298366077364617, -0.0016799111915708161, 8.923182955365044e-5, 5.0582622549721326e-5, 0.00014058020498070858, -0.000543711198660699, -7.390483116950151e-5, 0.00012657088077202086], [-3.5209885117269387e-7, 1.5848714421744543e-7, -9.167733325735587e-8, -6.846214281511882e-7, 2.3004589073232764e-6, -1.3707545247476627e-6, -8.057849142534832e-7, 3.955905940377849e-7, -3.154400677923976e-6, 1.1865536584466973e-6  …  7.964877669005568e-7, -1.7641418458913885e-7, -7.078228673053192e-7, -5.399777595418238e-6, 3.5809572045835975e-7, 1.420689832518497e-7, 3.2482377576212827e-7, -1.8356762746900822e-6, -1.532333583050341e-7, 4.386943524777346e-7], [-1.0064334253511585e-9, 5.056502510133358e-10, 3.871942350753112e-11, -2.3297372639597596e-9, 7.494677196071605e-9, -4.210291441075526e-9, -2.672989884826022e-9, 1.3798550543074974e-9, -1.0221697163863351e-8, 3.629318090525059e-9  …  2.767941284054047e-9, -3.2759809784604216e-10, -1.949569701720699e-9, -1.739925769737513e-8, 1.377586928102796e-9, 3.997302044488754e-10, 6.404886932235773e-10, -6.19695953135279e-9, -2.095272195763026e-10, 1.5140272032507056e-9]], :gradient)], Dict(:Iteration =&gt; 1, :Gradient =&gt; 3, :Cost =&gt; 2)), 6, true), Stop = RecordIteration([22])))</code></pre><p>and we see</p><pre><code class="language-julia">get_record(r2, :Stop)</code></pre><pre><code class="language-none">1-element Vector{Int64}:
+ 22</code></pre><p>as well as</p><pre><code class="language-julia">get_record(r2, :Iteration, (:Iteration, :Cost))</code></pre><pre><code class="language-none">3-element Vector{Tuple{Int64, Float64}}:
+ (6, 0.5363315909736714)
+ (12, 0.5363307516757745)
+ (18, 0.5363307516670831)</code></pre><p>Here it is interesting to see, that a meta-record like <a href="../plans/index.html#Manopt.RecordEvery"><code>RecordEvery</code></a> just passes the tuple further on, so we can again also do</p><pre><code class="language-julia">get_record_action(r2, :Iteration)[:Gradient]</code></pre><pre><code class="language-none">3-element Vector{Vector{Float64}}:
+ [-0.00012277887133171092, 6.114386800772579e-5, -6.0625679757341415e-5, -0.0001988315013940286, 0.0007078595202252684, -0.0004454101722301678, -0.00024232068574758792, 0.00011343500740630337, -0.0009748330015168162, 0.00038700419735796876  …  0.0002297320393751911, -7.972471678754147e-5, -0.00025298366077364617, -0.0016799111915708161, 8.923182955365044e-5, 5.0582622549721326e-5, 0.00014058020498070858, -0.000543711198660699, -7.390483116950151e-5, 0.00012657088077202086]
+ [-3.5209885117269387e-7, 1.5848714421744543e-7, -9.167733325735587e-8, -6.846214281511882e-7, 2.3004589073232764e-6, -1.3707545247476627e-6, -8.057849142534832e-7, 3.955905940377849e-7, -3.154400677923976e-6, 1.1865536584466973e-6  …  7.964877669005568e-7, -1.7641418458913885e-7, -7.078228673053192e-7, -5.399777595418238e-6, 3.5809572045835975e-7, 1.420689832518497e-7, 3.2482377576212827e-7, -1.8356762746900822e-6, -1.532333583050341e-7, 4.386943524777346e-7]
+ [-1.0064334253511585e-9, 5.056502510133358e-10, 3.871942350753112e-11, -2.3297372639597596e-9, 7.494677196071605e-9, -4.210291441075526e-9, -2.672989884826022e-9, 1.3798550543074974e-9, -1.0221697163863351e-8, 3.629318090525059e-9  …  2.767941284054047e-9, -3.2759809784604216e-10, -1.949569701720699e-9, -1.739925769737513e-8, 1.377586928102796e-9, 3.997302044488754e-10, 6.404886932235773e-10, -6.19695953135279e-9, -2.095272195763026e-10, 1.5140272032507056e-9]</code></pre><h2 id="Writing-an-own-[RecordAction](@ref)s-1"><a class="docs-heading-anchor" href="#Writing-an-own-[RecordAction](@ref)s-1">Writing an own <a href="../plans/index.html#Manopt.RecordAction"><code>RecordAction</code></a>s</a><a class="docs-heading-anchor-permalink" href="#Writing-an-own-[RecordAction](@ref)s-1" title="Permalink"></a></h2><p>Let&#39;s investigate where we want to count the number of function evaluations, again just to illustrate, since for the gradient this is just one evaluation per iteration. We first define a cost, that counts it&#39;s own calls.</p><pre><code class="language-julia">mutable struct MyCost{T}
+    data::T
+    count::Int
+end
+MyCost(data::T) where {T} = MyCost{T}(data, 0)
+function (c::MyCost)(M, x)
+    c.count += 1
+    return sum(1 / (2 * length(c.data)) * distance.(Ref(M), Ref(x), c.data) .^ 2)
+end</code></pre><p>and we define the following RecordAction,</p><pre><code class="language-julia">mutable struct RecordCount &lt;: RecordAction
+    recorded_values::Vector{Int}
+    RecordCount() = new(Vector{Int}())
+end
+function (r::RecordCount)(p::Problem, ::Options, i)
+    if i &gt; 0
+        push!(r.recorded_values, p.cost.count)
+    elseif i &lt; 0 # reset if negative
+        r.recorded_values = Vector{Int}()
+    end
+end</code></pre><p>And now we can initialize the new cost and call the gradient descent. Note that this illustrates also the last use case – you can pass symbol-Action pairs into the <code>record=</code>array.</p><pre><code class="language-julia">F2 = MyCost(data)
+R = gradient_descent(
+    M,
+    F2,
+    gradF,
+    data[1];
+    record=[:Iteration, :Count =&gt; RecordCount(), :Cost],
+    return_options=true,
+)</code></pre><pre><code class="language-none">RecordOptions{GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize, ExponentialRetraction}, NamedTuple{(:Iteration,), Tuple{RecordGroup}}}(GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize, ExponentialRetraction}([-0.019726443316661877, -0.9981026595386627, 0.01955658867659334, 0.012841365119213698, 0.006886034463205455, -0.002575547367871232, 0.008364897314973115, -0.00879174612335158, -0.026238052383071163, 0.002958797733785121  …  -0.0020583455995372394, 0.0015537606468123669, -0.0030191692672922052, -0.01633880189330779, -0.0007654986229716712, 0.01205846081682446, 0.013875198858606443, -0.013075915829476342, -0.012082061386298401, 0.0071236850703163945], IdentityUpdateRule(), StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}((StopAfterIteration(200, &quot;&quot;), StopWhenGradientNormLess(1.0e-8, &quot;The algorithm reached approximately critical point after 20 iterations; the gradient norm (4.0685524938387935e-9) is less than 1.0e-8.\n&quot;)), &quot;The algorithm reached approximately critical point after 20 iterations; the gradient norm (4.0685524938387935e-9) is less than 1.0e-8.\n&quot;), ConstantStepsize(1.0), [-1.4276010178107336e-10, 7.451576365038196e-11, 2.2281392924011333e-11, -3.495999269698298e-10, 1.1116534720198058e-9, -6.117073198750591e-10, -3.98418127211652e-10, 2.0923500106996562e-10, -1.5131837955773605e-9, 5.265178595849004e-10  …  4.1941564560580777e-10, -3.7090792459962274e-11, -2.7207815357253515e-10, -2.5713063498615345e-9, 2.1438278940705963e-10, 5.649575485168132e-11, 7.484010481652315e-11, -9.296560752794893e-10, -1.661503171103331e-11, 2.2863057034063806e-10], ExponentialRetraction()), (Iteration = RecordGroup(RecordAction[RecordIteration([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]), Main.ex-HowToRecord.RecordCount([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]), RecordCost([0.5483548369809805, 0.5381086420978917, 0.5365926945484399, 0.5363693521566143, 0.5363364424922269, 0.5363315909736714, 0.5363308754910993, 0.5363307699403789, 0.5363307543645233, 0.5363307520653806, 0.5363307517259109, 0.5363307516757745, 0.5363307516683673, 0.5363307516672731, 0.5363307516671113, 0.5363307516670872, 0.5363307516670837, 0.5363307516670831, 0.536330751667083, 0.5363307516670831])], Dict(:Iteration =&gt; 1, :Count =&gt; 2, :Cost =&gt; 3)),))</code></pre><p>We can again access the whole sets of records</p><pre><code class="language-julia">get_record(R)</code></pre><pre><code class="language-none">20-element Vector{Tuple{Int64, Int64, Float64}}:
+ (1, 0, 0.5483548369809805)
+ (2, 1, 0.5381086420978917)
+ (3, 2, 0.5365926945484399)
+ (4, 3, 0.5363693521566143)
+ (5, 4, 0.5363364424922269)
+ (6, 5, 0.5363315909736714)
+ (7, 6, 0.5363308754910993)
+ (8, 7, 0.5363307699403789)
+ (9, 8, 0.5363307543645233)
+ (10, 9, 0.5363307520653806)
+ (11, 10, 0.5363307517259109)
+ (12, 11, 0.5363307516757745)
+ (13, 12, 0.5363307516683673)
+ (14, 13, 0.5363307516672731)
+ (15, 14, 0.5363307516671113)
+ (16, 15, 0.5363307516670872)
+ (17, 16, 0.5363307516670837)
+ (18, 17, 0.5363307516670831)
+ (19, 18, 0.536330751667083)
+ (20, 19, 0.5363307516670831)</code></pre><p>this is equivalent to calling <code>R[:Iteration</code>. Note that since we introduced <code>:Count</code> we can also access a single recorded value using</p><pre><code class="language-julia">R[:Iteration, :Count]</code></pre><pre><code class="language-none">20-element Vector{Int64}:
+  0
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+ 17
+ 18
+ 19</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="GeodesicRegression.html">« Do Geodesic regression</a><a class="docs-footer-nextpage" href="StochasticGradientDescent.html">do stochastic gradient descent »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 26 March 2022 14:55">Saturday 26 March 2022</span>. Using Julia version 1.6.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
