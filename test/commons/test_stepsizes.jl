@@ -88,7 +88,6 @@ using ManifoldsBase, Manopt, Manifolds, Random, Test
     end
 end
 
-
 @testset "Stepsize" begin
     M = ManifoldsBase.DefaultManifold(2)
     @test Manopt.get_message(Manopt.ConstantStepsize(M, 1.0)) == ""
@@ -1291,5 +1290,13 @@ end
         # Manually
         sn = ArmijoLinesearch(M; number_type = Float32)()
         @test sn.initial_stepsize isa Float32
+        #
+        f(M, p) = sum((p .- 1.0f0) .^ 2)
+        grad_f(M, p) = 2.0f0 .* (p .- 1.0f0)
+        mgo = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, mgo)
+        gds = GradientDescentState(M; p=p)
+        step = s(mp, gds, 1)
+        @test step isa Float32
     end
 end
