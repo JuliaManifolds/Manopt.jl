@@ -636,4 +636,24 @@ end
         β = (π / 4) / norm(S, qns.p, qns.sk)
         @test isapprox(S, qns.p, qns.yk, qns.X ./ β .- qns.X_old)
     end
+    @testset "Float32 default Wolfe-Powell line search" begin
+        M = Euclidean(2)
+        p = Float32[1.0, 2.0]
+        qns = QuasiNewtonState(M; p = p)
+        @test qns.stepsize.candidate_point isa Vector{Float32}
+        @test qns.stepsize.last_stepsize isa Float32
+        @test qns.stepsize.stop_when_stepsize_less isa Float32
+
+        f(M, q) = sum(abs2, q)
+        grad_f(M, q) = 2 .* q
+        state = quasi_Newton(
+            M, f, grad_f, p;
+            stopping_criterion = StopAfterIteration(1),
+            return_state = true,
+            debug = [],
+        )
+        @test state.stepsize.candidate_point isa Vector{Float32}
+        @test state.stepsize.last_stepsize isa Float32
+        @test state.stepsize.stop_when_stepsize_less isa Float32
+    end
 end

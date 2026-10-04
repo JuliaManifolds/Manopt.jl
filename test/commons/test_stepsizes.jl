@@ -88,7 +88,6 @@ using ManifoldsBase, Manopt, Manifolds, Random, Test
     end
 end
 
-
 @testset "Stepsize" begin
     M = ManifoldsBase.DefaultManifold(2)
     @test Manopt.get_message(Manopt.ConstantStepsize(M, 1.0)) == ""
@@ -170,6 +169,20 @@ end
     @test f3(M, q4) <= f3(M, gds3.p) + 1.0e-4 * α4 * d0
     @test -grad_f3(M, q4)' * gds3.X >= 0.999 * d0
     @test get_last_stepsize(s4) == α4
+    p4f = Float32[1.0, 1.0]
+    s4f = WolfePowellLinesearch()(M, p4f)
+    # Check point storage, the shared scalar parameter R, and the returned step type.
+    @test s4f.candidate_point isa Vector{Float32}
+    @test s4f.last_stepsize isa Float32
+    gds4f = GradientDescentState(M; p = p4f)
+    gds4f.X = grad_f3(M, p4f)
+    α4f = s4f(dmp3, gds4f, 1, -gds4f.X)
+    @test α4f isa Float32
+    s4mixed = WolfePowellLinesearch(;
+        initial_guess = Manopt.ConstantInitialGuess(1.0)
+    )(M, p4f)
+    α4mixed = s4mixed(dmp3, gds4f, 1, -gds4f.X)
+    @test α4mixed isa Float64
     @testset "Armijo setter / getters" begin
         # Check that the passdowns work, though; since the defaults are functions, they return nothing
         @test isnothing(Manopt.get_parameter(s, :IncreaseCondition, :Dummy))
@@ -1261,5 +1274,29 @@ end
             @test eltype(q) === Float32
             @test isapprox(M, q, Float32[1, 1]; atol = 1.0f-3)
         end
+    end
+    @testset "Armijo parameters are set according to its number_type" begin
+        # Real Float32 yields FLoat32 types
+        M = Euclidean(2)
+        p = Float32.([1.0, 0.1])
+        s = ArmijoLinesearch(M; candidate_point = p)()
+        @test s.initial_stepsize isa Float32
+        # Complex case
+        Mc = Euclidean(2; field = ℂ)
+        pc = ComplexF32.([1.0, 1.0im])
+        sc = ArmijoLinesearch(M; candidate_point = pc)()
+        # This still yields real parameters
+        @test sc.initial_stepsize isa Float32
+        # Manually
+        sn = ArmijoLinesearch(M; number_type = Float32)()
+        @test sn.initial_stepsize isa Float32
+        #
+        f(M, p) = sum((p .- 1.0f0) .^ 2)
+        grad_f(M, p) = 2.0f0 .* (p .- 1.0f0)
+        mgo = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, mgo)
+        gds = GradientDescentState(M; p = p)
+        step = s(mp, gds, 1)
+        @test step isa Float32
     end
 end

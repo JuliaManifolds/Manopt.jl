@@ -454,7 +454,18 @@ Glossaries.define!(
     _glossary_variables, :M, :description,
     (; M = "M") -> "a Riemannian manifold ``$(_math(:Manifold, M = M))``"
 )
-Glossaries.define!(_glossary_variables, :M, :type, "`$(_link(:AbstractManifold))` ")
+Glossaries.define!(_glossary_variables, :M, :type, "`$(_link(:AbstractManifold))` ")
+
+Glossaries.define!(_glossary_variables, :number_type)
+Glossaries.define!(
+    _glossary_variables, :number_type, :description,
+    "specify the number type for parameter defaults in the constructor. Setting a keyword argument of a parameter manually might yield still a promotion to another number type",
+)
+Glossaries.define!(_glossary_variables, :number_type, :type, "Type")
+Glossaries.define!(
+    _glossary_variables, :number_type, :default,
+    (; p = "p") -> "real(float(eltype($p)))",
+)
 
 Glossaries.define!(_glossary_variables, :p)
 Glossaries.define!(
