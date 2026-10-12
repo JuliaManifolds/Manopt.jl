@@ -202,7 +202,9 @@ function (acs::AffineCovariantStepsize)(
     M = get_manifold(amp)
     NE = get_newton_equation(amp)
     b = copy(NE.b)
+    i=0
     while θ_new > acs.θ_acc && α_new > 1.0e-10
+        i=i+1
         Xα = α_new * ams.X
         retract!(M, ams.p_trial, ams.p, Xα, ams.retraction_method)
 
