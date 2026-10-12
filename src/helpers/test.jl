@@ -4,7 +4,7 @@
 The module `Manopt.Test` provides dummy types and small test problems and examples
 that can be used throughout testing.
 
-Some of these are simplified variants from problems from `ManoptExamples.jl`,
+Some of these are simplified variants of problems from `ManoptExamples.jl`
 that are added here to not introduce a circular dependency.
 
 Some of the functionality is only populated when certain packages are loaded,
@@ -25,15 +25,10 @@ using ManifoldDiff
 # Dummy types
 struct DummyManifold <: AbstractManifold{ManifoldsBase.ℝ} end
 
-struct DummyDecoratedObjective{E, O <: AbstractManifoldObjective} <: Manopt.AbstractDecoratedManifoldObjective{E, O}
+struct DummyDecoratedObjective{O <: AbstractManifoldObjective} <: Manopt.AbstractDecoratedManifoldObjective{O}
     objective::O
 end
-function DummyDecoratedObjective(o::O) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
-    return DummyDecoratedObjective{E, O}(o)
-end
-function Manopt.status_summary(
-        ddo::DummyDecoratedObjective; kwargs...
-    )
+function Manopt.status_summary(ddo::DummyDecoratedObjective; kwargs...)
     return "A dummy decorator for " * Manopt.status_summary(ddo.objective; kwargs...)
 end
 function Base.show(io::IO, ddo::DummyDecoratedObjective)
@@ -41,13 +36,19 @@ function Base.show(io::IO, ddo::DummyDecoratedObjective)
     print(io, ddo.objective)
     return print(io, ")")
 end
-struct DummyEmptyDecoratedObjective{E, O <: AbstractManifoldObjective} <: Manopt.AbstractDecoratedManifoldObjective{E, O}
+struct DummyEmptyDecoratedObjective{O <: AbstractManifoldObjective} <: Manopt.AbstractDecoratedManifoldObjective{O}
     objective::O
-    function DummyEmptyDecoratedObjective(o::O) where {E <: AbstractEvaluationType, O <: AbstractManifoldObjective{E}}
-        return new{E, O}(o)
-    end
 end
-
+mutable struct DummyDecoratedFunction{F}
+    f::F
+    field::Int
+end
+function Manopt.set_parameter!(ddf::DummyDecoratedFunction, ::Val{:Field}, field)
+    return ddf.field = field
+end
+Manopt.get_parameter(ddf::DummyDecoratedFunction, ::Val{:Field}) = ddf.field
+Manopt.status_summary(ddf::DummyDecoratedFunction; context = :default) = "A dummy decorated function for $(ddf.f) with field $(ddf.field)."
+(ddf::DummyDecoratedFunction)(args...) = ddf.f(args...)
 struct DummyProblem{M <: AbstractManifold} <: AbstractManoptProblem{M} end
 struct DummyStoppingCriteriaSet <: StoppingCriterionSet end
 struct DummyStoppingCriterion <: StoppingCriterion end
@@ -56,7 +57,7 @@ mutable struct DummyState <: AbstractManoptSolverState
     storage::Vector{Float64}
 end
 DummyState() = DummyState([])
-Manopt.status_summary(ds::DummyState; context = :Default) = "A Manopt Test state with storage $(ds.storage)"
+Manopt.status_summary(ds::DummyState; context = :default) = "A Manopt Test state with storage $(ds.storage)"
 Base.show(io::IO, ds::DummyState) = print(io, "Manopt.Test.DummyState($(ds.storage))")
 Manopt.get_iterate(::DummyState) = NaN
 Manopt.set_parameter!(s::DummyState, ::Val, v) = s
@@ -64,9 +65,9 @@ Manopt.set_parameter!(s::DummyState, ::Val{:StoppingCriterion}, v) = s
 """
     M, f, grad_f, p0, p_star = Circle_mean_task()
 
-Create a small mean problem on the circle to test Number-based algorithms
-Requires `Manifolds.jl` to be loaded, use [`Manopt.Test.mean_task`](@ref)`(M, data)`
-for the general case
+Create a small mean problem on the circle to test Number-based algorithms.
+Requires `Manifolds.jl` to be loaded; use [`Manopt.Test.mean_task`](@ref)`(M, data)`
+for the general case.
 """
 function Circle_mean_task end
 
@@ -77,15 +78,55 @@ Returns cost and gradient for computing the mean of `data` ``d_i`` on manifold `
 
 ```math
 \begin{align*}
-f(p) = \frac{1}{2n} \sum_{i=1}^n d_M(p, d_i)^2
+f(p) = \frac{1}{2n} \sum_{i=1}^n d_M(p, d_i)^2\\
 \operatorname{grad} f(p) = -\frac{1}{n} \sum_{i=1}^n \log_p(d_i)
 \end{align*}
+```
 """
 function mean_task(M::AbstractManifold, data::AbstractVector)
     n = length(data)
     f(M, p) = 1 / (2n) * sum(distance.(Ref(M), Ref(p), data) .^ 2)
     grad_f(M, p) = -1 / n * sum(log.(Ref(M), Ref(p), data))
     return f, grad_f
+end
+
+"""
+    project_C, project_C! = ball_projection(M::AbstractManifold, c, r)
+
+Return the projection onto the geodesic ball of radius `r` around `c` on `M`,
+allocating and in place.
+"""
+function ball_projection(M::AbstractManifold, c, r)
+    function project_C(M, p)
+        X = log(M, c, p)
+        n = norm(M, c, X)
+        return (n > r) ? exp(M, c, (r / n) * X) : copy(M, p)
+    end
+    function project_C!(M, q, p; X = zero_vector(M, c))
+        n = norm(M, c, log!(M, X, c, p))
+        (n > r) ? exp!(M, q, c, (r / n) * X) : copyto!(M, q, p)
+        return q
+    end
+    return project_C, project_C!
+end
+
+"""
+    f, ∂f, ∂f! = distance_task(M::AbstractManifold, q)
+
+Return the distance to `q` on `M` and a subgradient of it, allocating and in place.
+"""
+function distance_task(M::AbstractManifold, q)
+    f(M, p) = distance(M, p, q)
+    function ∂f(M, p)
+        (distance(M, q, p) == 0) && return zero_vector(M, p)
+        return -log(M, p, q) / max(10 * eps(Float64), distance(M, q, p))
+    end
+    function ∂f!(M, X, p)
+        (distance(M, q, p) == 0) && return zero_vector!(M, X, p)
+        log!(M, X, p, q)
+        return X .*= -1 / max(10 * eps(Float64), distance(M, q, p))
+    end
+    return f, ∂f, ∂f!
 end
 
 #
@@ -113,14 +154,13 @@ function adjoint_differential_forward_logs!(
             I = [i.I...] # array of index
             J = I .+ 1 .* (1:d .== k) #i + e_k is j
             if all(J .<= maxInd) # is this neighbor in range?
-                j = CartesianIndex{d}(J...) # neighbour index as Cartesian Index
                 Y[M, I...] =
                     Y[M, I...] + ManifoldDiff.adjoint_differential_log_basepoint(
                     M.manifold, p[M, I...], p[M, J...], X[N, I..., k]
                 )
                 Y[M, J...] =
                     Y[M, J...] + ManifoldDiff.adjoint_differential_log_argument(
-                    M.manifold, p[M, J...], p[M, I...], X[N, I..., k]
+                    M.manifold, p[M, I...], p[M, J...], X[N, I..., k]
                 )
             end
         end # directions
@@ -129,9 +169,7 @@ function adjoint_differential_forward_logs!(
 end
 function differential_forward_logs(M::PowerManifold, p, X)
     power_size = power_dimensions(M)
-    R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
-    maxInd = last(R).I
     d2 = (d > 1) ? ones(Int, d + 1) + (d - 1) * (1:(d + 1) .== d + 1) : 1
     if d > 1
         N = PowerManifold(M.manifold, NestedPowerRepresentation(), power_size..., d)
@@ -176,7 +214,6 @@ function forward_logs(M::PowerManifold{𝔽, TM, TSize, TPR}, p) where {𝔽, TM
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
-    sX = size(p)
     maxInd = last(R).I
     if d > 1
         d2 = fill(1, d + 1)
@@ -194,7 +231,7 @@ function forward_logs(M::PowerManifold{𝔽, TM, TSize, TPR}, p) where {𝔽, TM
             I = i.I
             J = I .+ 1 .* e_k_vals[k] #i + e_k is j
             if all(J .<= maxInd) # is this neighbor in range?
-                j = CartesianIndex{d}(J...) # neighbour index as Cartesian Index
+                j = CartesianIndex{d}(J...) # neighbor index as Cartesian Index
                 X[N, i.I..., k] = log(M.manifold, p[M, i.I...], p[M, j.I...])
             end
         end # directions
@@ -205,14 +242,7 @@ function forward_logs!(M::PowerManifold{𝔽, TM, TSize, TPR}, X, p) where {𝔽
     power_size = power_dimensions(M)
     R = CartesianIndices(Tuple(power_size))
     d = length(power_size)
-    sX = size(p)
     maxInd = last(R).I
-    if d > 1
-        d2 = fill(1, d + 1)
-        d2[d + 1] = d
-    else
-        d2 = 1
-    end
     sN = d > 1 ? [power_size..., d] : [power_size...]
     N = PowerManifold(M.manifold, TPR(), sN...)
     e_k_vals = [1 * (1:d .== k) for k in 1:d]
@@ -221,7 +251,7 @@ function forward_logs!(M::PowerManifold{𝔽, TM, TSize, TPR}, X, p) where {𝔽
             I = i.I
             J = I .+ 1 .* e_k_vals[k] #i + e_k is j
             if all(J .<= maxInd) # is this neighbor in range?
-                j = CartesianIndex{d}(J...) # neighbour index as Cartesian Index
+                j = CartesianIndex{d}(J...) # neighbor index as Cartesian Index
                 X[N, i.I..., k] = log(M.manifold, p[M, i.I...], p[M, j.I...])
             else
                 X[N, i.I..., k] = zero_vector(M.manifold, p[M, i.I...])
@@ -245,7 +275,7 @@ function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p = 2.0, q = 1.0,
         if s != d
             throw(
                 ErrorException(
-                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not.",
+                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but it is not.",
                 ),
             )
         end
@@ -307,7 +337,7 @@ function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p = 2.0, q =
         if s != d
             throw(
                 ErrorException(
-                    "the last dimension ($d) has to be equal to the number of the previous ones ($s) but its not.",
+                    "the last dimension ($d) has to be equal to the number of the previous ones ($s) but it is not.",
                 ),
             )
         end
@@ -358,21 +388,19 @@ end
 function project_collaborative_TV!(N::PowerManifold, Θ, λ, x, Ξ, p::Int, q::Int, α = 1.0)
     return project_collaborative_TV!(N, Θ, λ, x, Ξ, Float64(p), Float64(q), α)
 end
+function _prox_Total_Variation_t(M::AbstractManifold, λ::Number, x::Tuple, p::Int)
+    p == 1 && return min(0.5, λ / distance(M, x[1], x[2]))
+    p == 2 && return λ / (1 + 2 * λ)
+    return throw(
+        ErrorException(
+            "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
+        ),
+    )
+end
 function prox_Total_Variation(
         M::AbstractManifold, λ::Number, x::Tuple{T, T}, p::Int = 1
     ) where {T}
-    d = distance(M, x[1], x[2])
-    if p == 1
-        t = min(0.5, λ / d)
-    elseif p == 2
-        t = λ / (1 + 2 * λ)
-    else
-        throw(
-            ErrorException(
-                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
-            ),
-        )
-    end
+    t = _prox_Total_Variation_t(M, λ, x, p)
     return (
         ManifoldsBase.exp_fused(M, x[1], log(M, x[1], x[2]), t),
         ManifoldsBase.exp_fused(M, x[2], log(M, x[2], x[1]), t),
@@ -381,18 +409,7 @@ end
 function prox_Total_Variation(
         M::PowerManifold, λ::Number, x::Tuple{T, T}, p::Int = 1
     ) where {T}
-    d = distance(M, x[1], x[2])
-    if p == 1
-        t = min(0.5, λ / d)
-    elseif p == 2
-        t = λ / (1 + 2 * λ)
-    else
-        throw(
-            ErrorException(
-                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
-            ),
-        )
-    end
+    t = _prox_Total_Variation_t(M, λ, x, p)
     return (
         ManifoldsBase.exp_fused(M, x[1], log(M, x[1], x[2]), t),
         ManifoldsBase.exp_fused(M, x[2], log(M, x[2], x[1]), t),
@@ -402,18 +419,7 @@ end
 function prox_Total_Variation!(
         M::AbstractManifold, y, λ::Number, x::Tuple{T, T}, p::Int = 1
     ) where {T}
-    d = distance(M, x[1], x[2])
-    if p == 1
-        t = min(0.5, λ / d)
-    elseif p == 2
-        t = λ / (1 + 2 * λ)
-    else
-        throw(
-            ErrorException(
-                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
-            ),
-        )
-    end
+    t = _prox_Total_Variation_t(M, λ, x, p)
     X1 = log(M, x[1], x[2])
     X2 = log(M, x[2], x[1])
     ManifoldsBase.exp_fused!(M, y[1], x[1], X1, t)
@@ -423,18 +429,7 @@ end
 function prox_Total_Variation!(
         M::PowerManifold, y, λ::Number, x::Tuple{T, T}, p::Int = 1
     ) where {T}
-    d = distance(M, x[1], x[2])
-    if p == 1
-        t = min(0.5, λ / d)
-    elseif p == 2
-        t = λ / (1 + 2 * λ)
-    else
-        throw(
-            ErrorException(
-                "Proximal Map of TV(M,x1,x2,p) not implemented for p=$(p) (requires p=1 or 2)",
-            ),
-        )
-    end
+    t = _prox_Total_Variation_t(M, λ, x, p)
     X1 = log(M, x[1], x[2])
     X2 = log(M, x[2], x[1])
     ManifoldsBase.exp_fused!(M, y[1], x[1], X1, t)
@@ -454,7 +449,7 @@ function prox_Total_Variation(M::PowerManifold, λ, x, p::Int = 1)
                 if (i[k] % 2) == l
                     J = i.I .+ ek.I #i + e_k is j
                     if all(J .<= maxInd) # is this neighbor in range?
-                        j = CartesianIndex(J...) # neighbour index as Cartesian Index
+                        j = CartesianIndex(J...) # neighbor index as Cartesian Index
                         (y[i], y[j]) = prox_Total_Variation(M.manifold, λ, (y[i], y[j]), p) # Compute TV on these
                     end
                 end
@@ -476,7 +471,7 @@ function prox_Total_Variation!(M::PowerManifold, y, λ, x, p::Int = 1)
                 if (i[k] % 2) == l # even/odd splitting
                     J = i.I .+ ek.I #i + e_k is j
                     if all(J .<= maxInd) # is this neighbor in range?
-                        j = CartesianIndex(J...) # neighbour index as Cartesian Index
+                        j = CartesianIndex(J...) # neighbor index as Cartesian Index
                         prox_Total_Variation!(M.manifold, [y[i], y[j]], λ, (y[i], y[j]), p) # Compute TV on these
                     end
                 end
@@ -510,12 +505,12 @@ end
 #
 #
 # Further example functions - Chambolle-Pock
-function differential_project_collaborative_TV(N::PowerManifold, p, ξ, η, p1 = 2.0, p2 = 1.0)
+function differential_project_collaborative_TV(N::PowerManifold, p, ξ, η, p1 = Inf, p2 = Inf)
     ζ = zero_vector(N, p)
     return differential_project_collaborative_TV!(N, ζ, p, ξ, η, p1, p2)
 end
 function differential_project_collaborative_TV!(
-        N::PowerManifold, ζ, p, ξ, η, p1 = 2.0, p2 = 1.0
+        N::PowerManifold, ζ, p, ξ, η, p1 = Inf, p2 = Inf
     )
     ζ = zero_vector!(N, ζ, p)
     pdims = power_dimensions(N)
@@ -529,7 +524,7 @@ function differential_project_collaborative_TV!(
         if s != d
             throw(
                 ErrorException(
-                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not.",
+                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but it is not.",
                 ),
             )
         end
@@ -631,7 +626,7 @@ function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, 
         if s != d
             throw(
                 ErrorException(
-                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not.",
+                    "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but it is not.",
                 ),
             )
         end
@@ -709,7 +704,7 @@ function differential_project_collaborative_TV(N::PowerManifold, λ, x, Ξ, Η, 
                         Y[N, I..., k] = zero_vector(N.manifold, x[N, I..., k])
                     end
                 end # directions
-            end # `ì` in R
+            end # `i` in R
             return Y
         else
             throw(ErrorException("The case p=$p, q=$q is not yet implemented"))

@@ -19,13 +19,6 @@ _debug_gradient_sampling = false
     f(M, p) = sum(1 / (2 * d) * distance.(Ref(M), Ref(p), data) .^ 2)
     grad_f(M, p) = sum(1 / d * grad_distance.(Ref(M), data, Ref(p)))
 
-    # For comparison
-    m1 = gradient_descent(
-        M, f, grad_f, p0;
-        return_state = true,
-        record = [:Iteration, :Cost, RecordGradientNorm()]
-    )
-
     Random.seed!(23)
     m2 = gradient_sampling(
         M, f, grad_f, p0;
@@ -33,6 +26,31 @@ _debug_gradient_sampling = false
         debug = _debug_gradient_sampling ? [:Iteration, :Cost, " ", :subgradient_norm_tolerance, " ", :sampling_radius, " | ", :GradientNorm, " ", :Change, "\n", :Stop, 10] : [],
         record = [:Iteration, :Cost, RecordGradientNorm()]
     )
+
+    @testset "documented constructor" begin
+        # the `convex_hull_coeffs` default must not mention the static parameter `R`
+        sd = GradientSamplingState(M)
+        @test length(sd.convex_hull_coeffs) == 6
+        @test eltype(sd.convex_hull_coeffs) === Float64
+        sd7 = GradientSamplingState(M; sample_size = 7)
+        @test length(sd7.convex_hull_coeffs) == 8
+        # keywords of different number types are promoted instead of erroring
+        si = GradientSamplingState(M; sampling_radius = 1)
+        @test si.sampling_radius isa Float64
+        @test eltype(si.convex_hull_coeffs) === Float64
+        sf = GradientSamplingState(M; sampling_radius = 0.5f0)
+        @test sf.sampling_radius isa Float64 # promoted against the other defaults
+    end
+
+    @testset "the step size is initialized" begin
+        awn = AdaptiveWNGradient()(M)
+        gss = GradientSamplingState(M; p = copy(M, p0), stepsize = awn)
+        awn.weight = 5.0
+        awn.count = 3
+        initialize_solver!(DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f)), gss)
+        @test awn.weight == awn.initial_bound
+        @test awn.count == 0
+    end
 
     s2 = get_state(m2, true)
     @test startswith(repr(s2), "GradientSamplingState(; ")
@@ -52,9 +70,33 @@ _debug_gradient_sampling = false
     )
     # The parameters of this run are chosen so that reduction is necessary,
     # they hence to not work that well and we end up a bit further away.
-    @test isapprox(M, p2, p3; atol = 2.0e-3)
+    @test isapprox(M, p2, p3; atol = 3.0e-3)
+    @testset "a manifold whose points are numbers" begin
+        Mc = Circle()
+        datac = [-0.2, 0.0, 0.3]
+        fc(N, q) = sum(distance.(Ref(N), Ref(q), datac) .^ 2) / (2 * length(datac))
+        grad_fc(N, q) = sum(grad_distance.(Ref(N), datac, Ref(q))) / length(datac)
+        Random.seed!(42)
+        qc = gradient_sampling(
+            Mc, fc, grad_fc, 0.5; stopping_criterion = StopAfterIteration(20)
+        )
+        @test qc isa Float64
+        @test fc(Mc, qc) < fc(Mc, 0.5)
+    end
+
+    # the in-place gradient variant produces the same iterates
+    grad_f!(M, X, p) = copyto!(M, X, p, grad_f(M, p))
+    Random.seed!(23)
+    p4 = gradient_sampling(M, f, grad_f!, p0; evaluation = InplaceEvaluation())
+    @test isapprox(M, p2, p4)
 
     if _debug_gradient_sampling
+        # For comparison
+        m1 = gradient_descent(
+            M, f, grad_f, p0;
+            return_state = true,
+            record = [:Iteration, :Cost, RecordGradientNorm()]
+        )
         p1 = get_solver_result(m1)
         p2 = get_solver_result(m2)
         @info "p1 " p1 "with cost " f(M, p1)

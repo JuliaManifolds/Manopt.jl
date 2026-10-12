@@ -2,14 +2,16 @@
 #
 # State
 """
-    ProximalPointState{P} <: AbstractGradientSolverState
+    ProximalPointState{P} <: AbstractManoptSolverState
+
+State for the [`proximal_point`](@ref) solver.
 
 # Fields
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:stopping_criterion; name = "stop"))
-* `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``k``
+* `λ`:         a function for the values of ``λ_k`` per iteration/cycle ``k``
 
 # Constructor
 
@@ -23,16 +25,16 @@ $(_args(:M))
 
 ## Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
-* `λ=k -> 1.0` a function to compute the ``λ_k, k ∈ $(_tex(:Cal, "N"))``,
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
+* `λ=k -> 1.0`: a function to compute ``λ_k`` for ``k ∈ ℕ``,
 $(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)"))
 
 # See also
 
 [`proximal_point`](@ref)
 """
-mutable struct ProximalPointState{P, Tλ, C <: AbstractDict{Symbol}, TStop <: StoppingCriterion} <: AbstractGradientSolverState
+mutable struct ProximalPointState{P, Tλ, C <: AbstractDict{Symbol}, TStop <: StoppingCriterion} <: AbstractManoptSolverState
     callbacks::C
     λ::Tλ
     p::P
@@ -49,25 +51,33 @@ mutable struct ProximalPointState{P, Tλ, C <: AbstractDict{Symbol}, TStop <: St
     end
 end
 get_callbacks(pps::ProximalPointState) = pps.callbacks
+get_iterate(pps::ProximalPointState) = pps.p
+function set_iterate!(pps::ProximalPointState, M::AbstractManifold, p)
+    copyto!(M, pps.p, p)
+    return pps
+end
+function (d::DebugProximalParameter)(::AbstractManoptProblem, pps::ProximalPointState, k::Int)
+    (k >= (d.at_init ? 0 : 1)) && Printf.format(d.io, Printf.Format(d.format), pps.λ(k))
+    return nothing
+end
+function (r::RecordProximalParameter)(::AbstractManoptProblem, pps::ProximalPointState, k::Int)
+    return record_or_reset!(r, pps.λ(k), k)
+end
 function Base.show(io::IO, pps::ProximalPointState)
     print(io, "ProximalPointState(; ")
     return print(io, "callbacks = ", pps.callbacks, ", λ = $(pps.λ), p = $(pps.p), stopping_criterion = $(pps.stop))")
 end
 function status_summary(pps::ProximalPointState; context::Symbol = :default)
     (context === :short) && return repr(pps)
-    i = get_count(pps, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(pps.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the proximal point algorithm$(conv_inl)"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(pps.stop) ? "Yes" : "No"
+    (context === :inline) && return "A solver state for the proximal point algorithm$(_iteration_suffix(pps))"
     as = _callbacks_summary(pps)
     (length(as) > 0) && (as = "## Parameters\n$(as)\n\n")
     s = """
     # Solver state for `Manopt.jl`s Proximal Point Method
-    $Iter$(as)
+    $(_iterations_str(pps))$(as)
     ## Stopping criterion
     $(_in_str(status_summary(pps.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $(_converged_str(pps))"""
     return s
 end
 #
@@ -88,15 +98,15 @@ p^{(k+1)} = $(_tex(:prox))_{λ_kf}(p^{(k)})
 # Input
 
 $(_args(:M))
-* `prox_f`: a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the summands of ``f`` (see `evaluation`)
+* `prox_f`: the proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` of ``f`` (see `evaluation`)
 
 # Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
 * `f=nothing`: a cost function ``f: $(_math(:Manifold))→ℝ`` to minimize. For running the algorithm, ``f`` is not required, but for example when recording the cost or using a stopping criterion that requires a cost function.
-* `λ= k -> 1.0`: a function returning the (square summable but not summable) sequence of ``λ_i``
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)"))
+* `λ=k -> 1.0`: a function returning the sequence of proximal parameters ``λ_k``
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)"))
 
 $(_note(:OtherKeywords))
 
@@ -109,12 +119,10 @@ function proximal_point(
         M::AbstractManifold, prox_f, p = rand(M);
         f = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    prox_f_ = _ensure_mutating_prox(prox_f, p, evaluation)
-    mpo = ManifoldProximalMapObjective(f_, prox_f_; evaluation = evaluation)
+    p_ = maybe_wrap_variable(p)
+    mpo = ManifoldProximalMapObjective(f, prox_f; evaluation = evaluation, p = p)
     rs = proximal_point(M, mpo, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function proximal_point(
         M::AbstractManifold, mpo::O, p; kwargs...
@@ -132,14 +140,14 @@ function proximal_point!(
         f = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
-    mpo = ManifoldProximalMapObjective(f, prox_f; evaluation = evaluation)
+    mpo = ManifoldProximalMapObjective(f, prox_f; evaluation = evaluation, p = p)
     return proximal_point!(M, mpo, p; evaluation = evaluation, kwargs...)
 end
 function proximal_point!(
         M::AbstractManifold, mpo::O, p;
         callbacks = Dict{Symbol, Function}(),
         stopping_criterion::StoppingCriterion = StopAfterIteration(1000) | StopWhenChangeLess(M, 1.0e-12),
-        λ = k -> 1, kwargs...,
+        λ = k -> 1.0, kwargs...,
     ) where {O <: Union{ManifoldProximalMapObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(proximal_point!; kwargs...)
     dmpo = decorate_objective!(M, mpo; kwargs...)

@@ -1,4 +1,8 @@
-# Vector Bundle Newton Method
+# Vector bundle Newton method
+
+```@meta
+CurrentModule = Manopt
+```
 
 ```@docs
   vectorbundle_newton
@@ -9,6 +13,7 @@
 
 ```@docs
 VectorBundleManoptProblem
+Manopt.get_manifold(::VectorBundleManoptProblem)
 ```
 
 ## State
@@ -17,17 +22,17 @@ VectorBundleManoptProblem
 VectorBundleNewtonState
 ```
 
-# [Stepsize](@id Sec-VectorBundleNewton-Stepsize)
+## [Step size](@id Sec-VectorBundleNewton-Stepsize)
 
 ```@docs
 AffineCovariantStepsize
 ```
 
-## Internal Functions
+## Internal functions
 
 ```@autodocs
 Modules = [Manopt]
-Pages = ["vectorbundle_newton.jl"]
+Pages = ["solvers/vectorbundle_newton.jl"]
 Order = [:function]
 Public=false
 Private=true

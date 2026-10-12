@@ -15,6 +15,8 @@ proximal_point!
 ProximalPointState
 ```
 
+## Literature
+
 ```@bibliography
 Pages = ["proximal_point.md"]
 Canonical=false

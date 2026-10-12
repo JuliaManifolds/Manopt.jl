@@ -11,9 +11,9 @@ module Manopt
 # When indenting something in print, use two spaces (or maybe \t later?)
 _MANOPT_INDENT = "  "
 
-import Base: &, copy, getindex, identity, length, setindex!, show, |
+import Base: &, copy, getindex, length, show, |
 import LinearAlgebra: reflect!
-import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
+import ManifoldsBase: embed!, prepare_check_result, find_best_slope_window
 import ManifoldsBase: base_manifold, base_point, get_basis
 import ManifoldsBase: project, project!, submanifold_component
 import LinearAlgebra: cross, LowerTriangular
@@ -23,23 +23,18 @@ using Glossaries
 using LinearAlgebra:
     Adjoint, Diagonal, I, Eigen, LinearAlgebra, PosDefException, Symmetric,
     cholesky, cond, dot,
-    eigen, eigen!, eigmin, eigvals,
+    eigen, eigmin, eigvals,
     ldiv!, mul!, opnorm, tril
 using ManifoldDiff:
     adjoint_differential_log_argument, adjoint_differential_log_argument!,
-    differential_exp_argument, differential_exp_argument!,
-    differential_exp_basepoint, differential_exp_basepoint!,
-    differential_log_argument, differential_log_argument!,
-    differential_log_basepoint, differential_log_basepoint!,
-    differential_shortest_geodesic_endpoint, differential_shortest_geodesic_endpoint!,
+    differential_exp_argument, differential_exp_basepoint, differential_log_argument,
+    differential_log_basepoint, differential_shortest_geodesic_endpoint,
     differential_shortest_geodesic_startpoint, differential_shortest_geodesic_startpoint!,
-    jacobi_field, jacobi_field!,
     riemannian_gradient, riemannian_gradient!,
     riemannian_Hessian, riemannian_Hessian!
 using ManifoldsBase
 using ManifoldsBase:
     AbstractBasis,
-    AbstractDecoratorManifold,
     AbstractInverseRetractionMethod,
     AbstractManifold, AbstractPowerManifold,
     AbstractPowerRepresentation,
@@ -60,46 +55,26 @@ using ManifoldsBase:
     allocate, allocate_result, allocate_result_type,
     base_manifold,
     copy, copyto!,
-    default_inverse_retraction_method,
-    default_retraction_method,
-    default_vector_transport_method,
+    default_inverse_retraction_method, default_retraction_method, default_vector_transport_method,
     distance,
-    embed, embed_project, embed_project!,
+    embed, embed_project!,
     exp, exp!, geodesic,
-    get_basis,
-    get_component,
-    get_coordinates, get_coordinates!,
-    get_embedding,
-    get_iterator,
+    get_basis, get_coordinates, get_coordinates!, get_embedding, get_iterator,
     get_vector, get_vector!, get_vectors,
     has_components,
-    injectivity_radius,
-    inner,
-    inverse_retract, inverse_retract!,
-    is_flat, is_point, is_vector,
+    injectivity_radius, inner, inverse_retract, inverse_retract!, is_flat, is_point, is_vector,
     log, log!,
-    manifold_dimension,
-    mid_point, mid_point!,
-    norm,
-    number_eltype, number_of_coordinates,
-    power_dimensions,
-    project,
-    project!,
-    rand!,
-    riemann_tensor, riemann_tensor!,
-    representation_size,
-    requires_caching,
-    retract, retract!,
+    manifold_dimension, mid_point, mid_point!,
+    norm, number_eltype, number_of_coordinates,
+    power_dimensions, project, project!,
+    rand!, representation_size, retract, retract!,
     sectional_curvature,
-    set_component!,
-    shortest_geodesic, shortest_geodesic!,
-    submanifold_component, submanifold_components,
+    shortest_geodesic, submanifold_component, submanifold_components,
     vector_transport_to, vector_transport_to!,
     zero_vector, zero_vector!,
     ×, ℂ, ℝ
-using Markdown
 using Preferences:
-    @load_preference, @set_preferences!, @has_preference, @delete_preferences!
+    @load_preference, @set_preferences!, @delete_preferences!
 using Printf
 using Random: AbstractRNG, default_rng, shuffle!, rand, randn!, randperm
 using SparseArrays
@@ -108,13 +83,13 @@ using Statistics
 include("documentation_glossary.jl")
 
 """
-    Rn(args; kwargs...)
-    Rn(s::Symbol=:Manifolds, args; kwargs...)
+    Rn(args...; kwargs...)
+    Rn(::Val{T}, args...; kwargs...)
 
 A small internal helper function to choose a Euclidean space.
 By default, this uses the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) unless you load
 a more advanced Euclidean space like [`Euclidean`](@extref Manifolds.Euclidean)
-from [`Manifolds.jl`](@extref Manifolds.Manifolds)
+from [`Manifolds.jl`](@extref Manifolds.Manifolds).
 """
 Rn(args...; kwargs...) = Rn(Val(Rn_default()), args...; kwargs...)
 
@@ -122,8 +97,8 @@ Rn(args...; kwargs...) = Rn(Val(Rn_default()), args...; kwargs...)
     Rn_default()
 
 Specify a default value to dispatch [`Rn`](@ref) on.
-This default is set to `Manifolds`, indicating, that when this package is loaded,
-it is the preferred package to ask for a vector space space.
+This default is set to `Manifolds`, indicating that, when this package is loaded,
+it is the preferred package to ask for a vector space.
 
 The default within `Manopt.jl` is to use the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) from `ManifoldsBase.jl`.
 If you load `Manifolds.jl` this switches to using [`Euclidean`](@extref Manifolds.Euclidean).
@@ -140,27 +115,67 @@ end
 #
 #
 # Base – A (work in progress) separate folder scheme for abstract types and design ideas
+# ---
+# ## Problem
 include("base/problem/abstract_problem.jl")
-include("base/objective/evaluation.jl")
+# ## Function
+include("base/function/evaluation.jl")
+include("base/function/abstract_function.jl")
+include("base/function/constrained.jl")
+include("base/function/robustifier.jl")
+include("base/function/vectorial.jl")
+# ## Objective
 include("base/objective/abstract_objective.jl")
+include("base/objective/cost.jl")
+include("base/objective/first_order.jl")
+include("base/objective/first_order_nonsmooth.jl")
+include("base/objective/linear_system.jl")
+include("base/objective/second_order.jl")
+include("base/objective/sub_objective.jl")
+# ## State
 include("base/state/abstract_state.jl")
 include("base/state/action.jl")
-include("base/state/debug.jl")
 include("base/state/callback.jl")
+include("base/state/debug.jl")
 include("base/state/decorator.jl")
+include("base/state/record.jl")
+include("base/solver.jl")
+include("base/state/sub_state.jl")
+# ## General further interfaces
 include("base/default_factory.jl")
-
+include("base/keyword.jl")
+include("base/parameter.jl")
+include("base/manifold.jl")
+include("base/repl.jl")
+include("base/stepsize.jl")
+include("base/stopping_criterion.jl")
 #
 #
 # Commons – a collection of types or functions that are common to more than one solver
+# ---
+# Robustifiers are used in the objective.jl, so they come first
+include("commons/robustifiers.jl")
+# Functions are used in the Objectives, these are sometimes used later
+include("commons/functions.jl")
+include("commons/objectives.jl")
+# The remainder is alphabetically ordered.
+include("commons/conjugate_gradient_coefficients.jl")
+include("commons/direction_updates.jl")
+include("commons/linear_systems.jl")
+include("commons/parameters.jl")
+include("commons/problems.jl")
+include("commons/quasi_newton_updates.jl")
+include("commons/stepsizes.jl")
+include("commons/stopping_criteria.jl")
+include("commons/sub_functions.jl")
+include("commons/sub_objectives.jl")
+include("commons/subsolver_states.jl")
+include("commons/vectorial_functions.jl")
+# Debug and Record might require common problems and objectives
 include("commons/debugs.jl")
-
-# Common Solver plans
-include("plans/plan.jl")
+include("commons/records.jl")
 #
 #
-# solvers general framework
-include("solvers/solver.jl")
 # specific solvers
 include("solvers/adaptive_regularization_with_cubics.jl")
 include("solvers/alternating_gradient_descent.jl")
@@ -195,6 +210,7 @@ include("solvers/trust_regions.jl")
 include("solvers/stochastic_gradient_descent.jl")
 include("solvers/subgradient.jl")
 include("solvers/vectorbundle_newton.jl")
+#
 include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
 
@@ -210,7 +226,9 @@ function __init__()
     #
     @static if isdefined(Base.Experimental, :register_error_hint) # COV_EXCL_LINE
         Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
-            if (exc.f === convex_bundle_method_subsolver) || (exc.f === proximal_bundle_method_subsolver) || (exc.f === gradient_sampling_subsolver)
+            if (exc.f === convex_bundle_method_subsolver) || (exc.f === convex_bundle_method_subsolver!) ||
+                    (exc.f === proximal_bundle_method_subsolver) || (exc.f === proximal_bundle_method_subsolver!) ||
+                    (exc.f === gradient_sampling_subsolver) || (exc.f === gradient_sampling_subsolver!)
                 print(
                     io,
                     "\nThe `$(exc.f)` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
@@ -223,7 +241,7 @@ function __init__()
 end
 #
 # General
-export ℝ, ℂ, &, |, ×, ≟, ⩼, ⩻
+export ℝ, ℂ, &, |, ×, ≟, ⩼, ⩻, ≞
 export mid_point, mid_point!, reflect, reflect!
 #
 # Problems
@@ -261,16 +279,16 @@ export AbstractDecoratedManifoldObjective,
     SimpleManifoldCachedObjective,
     ManifoldCachedObjective
 # Functions
-export AbstractVectorFunction, VectorDifferentialFunction
+export AbstractVectorFunction, AbstractFirstOrderVectorFunction, VectorDifferentialFunction
 export AbstractVectorGradientFunction, VectorGradientFunction, VectorHessianFunction
 # Robustifiers
-export AbstractRobustifierFunction, SoftL1Robustifier, AbstractRobustifierFunction,
+export AbstractRobustifierFunction, SoftL1Robustifier,
     CauchyRobustifier, TolerantRobustifier, TukeyRobustifier, ComposedRobustifierFunction,
     ArctanRobustifier, ScaledRobustifierFunction, RobustifierFunction, IdentityRobustifier,
     HuberRobustifier, ComponentwiseRobustifierFunction
 #
 # Evaluation & Vectorial Types
-export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
+export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation
 export AbstractVectorialType
 export CoefficientVectorialType, ComponentVectorialType, FunctionVectorialType
 #
@@ -326,7 +344,6 @@ export get_subgradient, get_subgradient!
 export get_subtrahend_gradient!, get_subtrahend_gradient
 export get_proximal_map, get_proximal_map!
 export get_state,
-    get_initial_stepsize,
     get_iterate,
     get_adjoint_jacobian, get_adjoint_jacobian!,
     get_jacobian, get_jacobian!,
@@ -349,7 +366,6 @@ export get_state,
 export get_hessian, get_hessian!
 export get_differential
 export provided_callbacks
-export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
 export equality_constraints_length,
@@ -376,8 +392,7 @@ export ProximalGradientNonsmoothCost, ProximalGradientNonsmoothSubgradient
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate, QuasiNewtonLimitedMemoryBoxDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
 export QuasiNewtonPreconditioner
-export QuasiNewtonCautiousDirectionUpdate,
-    BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
+export QuasiNewtonCautiousDirectionUpdate, BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
 export WolfePowellLinesearch, WolfePowellBinaryLinesearch
@@ -435,9 +450,10 @@ export adaptive_regularization_with_cubics,
     mesh_adaptive_direct_search, mesh_adaptive_direct_search!,
     NelderMead, NelderMead!,
     particle_swarm, particle_swarm!,
-    primal_dual_semismooth_Newton,
+    primal_dual_semismooth_Newton, primal_dual_semismooth_Newton!,
     projected_gradient_method, projected_gradient_method!,
     proximal_bundle_method, proximal_bundle_method!,
+    proximal_bundle_method_subsolver, proximal_bundle_method_subsolver!,
     proximal_gradient_method, proximal_gradient_method!,
     proximal_point, proximal_point!,
     quasi_Newton, quasi_Newton!,
@@ -453,21 +469,18 @@ export initialize_solver!, step_solver!, get_solver_result, stop_solver!
 export solve!
 export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
 export update_hessian!, update_hessian_basis!
-export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
 export AdaptiveRegularizationWithCubicsModelObjective
-export ExactPenaltyCost, ExactPenaltyGrad
 export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #
 # Stepsize
 export Stepsize
-export AdaptiveWNGradient, AffineCovariantStepsize, ConstantLength, DecreasingLength,
-    Polyak, DistanceOverGradients, DistanceOverGradientsStepsize
+export AdaptiveWNGradient, AffineCovariantStepsize, BarzilaiBorwein, ConstantLength
+export DecreasingLength, Polyak, DistanceOverGradients, DistanceOverGradientsStepsize
 export ProximalGradientMethodBacktracking
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch, CubicBracketingLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 export InteriorPointCentralityCondition
 export DomainBackTracking, DomainBackTrackingStepsize, NullStepBackTrackingStepsize
-export ProximalGradientMethodBacktracking
 export HagerZhangLinesearch
 #
 # Stopping Criteria
@@ -514,9 +527,8 @@ export DebugPrimalBaseChange, DebugPrimalBaseIterate, DebugPrimalChange, DebugPr
 export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIterate
 export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 export DebugProximalParameter, DebugWarnIfCostIncreases
-export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugWhenActive, DebugWarnIfFieldNotFinite, DebugIfEntry
-export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite
+export DebugWarnIfCostNotFinite
 export DebugWarnIfLagrangeMultiplierIncreases, DebugWarnIfStepsizeCollapsed
 export DebugWarnIfGradientNormTooLarge, DebugMessages
 #
@@ -530,7 +542,6 @@ export RecordGradient, RecordGradientNorm, RecordStepsize
 export RecordSubsolver, RecordWhenActive, RecordStoppingReason
 export RecordPrimalBaseChange,
     RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate
-export RecordStoppingReason, RecordWhenActive, RecordSubsolver
 export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
 export RecordProximalParameter
 #
@@ -539,4 +550,7 @@ export get_count, reset_counters!
 #
 # Helpers
 export check_gradient, check_differential, check_Hessian
+#
+# Errors
+export ManoptKeywordError
 end

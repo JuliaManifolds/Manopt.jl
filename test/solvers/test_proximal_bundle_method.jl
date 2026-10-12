@@ -1,10 +1,9 @@
 using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
-import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolver!
 
 @testset "The Proximal Bundle Method" begin
     M = Hyperbolic(4)
     p = [0.0, 0.0, 0.0, 0.0, 1.0]
-    p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
+    p0 = exp(M, p, [1.0, 0.0, 0.0, 0.0, 0.0])
     pbms = ProximalBundleMethodState(M; p = p0, stopping_criterion = StopAfterIteration(200))
     @test get_iterate(pbms) == p0
     # Check that Manifold+State is erroring since a problem is missing
@@ -13,6 +12,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
     @testset "Special Stopping Criteria" begin
         sc1 = StopWhenLagrangeMultiplierLess(1.0e-8)
         @test startswith(repr(sc1), "StopWhenLagrangeMultiplierLess([1.0e-8]; mode=:estimate)")
+        @test Manopt.indicates_convergence(sc1)
         @test get_reason(sc1) == ""
         # Trigger manually
         sc1.at_iteration = 2
@@ -29,15 +29,13 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         @test length(get_reason(sc3)) > 0
     end
     @testset "Allocating Subgradient" begin
-        f(M, q) = distance(M, q, p)
-        ∂f(M, q) = (distance(M, p, q) == 0) ? zero_vector(M, q) : (-log(M, q, p) / max(10 * eps(Float64), distance(M, p, q)))
+        f, ∂f, _ = Manopt.Test.distance_task(M, p)
         mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
         X = zero_vector(M, p)
         Y = get_subgradient(mp, p)
         get_subgradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
-        oR = solve!(mp, pbms)
-        xHat = get_solver_result(oR)
+        solve!(mp, pbms)
         # Check Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test norm(M, p, get_subgradient(mp, p)) == 0
@@ -52,38 +50,37 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         @test f(M, p_star2) <= f(M, p0)
         set_iterate!(pbms2, M, p)
         @test get_iterate(pbms2) == p
+        @test isapprox(M, Manopt.get_state(pbms2).p, p) # the iterate follows as well
+        #
+        # Check bundle trimming
+        pbms3 = proximal_bundle_method(
+            M, f, ∂f, p0; m = 2.0, bundle_size = 2,
+            stopping_criterion = StopAfterIteration(6), return_state = true,
+        )
+        @test length(pbms3.bundle) == 2
+        @test length(pbms3.lin_errors) == 2
+        @test length(pbms3.approx_errors) == 2
         # Test warnings
         dw1 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 0.0)
         dw1(mp, pbms, 1) #do one normal run.
-        @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=\"0.0\")"
+        @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=0.0)"
         pbms.ν = 101.0
         @test_logs (:warn,) dw1(mp, pbms, 2)
         dw2 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 1.0e1)
         dw2.old_value = -101.0
-        @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=\"10.0\")"
+        @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=10.0)"
         pbms.ν = -1.0
         @test_logs (:warn,) (:warn,) dw2(mp, pbms, 1)
     end
     @testset "Mutating Subgradient" begin
-        f(M, q) = distance(M, q, p)
-        function ∂f!(M, X, q)
-            d = distance(M, p, q)
-            if d == 0
-                zero_vector!(M, X, q)
-                return X
-            end
-            log!(M, X, q, p)
-            X .*= -1 / max(10 * eps(Float64), d)
-            return X
-        end
+        f, _, ∂f! = Manopt.Test.distance_task(M, p)
         bmom = ManifoldSubgradientObjective(f, ∂f!; evaluation = InplaceEvaluation())
         mp = DefaultManoptProblem(M, bmom)
         X = zero_vector(M, p)
         Y = get_subgradient(mp, p)
         get_subgradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
-        sr = solve!(mp, pbms)
-        xHat = get_solver_result(sr)
+        solve!(mp, pbms)
         # Test Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test norm(M, p, get_subgradient(mp, p)) == 0
@@ -98,7 +95,21 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             debug = [],
         )
         p_star2 = get_solver_result(s2)
+        # with the fix, the all-default in-place call works too (in-place subsolver chosen)
+        q_ip = proximal_bundle_method(
+            M, f, ∂f!, copy(p0);
+            stopping_criterion = StopAfterIteration(200), evaluation = InplaceEvaluation(),
+        )
+        @test isapprox(M, q_ip, p_star2; atol = 1.0e-8)
         @test f(M, p_star2) <= f(M, p0)
+    end
+    @testset "A manifold with numbers as points" begin
+        Mc = Circle()
+        gc(M, q) = distance(M, q, 0.5)
+        ∂gc(M, q) = distance(M, q, 0.5) == 0 ? 0.0 : -log(M, q, 0.5) / distance(M, q, 0.5)
+        qc = proximal_bundle_method(Mc, gc, ∂gc, 1.0; stopping_criterion = StopAfterIteration(20))
+        @test qc isa Float64
+        @test gc(Mc, qc) < gc(Mc, 1.0)
     end
     @testset "A simple median run" begin
         M = Sphere(2)
@@ -127,6 +138,23 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         # test access functions
         @test get_iterate(pbm_s) == q
         @test norm(M, q, get_subgradient(pbm_s)) < 1.0e-4
+        # integer parameters are stored as floating point numbers and the run agrees
+        sc3 = StopAfterIteration(3)
+        s_int = proximal_bundle_method(
+            M, f, ∂f, p0; m = 1, α₀ = 1, δ = -1, ε = 1, μ = 1, stopping_criterion = sc3, return_state = true,
+        )
+        @test (s_int.m, s_int.μ, s_int.δ) === (1.0, 1.0, -1.0)
+        q_float = proximal_bundle_method(
+            M, f, ∂f, p0; m = 1.0, α₀ = 1.0, δ = -1.0, ε = 1.0, μ = 1.0, stopping_criterion = StopAfterIteration(3),
+        )
+        @test get_solver_result(s_int) == q_float
+        # the tangent vector passed as `X=` is accepted and reaches the state
+        @test :X in Manopt.accepted_keywords(proximal_bundle_method).accepted
+        X0 = zero_vector(M, p0)
+        s_X = @test_nowarn proximal_bundle_method(
+            M, f, ∂f, p0; X = X0, stopping_criterion = StopAfterIteration(0), return_state = true,
+        )
+        @test get_state(s_X).X === X0
         # test the other stopping criterion mode
         q2 = proximal_bundle_method(
             M, f, ∂f, p0;
@@ -134,23 +162,26 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         )
         @test distance(M, q2, m) < 2 * 1.0e-3
         # Test bundle size and in-place
-        p_size = copy(p0)
+        q3 = copy(M, p0)
         function ∂f!(M, X, p)
-            X = sum(
+            X .= sum(
                 1 / length(data) *
-                    ManifoldDiff.subgrad_distance!.(Ref(M), Ref(X), data, Ref(p), 1; atol = 1.0e-8),
+                    ManifoldDiff.subgrad_distance.(Ref(M), data, Ref(p), 1; atol = 1.0e-8),
             )
             return X
         end
-        proximal_bundle_method!(
-            M, f, ∂f!, p_size; bundle_size = 2, stopping_criterion = StopAfterIteration(200),
+        r3 = proximal_bundle_method!(
+            M, f, ∂f!, q3;
             evaluation = InplaceEvaluation(), sub_problem = (proximal_bundle_method_subsolver!),
         )
+        @test distance(M, q3, m) < 2 * 1.0e-3
+        @test r3 === q3 # the passed point holds the result
         @testset "Callback test" begin
             sk_record = Tuple{Symbol, Int}[]
             cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))
+            q4 = copy(M, p0)
             proximal_bundle_method!(
-                M, f, ∂f!, p_size; bundle_size = 2,
+                M, f, ∂f!, q4; bundle_size = 2,
                 evaluation = InplaceEvaluation(), sub_problem = (proximal_bundle_method_subsolver!),
                 stopping_criterion = StopAfterIteration(1), callbacks = cb
             )
@@ -163,10 +194,9 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
     @testset "Trigger the case where the bundle is not transported" begin
         M = Hyperbolic(4)
         p = [0.0, 0.0, 0.0, 0.0, 1.0]
-        p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
+        p0 = exp(M, p, [1.0, 0.0, 0.0, 0.0, 0.0])
         pbms = ProximalBundleMethodState(M; p = p0, stopping_criterion = StopAfterIteration(200))
-        f(M, q) = distance(M, q, p)
-        ∂f(M, q) = (distance(M, p, q) == 0) ? zero_vector(M, q) : (-log(M, q, p) / max(10 * eps(Float64), distance(M, p, q)))
+        f, ∂f, _ = Manopt.Test.distance_task(M, p)
         mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
         pbms.p_last_serious = p0
         Manopt.step_solver!(mp, pbms, 1)

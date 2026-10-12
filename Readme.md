@@ -1,17 +1,18 @@
 <div align="center">
     <picture>
         <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/JuliaManifolds/Manopt.jl/master/docs/src/assets/logo-text-readme-dark.png">
-      <img alt="Manifolds.jl logo with text on the side" src="https://raw.githubusercontent.com/JuliaManifolds/Manopt.jl/master/docs/src/assets/logo-text-readme.png">
+      <img alt="Manopt.jl logo with text on the side" src="https://raw.githubusercontent.com/JuliaManifolds/Manopt.jl/master/docs/src/assets/logo-text-readme.png">
     </picture>
 </div>
 
-## Optimization Algorithm on Riemannian Manifolds.
+## Optimization Algorithms on Riemannian Manifolds
 
 [![](https://img.shields.io/badge/docs-stable-blue?logo=Julia&logoColor=white)](https://manoptjl.org/stable)
 [![code style: runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-black)](https://github.com/fredrikekre/Runic.jl)
 [![CI](https://github.com/JuliaManifolds/Manopt.jl/workflows/CI/badge.svg)](https://github.com/JuliaManifolds/Manopt.jl/actions?query=workflow%3ACI+branch%3Amaster)
 [![codecov](https://codecov.io/gh/JuliaManifolds/Manopt.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaManifolds/Manopt.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
+[![JET CA](https://img.shields.io/badge/%F0%9F%9B%A9%EF%B8%8F_tested_with-JET.jl-233f9a)](https://github.com/aviatesk/JET.jl)
 
 [![DOI](https://zenodo.org/badge/74746729.svg)](https://zenodo.org/badge/latestdoi/74746729)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.03866/status.svg)](https://doi.org/10.21105/joss.03866)
@@ -23,9 +24,9 @@ For a function $f: ℳ → ℝ$  that maps from a [Riemannian manifold](https://
 
 `Manopt.jl` provides
 
-* A framework to implement arbitrary optimization algorithms on Riemannian Manifolds
-* A library of optimization algorithms on Riemannian manifolds
-* an easy-to-use interface for (debug) output and recording values during an algorithm run.
+* a framework to implement arbitrary optimization algorithms on Riemannian manifolds
+* a library of optimization algorithms on Riemannian manifolds
+* an easy-to-use interface for (debug) output and recording values during an algorithm run
 * several tools to investigate the algorithms, gradients, and optimality criteria
 
 ## Getting started
@@ -54,7 +55,7 @@ a Riemannian manifold.
 The following packages are related to `Manopt.jl`
 
 * [`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/): a library of manifolds implemented using [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/) :octocat: [GitHub repository](https://github.com/JuliaManifolds/Manifolds.jl)
-* [`ManifoldsDiff.jl`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/): a package to use (Euclidean) AD tools on manifolds, that also provides several differentials and gradients. :octocat: [GitHub repository](https://github.com/JuliaManifolds/ManifoldDiff.jl)
+* [`ManifoldDiff.jl`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/): a package to use (Euclidean) AD tools on manifolds, that also provides several differentials and gradients. :octocat: [GitHub repository](https://github.com/JuliaManifolds/ManifoldDiff.jl)
 
 ## Citation
 
@@ -70,14 +71,14 @@ If you use `Manopt.jl` in your work, please cite the following
 <summary><code>Bergmann:2022</code> (BibLaTeX) </summary>
 
 ```biblatex
-@article{Bergmann2022,
+@article{Bergmann:2022,
     Author    = {Ronny Bergmann},
     Doi       = {10.21105/joss.03866},
     Journal   = {Journal of Open Source Software},
     Number    = {70},
     Pages     = {3866},
     Publisher = {The Open Journal},
-    Title     = {Manopt.jl: Optimization on Manifolds in {J}ulia},
+    Title     = {{M}anopt.jl: Optimization on Manifolds in {J}ulia},
     Volume    = {7},
     Year      = {2022},
 }
@@ -95,13 +96,13 @@ To refer to a certain version or the source code in general please cite for exam
   <summary><code>Manoptjl-zenodo-mostrecent</code> (BibLaTeX)</summary>
 
 ```biblatex
-@software{manoptjl-zenodo-mostrecent,
+@software{Manoptjl-zenodo-mostrecent,
     Author    = {Ronny Bergmann},
     Copyright = {MIT License},
     Doi       = {10.5281/zenodo.4290905},
     Publisher = {Zenodo},
-    Title     = {Manopt.jl},
-    Year      = {2024},
+    Title     = {{M}anopt.jl},
+    Year      = {2026},
 }
 ```
 
@@ -119,7 +120,7 @@ If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifold
 > arXiv: [2106.08777](https://arxiv.org/abs/2106.08777)
 <details>
 
-  <summary><code>AxenBaranBergmannRzecki:2023</code>(BibLaTeX)</summary>
+  <summary><code>AxenBaranBergmannRzecki:2023</code> (BibLaTeX)</summary>
 
 ```biblatex
 @article{AxenBaranBergmannRzecki:2023,
@@ -129,7 +130,7 @@ If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifold
     JOURNAL   = {ACM Transactions on Mathematical Software},
     MONTH     = {dec},
     NUMBER    = {4},
-    TITLE     = {Manifolds.Jl: An Extensible Julia Framework for Data Analysis on Manifolds},
+    TITLE     = {Manifolds.jl: An Extensible Julia Framework for Data Analysis on Manifolds},
     VOLUME    = {49},
     YEAR      = {2023}
 }

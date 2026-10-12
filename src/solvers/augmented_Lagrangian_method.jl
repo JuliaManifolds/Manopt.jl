@@ -2,7 +2,7 @@
 # State
 #
 
-_sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min) `$(_sc(:All))` `[`StopWhenChangeLess`](@ref)`(1e-10))`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(M, 1.0e-10)`"
+_sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min) `$(_sc(:All))` `[`StopWhenChangeLess`](@ref)`(M, 1.0e-10))`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1.0e-10)`"
 @doc """
     AugmentedLagrangianMethodState{P,T} <: AbstractManoptSolverState
 
@@ -10,14 +10,13 @@ Describes the augmented Lagrangian method, with
 
 # Fields
 
-a default value is given in brackets if a parameter can be left out in initialization.
-
 * `ϵ`:     the accuracy tolerance
 * `ϵ_min`: the lower bound for the accuracy tolerance
 * `λ`:     the Lagrange multiplier with respect to the equality constraints
 * `λ_max`: an upper bound for the Lagrange multiplier belonging to the equality constraints
 * `λ_min`: a lower bound for the Lagrange multiplier belonging to the equality constraints
 $(_fields(:callbacks; add_properties = [:as_dict]))
+* `last_stepsize`: the length of the last step the sub solver took, initialized to `Inf`
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `penalty`: evaluation of the current penalty term, initialized to `Inf`.
 * `μ`:     the Lagrange multiplier with respect to the inequality constraints
@@ -44,13 +43,18 @@ manifold- or objective specific defaults.
 
 construct an augmented Lagrangian method options, where the manifold `M` and the [`ConstrainedManifoldObjective`](@ref) `co` are used for
 manifold- or objective specific defaults, and `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
+The closed form solution is expected to be of the form `(M, q, ρ, μ, λ, p) -> q` for the in-place
+and `(M, ρ, μ, λ, p) -> q` for the allocating `evaluation`, that is it minimizes the augmented
+Lagrangian for the current penalty parameter `ρ` and multipliers `μ` and `λ`, starting from `p`.
 
 ## Keyword arguments
 
-the following keyword arguments are available to initialise the corresponding fields
+the following keyword arguments are available to initialize the corresponding fields
 
-* `ϵ=1e–3`
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
+* `ϵ=1e-3`
 * `ϵ_min=1e-6`
+* `ϵ_exponent=1/100`: a shortcut for the scaling factor ``θ_ϵ``
 * `λ=ones(n)`: `n` is the number of equality constraints in the [`ConstrainedManifoldObjective`](@ref) `co`.
 * `λ_max=20.0`
 * `λ_min=- λ_max`
@@ -68,14 +72,10 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
 [`augmented_Lagrangian_method`](@ref)
 """
 mutable struct AugmentedLagrangianMethodState{
-        P,
-        Pr <: Union{F, AbstractManoptProblem} where {F},
-        St <: AbstractManoptSolverState,
-        R <: Real,
-        C <: AbstractDict{Symbol},
-        V <: AbstractVector{<:R},
+        P, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
+        R <: Real, C <: AbstractDict{Symbol}, V <: AbstractVector{<:R},
         TStopping <: StoppingCriterion,
-    } <: AbstractSubProblemSolverState
+    } <: AbstractManoptSolverState
     callbacks::C
     p::P
     sub_problem::Pr
@@ -95,28 +95,31 @@ mutable struct AugmentedLagrangianMethodState{
     stop::TStopping
     last_stepsize::R
     function AugmentedLagrangianMethodState(
-            M::AbstractManifold, co::ConstrainedManifoldObjective, sub_problem::Pr, sub_state::St;
+            M::AbstractManifold, co::Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective},
+            sub_problem::Pr, sub_state::St;
             callbacks::C = Dict{Symbol, Function}(),
             p::P = rand(M),
-            ϵ::R = 1.0e-3,
-            ϵ_min::R = 1.0e-6,
+            ϵ::Real = 1.0e-3,
+            ϵ_min::Real = 1.0e-6,
             λ::V = ones(length(get_equality_constraint(M, co, p, :))),
-            λ_max::R = 20.0,
-            λ_min::R = (-λ_max),
+            λ_max::Real = 20.0,
+            λ_min::Real = (-λ_max),
             μ::V = ones(length(get_inequality_constraint(M, co, p, :))),
-            μ_max::R = 20.0,
-            ρ::R = 1.0,
-            τ::R = 0.8,
-            θ_ρ::R = 0.3,
+            μ_max::Real = 20.0,
+            ρ::Real = 1.0,
+            τ::Real = 0.8,
+            θ_ρ::Real = 0.3,
             ϵ_exponent = 1 / 100,
-            θ_ϵ = (ϵ_min / ϵ)^(ϵ_exponent),
+            θ_ϵ::Real = (ϵ_min / ϵ)^(ϵ_exponent),
             stopping_criterion::SC = StopAfterIteration(300) |
-                (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(M, 1.0e-10)) | StopWhenChangeLess(M, 1.0e-10),
+                (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(M, 1.0e-10)) | StopWhenStepsizeLess(1.0e-10),
             kwargs...,
         ) where {
             P, Pr <: Union{F, AbstractManoptProblem} where {F}, St <: AbstractManoptSolverState,
-            R <: Real, C <: AbstractDict{Symbol}, V, SC <: StoppingCriterion,
+            C <: AbstractDict{Symbol}, V, SC <: StoppingCriterion,
         }
+        # unify the real type of the scalars that are stored in the state
+        R = float(promote_type(typeof.((ϵ, ϵ_min, λ_max, λ_min, μ_max, ρ, τ, θ_ρ, θ_ϵ))...))
         alms = new{P, Pr, St, R, C, V, SC}()
         alms.callbacks = callbacks
         alms.p = p
@@ -139,20 +142,35 @@ mutable struct AugmentedLagrangianMethodState{
         return alms
     end
 end
+has_sub_problem(::Type{<:AugmentedLagrangianMethodState}) = true
 function AugmentedLagrangianMethodState(
-        M::AbstractManifold,
-        co::ConstrainedManifoldObjective,
-        sub_problem;
-        evaluation::E = AllocatingEvaluation(),
+        M::AbstractManifold, co::Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective},
+        sub_problem, sub_state::AbstractEvaluationType;
         kwargs...,
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
-    return AugmentedLagrangianMethodState(M, co, sub_problem, cfs; kwargs...)
+    )
+    return AugmentedLagrangianMethodState(M, co, sub_problem; evaluation = sub_state, kwargs...)
+end
+function AugmentedLagrangianMethodState(
+        M::AbstractManifold, co::Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}, sub_problem;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Point)
+    return AugmentedLagrangianMethodState(M, co, sub_problem_, ClosedFormSubSolverState(); kwargs...)
 end
 
+function Base.show(io::IO, alms::AugmentedLagrangianMethodState)
+    print(io, "AugmentedLagrangianMethodState(", alms.sub_problem, ", ", alms.sub_state, "; ")
+    print(io, "callbacks = ", alms.callbacks, ", p = ", alms.p, ", ")
+    print(io, "ϵ = ", alms.ϵ, ", ϵ_min = ", alms.ϵ_min, ", θ_ϵ = ", alms.θ_ϵ, ", ")
+    print(io, "λ = ", alms.λ, ", λ_min = ", alms.λ_min, ", λ_max = ", alms.λ_max, ", ")
+    print(io, "μ = ", alms.μ, ", μ_max = ", alms.μ_max, ", ")
+    print(io, "ρ = ", alms.ρ, ", θ_ρ = ", alms.θ_ρ, ", τ = ", alms.τ, ", ")
+    print(io, "stopping_criterion = ", status_summary(alms.stop; context = :short))
+    return print(io, ")")
+end
 get_iterate(alms::AugmentedLagrangianMethodState) = alms.p
 get_callbacks(alms::AugmentedLagrangianMethodState) = alms.callbacks
-provided_callbacks(::Type{AugmentedLagrangianMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Subsolver])
+additional_callbacks(::Type{<:AugmentedLagrangianMethodState}) = [:BeforeSubsolver, :Subsolver]
 function set_iterate!(alms::AugmentedLagrangianMethodState, M, p)
     alms.p = p
     return alms
@@ -164,15 +182,11 @@ end
 
 function status_summary(alms::AugmentedLagrangianMethodState; context::Symbol = :default)
     (context === :short) && (return repr(alms))
-    i = get_count(alms, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(alms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the augmented Lagrandigan method$(conv_inl)"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(alms.stop) ? "Yes" : "No"
+    (context === :inline) && return "A solver state for the augmented Lagrangian method$(_iteration_suffix(alms))"
     as = _callbacks_summary(alms)
     s = """
     # Solver state for `Manopt.jl`s Augmented Lagrangian Method
-    $Iter
+    $(_iterations_str(alms))
     ## Parameters$(as)
     * ϵ: $(alms.ϵ) (ϵ_min: $(alms.ϵ_min), θ_ϵ: $(alms.θ_ϵ))
     * λ: $(alms.λ) (λ_min: $(alms.λ_min), λ_max: $(alms.λ_max))
@@ -183,13 +197,13 @@ function status_summary(alms::AugmentedLagrangianMethodState; context::Symbol = 
 
     ## Stopping criterion
     $(_in_str(status_summary(alms.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $(_converged_str(alms))"""
     return s
 end
 
 _doc_alm_λ_update = raw"""
 ```math
-λ_j^{(k+1)} =\operatorname{clip}_{[λ_{\min},λ_{\max}]} (λ_j^{(k)} + ρ^{(k)} h_j(p^{(k+1)})) \text{for all} j=1,…,p,
+λ_j^{(k+1)} =\operatorname{clip}_{[λ_{\min},λ_{\max}]} (λ_j^{(k)} + ρ^{(k)} h_j(p^{(k+1)})) \text{ for all } j=1,…,n,
 ```
 """
 _doc_alm_μ_update = raw"""
@@ -205,15 +219,15 @@ _doc_alm_ε_update = raw"""
 
 _doc_alm_σ = raw"""
 ```math
-σ^{(k)}=\max_{j=1,…,p, i=1,…,m} \{\|h_j(p^{(k)})\|, \|\max_{i=1,…,m}\{g_i(p^{(k)}), -\frac{μ_i^{(k-1)}}{ρ^{(k-1)}} \}\| \}.
+σ^{(k)}=\max_{j=1,…,n, i=1,…,m} \{\|h_j(p^{(k)})\|, \|\max_{i=1,…,m}\{g_i(p^{(k)}), -\frac{μ_i^{(k-1)}}{ρ^{(k-1)}} \}\| \}.
 ```
 """
 
 _doc_alm_ρ_update = raw"""
 ```math
 ρ^{(k)} = \begin{cases}
-ρ^{(k-1)}/θ_ρ,  & \text{if } σ^{(k)}\leq θ_ρ σ^{(k-1)} ,\\
-ρ^{(k-1)}, & \text{else,}
+ρ^{(k-1)}, & \text{if } σ^{(k)} \leq τ σ^{(k-1)},\\
+ρ^{(k-1)}/θ_ρ, & \text{else.}
 \end{cases}
 ```
 """
@@ -227,15 +241,15 @@ _doc_alm = """
 perform the augmented Lagrangian method (ALM) [LiuBoumal:2019](@cite).
 This method can work in-place of `p`.
 
-The aim of the ALM is to find the solution of the constrained optimisation task
+The aim of the ALM is to find the solution of the constrained optimization task
 
 $(_problem(:Constrained))
 
-where `M` is a Riemannian manifold, and ``f``, ``$(_math(:Sequence, "g", "i", "1", "n"))`` and ``$(_math(:Sequence, "h", "j", "1", "m"))``
+where `M` is a Riemannian manifold, and ``f``, ``$(_math(:Sequence, "g", "i", "1", "m"))`` and ``$(_math(:Sequence, "h", "j", "1", "n"))``
 are twice continuously differentiable functions from `M` to ℝ.
 In every step ``k`` of the algorithm, the [`AugmentedLagrangianCost`](@ref)
  ``$(_doc_AL_Cost("k"))`` is minimized on ``$(_math(:Manifold))``,
-  where ``μ^{(k)} ∈ ℝ^n`` and ``λ^{(k)} ∈ ℝ^m`` are the current iterates of the Lagrange multipliers and ``ρ^{(k)}`` is the current penalty parameter.
+  where ``μ^{(k)} ∈ ℝ^m`` and ``λ^{(k)} ∈ ℝ^n`` are the current iterates of the Lagrange multipliers and ``ρ^{(k)}`` is the current penalty parameter.
 
 The Lagrange multipliers are then updated by
 
@@ -251,7 +265,7 @@ Next, the accuracy tolerance ``ϵ`` is updated as
 
 $_doc_alm_ε_update
 
- where ``ϵ_{$(_tex(:text, "min"))}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is constant scaling factor.
+ where ``ϵ_{$(_tex(:text, "min"))}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is a constant scaling factor.
 
 Last, the penalty parameter ``ρ`` is updated as follows: with
 
@@ -261,33 +275,37 @@ $_doc_alm_σ
 
 $_doc_alm_ρ_update
 
-where ``θ_ρ ∈ (0,1)`` is a constant scaling factor.
+where ``θ_ρ ∈ (0,1)`` is a constant scaling factor and ``τ ∈ (0,1)`` the required improvement factor of the constraint violation.
 
 # Input
 
-$(_args([:M, :f, :grad_f]))
+$(_args([:M, :f, :grad_f, :p]))
 
-# Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)
+# Keyword arguments for the constraints
 
-* `g=nothing`: the inequality constraints
-* `h=nothing`: the equality constraints
-* `grad_g=nothing`: the gradient of the inequality constraints
-* `grad_h=nothing`: the gradient of the equality constraints
+These are only used to build the objective, that is if the solver is not called with a
+[`ConstrainedManifoldObjective`](@ref) `cmo`.
 
-Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) have to be provided.
-But if neither of them is provided the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
+* `equality_constraints=nothing`: the number ``n`` of equality constraints.
+  If not provided, a call to the gradient of `h` is performed to estimate these.
+* `g=missing`: the inequality constraints
+* `grad_g=missing`: the gradient of the inequality constraints
+* `grad_h=missing`: the gradient of the equality constraints
+* `h=missing`: the equality constraints
+* `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
+  If not provided, a call to the gradient of `g` is performed to estimate these.
 
-# Keyword Arguments
+Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be provided.
+Otherwise the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
+
+# Keyword arguments
 
 $(_kwargs(:evaluation))
-* `callbacks=Dict{Symbol, Function}()`: callback hooks for the solver lifecycle
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 * `ϵ=1e-3`:           the accuracy tolerance
 * `ϵ_min=1e-6`:       the lower bound for the accuracy tolerance
 * `ϵ_exponent=1/100`: exponent of the ϵ update factor;
   also 1/number of iterations until maximal accuracy is needed to end algorithm naturally
-
-  * `equality_constraints=nothing`: the number ``n`` of equality constraints.
-  If not provided, a call to the gradient of `g` is performed to estimate these.
 
 * `gradient_range=nothing`: specify how both gradients of the constraints are represented
 
@@ -297,14 +315,11 @@ $(_kwargs(:evaluation))
 * `gradient_inequality_range=gradient_range`:
    specify how gradients of the inequality constraints are represented, see [`VectorGradientFunction`](@ref).
 
-* `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
-   If not provided, a call to the gradient of `g` is performed to estimate these.
-
-* `λ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the equality constraints
+* `λ=ones(length(get_equality_constraint(M, cmo, p, :)))`: the Lagrange multiplier with respect to the equality constraints
 * `λ_max=20.0`:       an upper bound for the Lagrange multiplier belonging to the equality constraints
 * `λ_min=- λ_max`:    a lower bound for the Lagrange multiplier belonging to the equality constraints
 
-* `μ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the inequality constraints
+* `μ=ones(length(get_inequality_constraint(M, cmo, p, :)))`: the Lagrange multiplier with respect to the inequality constraints
 * `μ_max=20.0`: an upper bound for the Lagrange multiplier belonging to the inequality constraints
 
 * `ρ=1.0`:            the penalty parameter
@@ -312,18 +327,18 @@ $(_kwargs(:evaluation))
 * `θ_ρ=0.3`:          the scaling factor of the penalty parameter
 * `θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent)`: the scaling factor of the exactness
 
-* `sub_cost=[`AugmentedLagrangianCost± (@ref)`(cmo, ρ, μ, λ):` use augmented Lagrangian cost, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
+* `sub_cost=`[`AugmentedLagrangianCost`](@ref)`(cmo, ρ, μ, λ)`: use augmented Lagrangian cost, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
    $(_note(:KeywordUsedIn, "sub_problem"))
 
-* `sub_grad=[`AugmentedLagrangianGrad`](@ref)`(cmo, ρ, μ, λ)`: use augmented Lagrangian gradient, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
+* `sub_grad=`[`AugmentedLagrangianGrad`](@ref)`(cmo, ρ, μ, λ)`: use augmented Lagrangian gradient, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
   $(_note(:KeywordUsedIn, "sub_problem"))
 
 $(_kwargs(:sub_kwargs))
 
-$(_kwargs(:stopping_criterion; default = "`$(_sc_alm_default)` "))
-$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
-$(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` ")), where more precisely
-  as quasi newton method, the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used.
+$(_kwargs(:stopping_criterion; default = "`" * chopsuffix(_sc_alm_default, "`")))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation))"))
+$(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` "))
+  More precisely, a quasi Newton method with the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) and [`InverseBFGS`](@ref) is used by default.
 * `sub_stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`,
 
 
@@ -337,42 +352,22 @@ $(_note(:OutputSection))
 
 @doc "$(_doc_alm)"
 function augmented_Lagrangian_method(
-        M::AbstractManifold,
-        f,
-        grad_f,
-        p = rand(M);
+        M::AbstractManifold, f, grad_f, p = rand(M);
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        g = nothing,
-        h = nothing,
-        grad_g = nothing,
-        grad_h = nothing,
-        inequality_constraints::Union{Integer, Nothing} = nothing,
+        g = missing, h = missing, grad_g = missing, grad_h = missing,
+        inequality_constraints::Union{Nothing, Integer} = nothing,
         equality_constraints::Union{Nothing, Integer} = nothing,
         kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    g_ = _ensure_mutating_cost(g, p)
-    grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)
-    h_ = _ensure_mutating_cost(h, p)
-    grad_h_ = _ensure_mutating_gradient(grad_h, p, evaluation)
-
+    p_ = maybe_wrap_variable(p)
     cmo = ConstrainedManifoldObjective(
-        f_,
-        grad_f_,
-        g_,
-        grad_g_,
-        h_,
-        grad_h_;
+        f, grad_f, g, grad_g, h, grad_h;
         evaluation = evaluation,
-        inequality_constraints = inequality_constraints,
-        equality_constraints = equality_constraints,
-        M = M,
-        p = p,
+        inequality_constraints = inequality_constraints, equality_constraints = equality_constraints,
+        M = M, p = p,
     )
     rs = augmented_Lagrangian_method(M, cmo, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function augmented_Lagrangian_method(
         M::AbstractManifold, cmo::O, p = rand(M); kwargs...
@@ -385,24 +380,17 @@ calls_with_kwargs(::typeof(augmented_Lagrangian_method)) = (augmented_Lagrangian
 
 @doc "$(_doc_alm)"
 function augmented_Lagrangian_method!(
-        M::AbstractManifold,
-        f::TF,
-        grad_f::TGF,
-        p;
+        M::AbstractManifold, f::TF, grad_f::TGF, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        g = nothing,
-        h = nothing,
-        grad_g = nothing,
-        grad_h = nothing,
-        inequality_constraints = nothing,
-        equality_constraints = nothing,
+        g = missing, h = missing, grad_g = missing, grad_h = missing,
+        inequality_constraints = nothing, equality_constraints = nothing,
         kwargs...,
     ) where {TF, TGF}
     if isnothing(inequality_constraints)
-        inequality_constraints = _number_of_constraints(g, grad_g; M = M, p = p)
+        inequality_constraints = _number_of_constraints(g, grad_g; M = M, p = p, evaluation = evaluation)
     end
     if isnothing(equality_constraints)
-        equality_constraints = _number_of_constraints(h, grad_h; M = M, p = p)
+        equality_constraints = _number_of_constraints(h, grad_h; M = M, p = p, evaluation = evaluation)
     end
     cmo = ConstrainedManifoldObjective(
         f, grad_f, g, grad_g, h, grad_h;
@@ -412,9 +400,8 @@ function augmented_Lagrangian_method!(
         M = M,
         p = p,
     )
-    dcmo = decorate_objective!(M, cmo; kwargs...)
     return augmented_Lagrangian_method!(
-        M, dcmo, p;
+        M, cmo, p;
         evaluation = evaluation,
         equality_constraints = equality_constraints,
         inequality_constraints = inequality_constraints,
@@ -444,7 +431,7 @@ function augmented_Lagrangian_method!(
         sub_stopping_criterion::StoppingCriterion = StopAfterIteration(300) |
             StopWhenGradientNormLess(ϵ) |
             StopWhenStepsizeLess(1.0e-8),
-        sub_state::AbstractManoptSolverState = decorate_state!(
+        sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState} = decorate_state!(
             QuasiNewtonState(
                 M;
                 p = copy(M, p),
@@ -458,14 +445,12 @@ function augmented_Lagrangian_method!(
             );
             sub_kwargs...,
         ),
-        sub_problem::AbstractManoptProblem = DefaultManoptProblem(
+        sub_problem::Pr = DefaultManoptProblem(
             M,
             # pass down objective type to sub solvers
             decorate_objective!(
-                M,
-                ManifoldGradientObjective(sub_cost, sub_grad; evaluation = evaluation);
-                objective_type = objective_type,
-                sub_kwargs...,
+                M, ManifoldGradientObjective(sub_cost, sub_grad; evaluation = evaluation, p = p);
+                objective_type = objective_type, sub_kwargs...,
             ),
         ),
         stopping_criterion::StoppingCriterion = StopAfterIteration(300) |
@@ -475,11 +460,13 @@ function augmented_Lagrangian_method!(
         ) |
             StopWhenStepsizeLess(1.0e-10),
         kwargs...,
-    ) where {O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective}}
+    ) where {
+        O <: Union{ConstrainedManifoldObjective, AbstractDecoratedManifoldObjective},
+        Pr <: Union{F, AbstractManoptProblem} where {F},
+    }
     keywords_accepted(augmented_Lagrangian_method!; kwargs...)
-    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     alms = AugmentedLagrangianMethodState(
-        M, cmo, sub_problem, sub_state_storage;
+        M, cmo, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, AugmentedLagrangianMethodState),
         p = p,
         ϵ = ϵ, ϵ_min = ϵ_min, λ_max = λ_max, λ_min = λ_min, μ_max = μ_max,
@@ -491,9 +478,7 @@ function augmented_Lagrangian_method!(
         DefaultManoptProblem(M, dcmo)
     else
         ConstrainedManoptProblem(
-            M,
-            dcmo;
-            gradient_equality_range = gradient_equality_range,
+            M, dcmo; gradient_equality_range = gradient_equality_range,
             gradient_inequality_range = gradient_inequality_range,
         )
     end
@@ -509,43 +494,63 @@ function initialize_solver!(::AbstractManoptProblem, alms::AugmentedLagrangianMe
     alms.penalty = Inf
     return alms
 end
-function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethodState, iter)
+#=
+    Variant I: the sub task is a sub problem that is solved by a sub solver
+=#
+function step_solver!(
+        mp::AbstractManoptProblem,
+        alms::AugmentedLagrangianMethodState{P, <:AbstractManoptProblem, <:AbstractManoptSolverState},
+        k,
+    ) where {P}
     M = get_manifold(mp)
     # use subsolver to minimize the augmented Lagrangian
-    set_parameter!(alms.sub_problem, :Objective, :Cost, :ρ, alms.ρ)
-    set_parameter!(alms.sub_problem, :Objective, :Cost, :μ, alms.μ)
-    set_parameter!(alms.sub_problem, :Objective, :Cost, :λ, alms.λ)
-    set_parameter!(alms.sub_problem, :Objective, :Gradient, :ρ, alms.ρ)
-    set_parameter!(alms.sub_problem, :Objective, :Gradient, :μ, alms.μ)
-    set_parameter!(alms.sub_problem, :Objective, :Gradient, :λ, alms.λ)
+    set_parameter!(alms.sub_problem, Val(:Objective), Val(:Cost), Val(:ρ), alms.ρ)
+    set_parameter!(alms.sub_problem, Val(:Objective), Val(:Cost), Val(:μ), alms.μ)
+    set_parameter!(alms.sub_problem, Val(:Objective), Val(:Cost), Val(:λ), alms.λ)
+    set_parameter!(alms.sub_problem, Val(:Objective), Val(:Gradient), Val(:ρ), alms.ρ)
+    set_parameter!(alms.sub_problem, Val(:Objective), Val(:Gradient), Val(:μ), alms.μ)
+    set_parameter!(alms.sub_problem, Val(:Objective), Val(:Gradient), Val(:λ), alms.λ)
     set_iterate!(alms.sub_state, M, copy(M, alms.p))
 
-    set_parameter!(alms, :StoppingCriterion, :MinIterateChange, alms.ϵ)
+    set_parameter!(alms, Val(:StoppingCriterion), Val(:MinIterateChange), alms.ϵ)
 
+    callback(:BeforeSubsolver, mp, alms, k)
     new_p = get_solver_result(solve!(alms.sub_problem, alms.sub_state))
-    callback(:Subsolver, mp, alms, iter)
+    callback(:Subsolver, mp, alms, k)
     alms.last_stepsize = distance(M, alms.p, new_p, default_inverse_retraction_method(M))
     copyto!(M, alms.p, new_p)
+    return _alm_update!(mp, alms)
+end
+#=
+    Variant II: the sub task is a function providing a closed form solution
+=#
+function step_solver!(
+        mp::AbstractManoptProblem,
+        alms::AugmentedLagrangianMethodState{P, F, ClosedFormSubSolverState},
+        k,
+    ) where {P, F <: Function}
+    M = get_manifold(mp)
+    set_parameter!(alms, Val(:StoppingCriterion), Val(:MinIterateChange), alms.ϵ)
 
-    # update multipliers
+    callback(:BeforeSubsolver, mp, alms, k)
+    # the closed form works in place of `p`; keep the previous iterate for the step length
+    q = copy(M, alms.p)
+    alms.sub_problem(M, alms.p, alms.ρ, alms.μ, alms.λ, q)
+    callback(:Subsolver, mp, alms, k)
+    alms.last_stepsize = distance(M, q, alms.p, default_inverse_retraction_method(M))
+    return _alm_update!(mp, alms)
+end
+# the multiplier, penalty and tolerance update both variants share
+function _alm_update!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethodState)
     cost_ineq = get_inequality_constraint(mp, alms.p, :)
-    n_ineq_constraint = length(cost_ineq)
-    alms.μ .=
-        min.(
-        ones(n_ineq_constraint) .* alms.μ_max,
-        max.(alms.μ .+ alms.ρ .* cost_ineq, zeros(n_ineq_constraint)),
-    )
     cost_eq = get_equality_constraint(mp, alms.p, :)
-    n_eq_constraint = length(cost_eq)
-    alms.λ =
-        min.(
-        ones(n_eq_constraint) .* alms.λ_max,
-        max.(ones(n_eq_constraint) .* alms.λ_min, alms.λ + alms.ρ .* cost_eq),
-    )
     # get new evaluation of penalty
     penalty = maximum(
         [abs.(max.(-alms.μ ./ alms.ρ, cost_ineq))..., abs.(cost_eq)...]; init = 0
     )
+    # update multipliers, both in place of the vectors the state stores
+    alms.μ .= min.(alms.μ_max, max.(alms.μ .+ alms.ρ .* cost_ineq, 0))
+    alms.λ .= min.(alms.λ_max, max.(alms.λ_min, alms.λ .+ alms.ρ .* cost_eq))
     # update ρ if necessary
     (penalty > alms.τ * alms.penalty) && (alms.ρ = alms.ρ / alms.θ_ρ)
     alms.penalty = penalty
@@ -554,7 +559,6 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
     alms.ϵ = max(alms.ϵ_min, alms.ϵ * alms.θ_ϵ)
     return alms
 end
-get_solver_result(alms::AugmentedLagrangianMethodState) = alms.p
 
 function get_last_stepsize(::AbstractManoptProblem, s::AugmentedLagrangianMethodState, k)
     return s.last_stepsize

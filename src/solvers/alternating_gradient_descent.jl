@@ -1,8 +1,10 @@
 """
     AlternatingGradientRule <: AbstractGradientGroupDirectionRule
 
-Create a functor `(problem, state k) -> (s,X)` to evaluate the alternating gradient,
-that is alternating between the components of the gradient and has an field for
+The direction processor to alternate the gradient directions.
+
+Create a functor `(problem, state, k) -> (s, X)` to evaluate the alternating gradient,
+that is alternating between the components of the gradient and has a field for
 partial evaluation of the gradient in-place.
 
 # Fields
@@ -17,7 +19,7 @@ Initialize the alternating gradient processor with tangent vector type of `X`,
 where both `M` and `p` are just help variables.
 
 # See also
-[`alternating_gradient_descent`](@ref), [`AlternatingGradient`])@ref)
+[`alternating_gradient_descent`](@ref), [`AlternatingGradient`](@ref)
 """
 struct AlternatingGradientRule{T} <: AbstractGradientGroupDirectionRule
     X::T
@@ -32,10 +34,10 @@ function Base.show(io::IO, ag::AlternatingGradientRule)
 end
 function status_summary(ag::AlternatingGradientRule; context::Symbol = :default)
     (context === :short) && return repr(ag)
-    return "A alternating gradient processor"
+    return "An alternating gradient processor"
 end
 """
-    AlternatingGradientDescentState <: AbstractGradientDescentSolverState
+    AlternatingGradientDescentState <: AbstractGradientSolverState
 
 Store the fields for an alternating gradient descent algorithm,
 see also [`alternating_gradient_descent`](@ref).
@@ -44,7 +46,7 @@ see also [`alternating_gradient_descent`](@ref).
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
 * `direction::`[`DirectionUpdateRule`](@ref)
-* `evaluation_order::Symbol`: whether to use a randomly permuted sequence (`:FixedRandom`),
+* `order_type::Symbol`: whether to use a randomly permuted sequence (`:FixedRandom`),
   a per cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
 * `inner_iterations`: how many gradient steps to take in a component before alternating to the next
 * `order`: the current permutation
@@ -52,7 +54,7 @@ $(_fields([:retraction_method, :stepsize]))
 $(_fields(:stopping_criterion; name = "stop"))
 $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:X; add_properties = [:as_Gradient]))
-* `k`, ì`: internal counters for the outer and inner iterations, respectively.
+* `k`, `i`: internal counters for the current component of the `order` and the inner iterations within that component, respectively.
 
 # Constructors
 
@@ -61,15 +63,16 @@ $(_fields(:X; add_properties = [:as_Gradient]))
 # Keyword arguments
 * `inner_iterations=5`
 $(_kwargs(:p))
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `order_type::Symbol=:Linear`
 * `order::Vector{<:Int}=Int[]`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
-$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, AlternatingGradientDescentState)"))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, AlternatingGradientDescentState; retraction_method=retraction_method)"))
 $(_kwargs(:X))
 
-Generate the options for point `p` and where `inner_iterations`, `order_type`, `order`,
-`retraction_method`, `stopping_criterion`, and `stepsize`` are keyword arguments.
+Generate the state for point `p` and where `inner_iterations`, `order_type`, `order`,
+`retraction_method`, `stopping_criterion`, and `stepsize` are keyword arguments.
 
 For internal use, there also exists a constructor solely having the fields as keyword arguments,
 but then all of them are mandatory.
@@ -85,9 +88,9 @@ mutable struct AlternatingGradientDescentState{
     stop::TStop
     stepsize::TStep
     order_type::Symbol
-    order::Vector{<:Int}
+    order::Vector{Int}
     retraction_method::RM
-    k::Int # current iterate
+    k::Int # current component
     i::Int # inner iterate
     inner_iterations::Int
     function AlternatingGradientDescentState(
@@ -98,8 +101,13 @@ mutable struct AlternatingGradientDescentState{
             order_type::Symbol = :Linear, order::Vector{<:Int} = Int[],
             retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
             stopping_criterion::StoppingCriterion = StopAfterIteration(1000),
-            stepsize::Stepsize = default_stepsize(M, AlternatingGradientDescentState),
+            stepsize::Stepsize = default_stepsize(
+                M, AlternatingGradientDescentState; retraction_method = retraction_method
+            ),
         ) where {P, T, C <: AbstractDict{Symbol}}
+        (order_type in (:Linear, :FixedRandom, :Random)) || throw(
+            DomainError(order_type, "The order type has to be one of :Linear, :FixedRandom, or :Random.")
+        )
         return AlternatingGradientDescentState(;
             callbacks = callbacks,
             p = p, X = X, direction = _produce_type(AlternatingGradient(; p = p, X = X), M),
@@ -135,39 +143,39 @@ function Base.show(io::IO, agds::AlternatingGradientDescentState)
 end
 function status_summary(agds::AlternatingGradientDescentState; context::Symbol = :default)
     (context === :short) && return repr(agds)
-    Iter = (agds.i > 0) ? "After $(agds.i) iterations\n" : ""
-    Conv = indicates_convergence(agds.stop) ? "Yes" : "No"
-    _is_inline(context) && (return "$(repr(agds)) – $(Iter) $(has_converged(agds) ? "(converged)" : "")")
+    (context === :inline) && return "A solver state for the alternating gradient descent solver$(_iteration_suffix(agds))"
     as = _callbacks_summary(agds)
     s = """
     # Solver state for `Manopt.jl`s Alternating Gradient Descent Solver
-    $Iter
+    $(_iterations_str(agds))
     ## Parameters$(as)
-    * order: :$(agds.order_type)
+    * order type: :$(agds.order_type)
     * retraction method: $(agds.retraction_method)
     * direction: $(status_summary(agds.direction; context = :inline))
 
     ## Stepsize
-    $(agds.stepsize)
+    $(_in_str(status_summary(agds.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
     $(_in_str(status_summary(agds.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $(_converged_str(agds))"""
     return s
 end
 function get_message(agds::AlternatingGradientDescentState)
-    # for now only step size is quipped with messages
+    # for now only the step size is equipped with messages
     return get_message(agds.stepsize)
 end
 get_callbacks(agds::AlternatingGradientDescentState) = agds.callbacks
-provided_callbacks(::Type{AlternatingGradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
+function set_iterate!(agds::AlternatingGradientDescentState, M, p)
+    copyto!(M, agds.p, p)
+    return agds
+end
+additional_callbacks(::Type{<:AlternatingGradientDescentState}) = [:Stepsize]
 
 function (ag::AlternatingGradientRule)(
         amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, k
     )
     M = get_manifold(amp)
-    # at begin of inner iterations reset internal vector to zero
-    (k == 1) && zero_vector!(M, ag.X, agds.p)
     # update order(k)th component in-place
     get_gradient!(amp, ag.X[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
     return agds.stepsize(amp, agds, k; gradient = ag.X), ag.X # return current full gradient
@@ -178,14 +186,14 @@ end
     AlternatingGradient(M::AbstractManifold; kwargs...)
 
 Specify that a gradient based method should only update parts of the gradient
-in order to do a alternating gradient descent.
+in order to do an alternating gradient descent.
 
 # Keyword arguments
 
-$(_kwargs(:X, name = "initial_gradient"))
+$(_kwargs(:X))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 
-$(_note(:ManifoldDefaultFactory, "AlternatingGradientRule"))
+$(_note(:ManifoldDefaultsFactory, "AlternatingGradientRule"))
 """
 function AlternatingGradient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.AlternatingGradientRule, args...; kwargs...)
@@ -193,13 +201,19 @@ end
 
 # update Armijo to work on the kth gradient only.
 function (a::ArmijoLinesearchStepsize)(
-        amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, ::Int, η;
-        kwargs...
+        amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, ::Int, η = nothing;
+        gradient = nothing, kwargs...
     )
     reset_messages!(a.messages)
     M = get_manifold(amp)
+    j = agds.order[agds.k]
     X = zero_vector(M, agds.p)
-    get_gradient!(amp, X[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
+    if isnothing(gradient)
+        get_gradient!(amp, X[M, j], agds.p, j)
+    else
+        copyto!(M[j], X[M, j], agds.p[M, j], gradient[M, j])
+    end
+    l = norm(M, agds.p, X)
     a.last_stepsize = linesearch_backtrack!(
         M,
         a.candidate_point,
@@ -211,14 +225,27 @@ function (a::ArmijoLinesearchStepsize)(
         -X;
         gradient = X,
         retraction_method = a.retraction_method,
+        stop_when_stepsize_less = a.stop_when_stepsize_less / l,
+        stop_when_stepsize_exceeds = a.stop_when_stepsize_exceeds / l,
+        stop_increasing_at_step = a.stop_increasing_at_step,
+        stop_decreasing_at_step = a.stop_decreasing_at_step,
+        additional_decrease_condition = a.additional_decrease_condition,
+        additional_increase_condition = a.additional_increase_condition,
         report_messages_in = a.messages,
     )
     return a.last_stepsize
 end
 
-function default_stepsize(M::AbstractManifold, ::Type{AlternatingGradientDescentState})
-    return ArmijoLinesearchStepsize(M)
+function default_stepsize(
+        M::AbstractManifold, ::Type{AlternatingGradientDescentState};
+        retraction_method = default_retraction_method(M),
+    )
+    return ArmijoLinesearchStepsize(M; retraction_method = retraction_method)
 end
+
+# the line search works on the product manifold, the update on a single component
+_component_retraction(r::AbstractRetractionMethod, ::Int) = r
+_component_retraction(r::ProductRetraction, j::Int) = r.retractions[j]
 
 function alternating_gradient_descent end
 function alternating_gradient_descent! end
@@ -229,36 +256,37 @@ _doc_AGD = """
     alternating_gradient_descent!(M::ProductManifold, f, grad_f, p)
     alternating_gradient_descent!(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
 
-perform an alternating gradient descent. This can be done in-place of the start point `p`
+perform an alternating gradient descent. This can be done in-place of the start point `p`.
 
 # Input
 
 $(_args([:M, :f]))
 * `grad_f`: a gradient, that can be of two cases
   * is a single function returning an `ArrayPartition` from [`RecursiveArrayTools.jl`](https://docs.sciml.ai/RecursiveArrayTools/stable/array_types/) or
-  * is a vector functions each returning a component part of the whole gradient
+  * is a vector of functions, each returning a component part of the whole gradient
 $(_args(:p))
 
 # Keyword arguments
 
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:evaluation))
-* `evaluation_order=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
-  a per cycle permuted sequence (`:Random`) or the default `:Linear` one.
+* `order_type=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
+  a per cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
 * `inner_iterations=5`:  how many gradient steps to take in a component before alternating to the next
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`)"))
-$(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
-* `order=[1:n]`:         the initial permutation, where `n` is the number of gradients in `gradF`.
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
+$(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`AlternatingGradientDescentState`](@ref)`; retraction_method=retraction_method)"))
+* `order=collect(1:n)`: the initial permutation, where `n` is the number of gradients in `grad_f`.
 $(_kwargs(:retraction_method))
 
-# Output
+$(_note(:OtherKeywords))
 
-usually the obtained (approximate) minimizer, see [`get_solver_return`](@ref) for details
+$(_note(:OutputSection))
 
 !!! note
 
-    The input of each of the (component) gradients is still the whole vector `X`,
-    just that all other then the `i`th input component are assumed to be fixed and just
-    the `i`th components gradient is computed / returned.
+    The input of each of the (component) gradients is still the whole point `p`,
+    just that all other than the `i`th input component are assumed to be fixed and just
+    the `i`th component's gradient is computed / returned.
 """
 
 @doc "$(_doc_AGD)"
@@ -285,7 +313,10 @@ function step_solver!(amp::AbstractManoptProblem, agds::AlternatingGradientDesce
     step, agds.X = agds.direction(amp, agds, k)
     callback(:Stepsize, amp, agds, k)
     j = agds.order[agds.k]
-    retract!(M[j], agds.p[M, j], agds.p[M, j], -step * agds.X[M, j])
+    retract!(
+        M[j], agds.p[M, j], agds.p[M, j], -step * agds.X[M, j],
+        _component_retraction(agds.retraction_method, j),
+    )
     agds.i += 1
     if agds.i > agds.inner_iterations
         agds.k = ((agds.k) % length(agds.order)) + 1

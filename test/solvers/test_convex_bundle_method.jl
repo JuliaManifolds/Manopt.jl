@@ -8,7 +8,7 @@ using Manopt: estimate_sectional_curvature
     p = [0.0, 0.0, 0.0, 0.0, 1.0]
     q0 = [1.0, 0.0, 0.0, 0.0, √2] # [0.0, 0.0, 0.0, 0.0, -1.0]
     p0 = exp(M, p, 4log(M, p, q0))
-    diameter = floatmax()
+    diameter = 10.0
     Ω = 0.0
     ω = -1.0
 
@@ -26,6 +26,12 @@ using Manopt: estimate_sectional_curvature
         @test ω ≤ curvature_cbms.k_min
         @test Ω ≥ curvature_cbms.k_max
         @test startswith(repr(curvature_cbms), "ConvexBundleMethodState(")
+        # estimated bounds take the real type of the other parameters
+        cbms32 = ConvexBundleMethodState(
+            M; p = p0, m = 1.0f-3, atol_λ = 1.0f-8, atol_errors = 1.0f-8, diameter = 1.0f0, last_stepsize = 1.0f0,
+        )
+        @test typeof.((cbms32.k_min, cbms32.k_max, cbms32.ϱ)) == (Float32, Float32, Float32)
+        @test ω ≤ cbms32.k_min ≤ cbms32.k_max ≤ Ω
     end
 
     @testset "Close Point Function" begin
@@ -35,7 +41,7 @@ using Manopt: estimate_sectional_curvature
     end
 
     cbms = ConvexBundleMethodState(
-        M; p = p0, atol_λ = 1.0e0, diameter = diameter,
+        M; p = copy(M, p0), atol_λ = 1.0e0, diameter = diameter,
         domain = (M, q) -> distance(M, q, p0) < diameter / 2 ? true : false,
         k_max = Ω, k_min = ω,
         stepsize = Manopt.DomainBackTrackingStepsize(M; contraction_factor = 0.975),
@@ -49,29 +55,24 @@ using Manopt: estimate_sectional_curvature
     @testset "Special Stopping Criteria" begin
         sc1 = StopWhenLagrangeMultiplierLess(1.0e-8)
         @test startswith(repr(sc1), "StopWhenLagrangeMultiplierLess([1.0e-8]; mode=:estimate)")
+        @test Manopt.indicates_convergence(sc1)
         sc2 = StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode = :both)
         @test startswith(repr(sc2), "StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode=:both)")
     end
 
     @testset "Allocating Subgradient" begin
-        f(M, q) = distance(M, q, p)
-        function ∂f(M, q)
-            if distance(M, p, q) == 0
-                return zero_vector(M, q)
-            end
-            return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
-        end
+        f, ∂f, _ = Manopt.Test.distance_task(M, p)
         mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
 
-        # Reset the serious iterate
-        p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
-        set_iterate!(cbms, M, p0)
+        # Reset the serious iterate to the minimizer itself (degenerate start)
+        p_deg = [0.0, 0.0, 0.0, 0.0, -1.0]
+        set_iterate!(cbms, M, p_deg)
+        @test isapprox(M, cbms.p, p_deg) # the iterate follows the serious iterate
         X = zero_vector(M, p)
         Y = get_subgradient(mp, p)
         get_subgradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
-        oR = solve!(mp, cbms)
-        xHat = get_solver_result(oR)
+        solve!(mp, cbms)
         # Check Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test norm(M, p, get_subgradient(mp, p)) == 0
@@ -79,16 +80,22 @@ using Manopt: estimate_sectional_curvature
         @test_throws MethodError get_proximal_map(mp, 1.0, cbms.p, 1)
 
         @testset "Domain and Null Conditions" begin
-            @test _domain_condition(M, p, p0, 1.0, 1.0, cbms.domain)
-            @test !_null_condition(
+            # inside the domain and within `t * length` of `p0`
+            @test _domain_condition(M, p, p0, 1.0, 4.0, cbms.domain)
+            # inside the domain but farther away than `t * length`
+            @test !_domain_condition(M, p, p0, 1.0, 1.0, cbms.domain)
+            # a distance that differs from `t * length` only by rounding is not closer
+            d = distance(M, p0, p)
+            @test !_domain_condition(M, p, p0, 1.0, d * (1 + 1.0e-12), cbms.domain)
+            # the degenerate start now really takes effect, so the run ends at the minimizer
+            # and the null condition holds for the resulting state
+            @test _null_condition(
                 mp, M, p, p0, cbms.X, cbms.g, cbms.vector_transport_method,
                 cbms.inverse_retraction_method, cbms.m, 1.0, cbms.ξ, cbms.ϱ,
             )
         end
 
         @testset "Stepsize and Debugging" begin
-            io = IOBuffer()
-            ds = DebugStepsize(; io = io)
             bms2 = convex_bundle_method(
                 M, f, ∂f, p0; diameter = diameter,
                 domain = (M, q) -> distance(M, q, p0) < diameter / 2 ? true : false,
@@ -96,8 +103,8 @@ using Manopt: estimate_sectional_curvature
                 stopping_criterion = StopAfterIteration(200), return_state = true, debug = [],
             )
             p_star2 = get_solver_result(bms2)
-            @test get_subgradient(bms2) == -∂f(M, p_star2)
-            @test f(M, p_star2) <= f(M, p0)
+            @test isapprox(M, p_star2, get_subgradient(bms2), ∂f(M, p_star2))
+            @test f(M, p_star2) < f(M, p0)
             set_iterate!(bms2, M, p)
             @test get_iterate(bms2) == p
             io = IOBuffer()
@@ -108,41 +115,36 @@ using Manopt: estimate_sectional_curvature
             ds(mp, bms2, 1)
             s = String(take!(io))
             @test s == "s:1.0"
+            # the generic action honours `at_init`, so it also writes at k = 0
+            ds(mp, cbms, 0)
+            @test startswith(String(take!(io)), "s:")
+            ds0 = DebugStepsize(; at_init = false, io = io)
+            ds0(mp, cbms, 0)
+            @test String(take!(io)) == ""
         end
 
         @testset "Warnings" begin
             dw1 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 0.0)
-            @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=\"0.0\")"
+            @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=0.0)"
             cbms.ξ = 101.0
             @test_logs (:warn,) dw1(mp, cbms, 1)
             dw2 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol = 1.0e1)
             dw2.old_value = -101.0
-            @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=\"10.0\")"
+            @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=10.0)"
             cbms.ξ = -1.0
             @test_logs (:warn,) (:warn,) dw2(mp, cbms, 1)
         end
     end
 
     @testset "Mutating Subgradient" begin
-        f(M, q) = distance(M, q, p)
-        function ∂f!(M, X, q)
-            d = distance(M, p, q)
-            if d == 0
-                zero_vector!(M, X, q)
-                return X
-            end
-            log!(M, X, q, p)
-            X .*= -1 / max(10 * eps(Float64), d)
-            return X
-        end
+        f, _, ∂f! = Manopt.Test.distance_task(M, p)
         bmom = ManifoldSubgradientObjective(f, ∂f!; evaluation = InplaceEvaluation())
         mp = DefaultManoptProblem(M, bmom)
         X = zero_vector(M, p)
         Y = get_subgradient(mp, p)
         get_subgradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
-        sr = solve!(mp, cbms)
-        xHat = get_solver_result(sr)
+        solve!(mp, cbms)
         # Check Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test norm(M, p, get_subgradient(mp, p)) == 0
@@ -157,7 +159,23 @@ using Manopt: estimate_sectional_curvature
             sub_problem = (convex_bundle_method_subsolver!), return_state = true, debug = [],
         )
         p_star2 = get_solver_result(s2)
-        @test f(M, p_star2) <= f(M, p0)
+        @test f(M, p_star2) < f(M, p0)
+        # with the fix, the in-place call needs no explicit sub_problem anymore
+        q_ip = convex_bundle_method(
+            M, f, ∂f!, copy(p0); diameter = diameter,
+            domain = (M, q) -> distance(M, q, p0) < diameter / 2 ? true : false,
+            k_max = Ω, stopping_criterion = StopAfterIteration(200),
+            evaluation = InplaceEvaluation(),
+        )
+        @test f(M, q_ip) < f(M, p0)
+        q_bang = copy(M, p0)
+        r_bang = convex_bundle_method!(
+            M, f, ∂f!, q_bang; diameter = diameter,
+            domain = (M, q) -> distance(M, q, p0) < diameter / 2 ? true : false,
+            k_max = Ω, stopping_criterion = StopAfterIteration(200),
+            evaluation = InplaceEvaluation(),
+        )
+        @test isapprox(M, r_bang, q_ip)
     end
 
     @testset "A simple median run" begin
@@ -182,6 +200,44 @@ using Manopt: estimate_sectional_curvature
         q = get_solver_result(cbm_s)
         m = median(M, data)
         @test distance(M, q, m) < 2.0e-2 #with default parameters this is not very precise
+        # the in-place call returns the passed point
+        kw_ip = (; k_max = 1.0, k_min = 1.0, diameter = π / 3, debug = [], stopping_criterion = StopAfterIteration(10))
+        p_ip = copy(M, p0)
+        Random.seed!(42)
+        @test convex_bundle_method!(M, f, ∂f, p_ip; kw_ip...) === p_ip
+        Random.seed!(42)
+        @test convex_bundle_method(M, f, ∂f, p0; kw_ip...) == p_ip
+        # the cost of the last serious iterate is evaluated once per iteration, 69 instead of 96 calls here
+        Random.seed!(42)
+        r_c = convex_bundle_method(M, f, ∂f, p0; count = [:Cost], return_objective = true, kw_ip...)
+        @test get_count(r_c[1], :Cost) == 69
+        # a step size that provides no candidate point: the solver computes it
+        Random.seed!(42)
+        s_cl = convex_bundle_method(
+            M, f, ∂f, p0; k_max = 1.0, k_min = 1.0, diameter = π / 3, debug = [], stepsize = ConstantLength(1.0),
+            contraction_factor = 0.9, stopping_criterion = StopAfterIteration(30), return_state = true,
+        )
+        @test f(M, get_solver_result(s_cl)) - f(M, m) < 1.0e-5
+        # the contraction factor for the null step reaches the state
+        @test get_state(s_cl).contraction_factor == 0.9
+        @test ConvexBundleMethodState(M; p = p0, k_max = 1.0, k_min = 1.0).contraction_factor == 0.975
+        # a contraction factor of the step size is stored in the state
+        Random.seed!(42)
+        s_dbt = convex_bundle_method(
+            M, f, ∂f, p0; k_max = 1.0, k_min = 1.0, diameter = π / 3, debug = [],
+            stepsize = DomainBackTracking(; contraction_factor = 0.8),
+            stopping_criterion = StopAfterIteration(30), return_state = true,
+        )
+        @test get_state(s_dbt).contraction_factor == 0.8
+        # already when the solver is initialized
+        s_init = ConvexBundleMethodState(
+            M; p = copy(M, p0), k_max = 1.0, k_min = 1.0, stepsize = DomainBackTracking(; contraction_factor = 0.7)(M),
+        )
+        initialize_solver!(DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f)), s_init)
+        @test s_init.contraction_factor == 0.7
+        @test Manopt.get_parameter(DomainBackTracking(; contraction_factor = 0.9)(M), :ContractionFactor) == 0.9
+        @test Manopt.get_parameter(Manopt.NullStepBackTrackingStepsize(M; contraction_factor = 0.8), :ContractionFactor) == 0.8
+        @test isnothing(Manopt.get_parameter(ConstantLength(1.0)(M), :ContractionFactor))
         # test the other stopping criterion mode
         q2 = convex_bundle_method(
             M, f, ∂f, p0; k_max = 1.0,
@@ -191,10 +247,11 @@ using Manopt: estimate_sectional_curvature
         # try to force entering the backtracking loop
         diam = π / 4
         domf(M, p) = distance(M, p, p0) < diam / 2 ? true : false
-        q2 = convex_bundle_method(
+        q3 = convex_bundle_method(
             M, f, ∂f, p0; k_max = 1.0, diameter = diam, domain = domf,
             stopping_criterion = StopAfterIteration(3),
         )
+        @test f(M, q3) < f(M, p0)
         @testset "Callback test" begin
             sk_record = Tuple{Symbol, Int}[]
             cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))
@@ -214,13 +271,7 @@ using Manopt: estimate_sectional_curvature
         M = Sphere(2)
         p = [1.0, 0.0, 0.0]
         q = [0.0, 1.0, 0.0]
-        f(M, q) = distance(M, q, p)
-        function ∂f(M, q)
-            if distance(M, p, q) == 0
-                return zero_vector(M, q)
-            end
-            return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
-        end
+        f, ∂f, _ = Manopt.Test.distance_task(M, p)
         cbms = ConvexBundleMethodState(
             M, convex_bundle_method_subsolver; p = q, k_max = 1.0, k_min = 1.0,
             stepsize = DomainBackTrackingStepsize(M; contraction_factor = 0.975),
@@ -247,21 +298,25 @@ using Manopt: estimate_sectional_curvature
         @test get_initial_stepsize(dbt) == 1
         @test startswith(repr(dbt), "DomainBackTrackingStepsize(;")
         @test startswith(Manopt.status_summary(dbt), "A domain backtracking stepsize")
-        # a newly setup stepsize has now message (yet)
+        # a newly set up stepsize has no message yet
         @test Manopt.get_message(dbt) == ""
     end
 
+    @testset "A manifold with numbers as points" begin
+        Mc = Circle()
+        gc(M, q) = distance(M, q, 0.5)
+        ∂gc(M, q) = distance(M, q, 0.5) == 0 ? 0.0 : -log(M, q, 0.5) / distance(M, q, 0.5)
+        qc = convex_bundle_method(Mc, gc, ∂gc, 1.0; k_max = 0.0, k_min = 0.0, stopping_criterion = StopAfterIteration(20))
+        @test qc isa Float64
+        @test qc ≈ 0.5
+    end
     @testset "Bundle Cap Condition" begin
         M = Sphere(2)
         p = [1.0, 0.0, 0.0]
         q = [0.0, 1.0, 0.0]
-        f(M, q) = distance(M, q, p)
-        function ∂f(M, q)
-            d = distance(M, p, q)
-            return d == 0 ? zero_vector(M, q) : -log(M, q, p) / d
-        end
+        f, ∂f, _ = Manopt.Test.distance_task(M, p)
         diam = π / 2
-        domf(M, p) = distance(M, p, p) < diam / 2 ? true : false
+        domf(M, p) = distance(M, p, q) < diam / 2 ? true : false
         cbms = ConvexBundleMethodState(
             M, convex_bundle_method_subsolver;
             diameter = diam, domain = domf, bundle_cap = 3, p = q, k_max = 1.0, k_min = 1.0,
@@ -278,6 +333,13 @@ using Manopt: estimate_sectional_curvature
             push!(cbms.λ, 0.0)
             push!(cbms.transported_subgradients, zero_vector(M, p))
         end
+
+        # the cap also holds when the oldest entry is the last serious iterate
+        cbms.p_last_serious .= cbms.bundle[1][1]
+        step_solver!(mp, cbms, 1)
+        @test length(cbms.bundle) ≤ cbms.bundle_cap
+        @test length(cbms.linearization_errors) == length(cbms.bundle)
+        @test length(cbms.λ) == length(cbms.bundle)
 
         # Ensure the first element in the bundle is not equal to p_last_serious
         cbms.p_last_serious .= [0.0, 1.0, 0.0]

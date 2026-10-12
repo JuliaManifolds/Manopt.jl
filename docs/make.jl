@@ -21,7 +21,7 @@ if "--help" ∈ ARGS
           Then you can spare time in the rendering by not passing this argument.
           If quarto is not run, some tutorials are generated as empty files, since they
           are referenced from within the documentation.
-          These are currently `getstarted.md` and `ImplementOwnManifold.md`.
+          These are currently `getstarted.md`, `ImplementOwnManifold.md`, and `HowToRecord.md`.
         """
     )
     exit(0)
@@ -47,6 +47,7 @@ tutorials_menu =
     "Optimize on your own manifold" => "tutorials/ImplementOwnManifold.md",
     "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
     "Do optimization with bounds" => "tutorials/BoxDomain.md",
+    "Run stochastic gradient descent" => "tutorials/StochasticGradientDescent.md",
 ]
 # Check whether all tutorials are rendered, issue a warning if not (and quarto if not set)
 all_tutorials_exist = true
@@ -82,13 +83,13 @@ end
 #
 # (b) if docs is not the current active environment, switch to it
 # (from https://github.com/JuliaIO/HDF5.jl/pull/1020/) 
+using Pkg
 if Base.active_project() != joinpath(@__DIR__, "Project.toml")
-    using Pkg
     Pkg.activate(@__DIR__)
     Pkg.instantiate()
 end
 
-# (b) If quarto is set, or we are on CI, run quarto
+# (c) If quarto is set, or we are on CI, run quarto
 if run_quarto || run_on_CI
     @info "Rendering Quarto"
     tutorials_folder = (@__DIR__) * "/../tutorials"
@@ -100,22 +101,22 @@ if run_quarto || run_on_CI
     run(`quarto render $(tutorials_folder)`)
 end
 
-# (c) load necessary packages for the docs
+# (d) load necessary packages for the docs
 using Documenter
-using DocumenterCitations, DocumenterInterLinks
+using DocumenterCitations, DocumenterCodeBlocks, DocumenterInterLinks, DocumenterLandingPage
 using LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
 using RipQP, QuadraticModels
 
-# (d) add contributing.md and changelog.md to the docs – and link to releases and issues
+# (e) add contributing.md and changelog.md to the docs – and link to releases and issues
 
 function add_links(line::String, url::String = "https://github.com/JuliaManifolds/Manopt.jl")
-    # replace issues (#XXXX) -> ([#XXXX](url/issue/XXXX))
+    # replace issues (#XXXX) -> ([#XXXX](url/issues/XXXX))
     while (m = match(r"\(\#([0-9]+)\)", line)) !== nothing
         id = m.captures[1]
         line = replace(line, m.match => "([#$id]($url/issues/$id))")
     end
     # replace ## [X.Y.Z] -> with a link to the release [X.Y.Z](url/releases/tag/vX.Y.Z)
-    while (m = match(r"\#\# \[([0-9]+.[0-9]+.[0-9]+)\] (.*)", line)) !== nothing
+    while (m = match(r"\#\# \[([0-9]+\.[0-9]+\.[0-9]+)\] (.*)", line)) !== nothing
         tag = m.captures[1]
         date = m.captures[2]
         line = replace(line, m.match => "## [$tag]($url/releases/tag/v$tag) ($date)")
@@ -145,11 +146,10 @@ for (md_file, doc_file) in
     end
 end
 
-## Build tutorials menu
-# (e) finally make docs
+# (f) finally make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style = :alpha)
 links = InterLinks(
-    "JuMP" => ("https://jump.dev/JuMP.jl/stable/"),
+    # "JuMP" => ("https://jump.dev/JuMP.jl/stable/"),
     "ManifoldDiff" => ("https://juliamanifolds.github.io/ManifoldDiff.jl/stable/"),
     "ManifoldsBase" => ("https://juliamanifolds.github.io/ManifoldsBase.jl/stable/"),
     "Manifolds" => ("https://juliamanifolds.github.io/Manifolds.jl/stable/"),
@@ -157,16 +157,17 @@ links = InterLinks(
 makedocs(;
     format = Documenter.HTML(;
         prettyurls = run_on_CI || ("--prettyurls" ∈ ARGS),
-        assets = ["assets/favicon.ico", "assets/citations.css", "assets/link-icons.css"],
-        size_threshold = 1100 * 2^10,      # raise slightly 200 to to 300 KiB
-        size_threshold_warn = 900 * 2^10, # raise from 500 KiB to 1.1 MB (for search index)
-        search_size_threshold_warn = 2000 * 2^10,
+        assets = ["assets/favicon.ico", "assets/link-icons.css"],
+        size_threshold = 1100 * 2^10,             # raise from the 200 KiB default
+        size_threshold_warn = 900 * 2^10,         # raise from the 100 KiB default
+        search_size_threshold_warn = 2000 * 2^10, # raise from the 500 KiB default
     ),
     modules = [
         Manopt,
         Base.get_extension(Manopt, :ManoptLineSearchesExt),
         Base.get_extension(Manopt, :ManoptLRUCacheExt),
         Base.get_extension(Manopt, :ManoptManifoldsExt),
+        Base.get_extension(Manopt, :ManoptRecursiveArrayToolsExt),
         Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt),
     ],
     authors = "Ronny Bergmann <ronny.bergmann@ntnu.no> and contributors.",
@@ -180,17 +181,17 @@ makedocs(;
             "Adaptive Regularization with Cubics" => "solvers/adaptive_regularization_with_cubics.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
             "Augmented Lagrangian Method" => "solvers/augmented_Lagrangian_method.md",
-            "Chambolle-Pock" => "solvers/ChambollePock.md",
+            "Chambolle–Pock" => "solvers/ChambollePock.md",
             "CMA-ES" => "solvers/cma_es.md",
-            "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
+            "Conjugate Gradient Descent" => "solvers/conjugate_gradient_descent.md",
             "Conjugate Residual" => "solvers/conjugate_residual.md",
-            "Convex bundle method" => "solvers/convex_bundle_method.md",
+            "Convex Bundle Method" => "solvers/convex_bundle_method.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Difference of Convex" => "solvers/difference_of_convex.md",
-            "Douglas—Rachford" => "solvers/DouglasRachford.md",
+            "Douglas–Rachford" => "solvers/DouglasRachford.md",
             "Exact Penalty Method" => "solvers/exact_penalty_method.md",
-            "Frank-Wolfe" => "solvers/FrankWolfe.md",
-            "Generalized Cauchy direction subsolver" => "solvers/generalized_cauchy_direction_subsolver.md",
+            "Frank–Wolfe" => "solvers/FrankWolfe.md",
+            "Generalized Cauchy direction sub solver" => "solvers/generalized_cauchy_direction_subsolver.md",
             "Gradient Descent" => "solvers/gradient_descent.md",
             "Gradient Sampling" => "solvers/gradient_sampling.md",
             "Interior Point Newton" => "solvers/interior_point_Newton.md",
@@ -200,49 +201,49 @@ makedocs(;
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",
             "Primal-dual Riemannian semismooth Newton" => "solvers/primal_dual_semismooth_Newton.md",
             "Projected Gradient Method" => "solvers/projected_gradient_method.md",
-            "Proximal bundle method" => "solvers/proximal_bundle_method.md",
+            "Proximal Bundle Method" => "solvers/proximal_bundle_method.md",
             "Proximal Gradient Method" => "solvers/proximal_gradient_method.md",
+            "Proximal Point Method" => "solvers/proximal_point.md",
             "Quasi-Newton" => "solvers/quasi_Newton.md",
             "Stochastic Gradient Descent" => "solvers/stochastic_gradient_descent.md",
-            "Subgradient method" => "solvers/subgradient.md",
-            "Steihaug-Toint TCG Method" => "solvers/truncated_conjugate_gradient_descent.md",
+            "Subgradient Method" => "solvers/subgradient.md",
+            "Steihaug–Toint TCG Method" => "solvers/truncated_conjugate_gradient_descent.md",
             "Trust-Regions Solver" => "solvers/trust_regions.md",
             "Vector Bundle Newton Method" => "solvers/vectorbundle_newton.md",
         ],
-        "Commons (WIP)" => [
+        "Commons" => [
             "Overview" => "commons/index.md",
             "Debug Outputs" => "commons/debugs.md",
+            "Functions" => "commons/functions.md",
+            "Objectives" => "commons/objectives.md",
+            "Problems" => "commons/problems.md",
+            "Record Actions" => "commons/records.md",
+            "Robustifiers" => "commons/robustifiers.md",
+            "States" => "commons/states.md",
+            "Step Size Rules" => "commons/stepsizes.md",
+            "Stopping Criteria" => "commons/stopping_criteria.md",
+            "Vector Functions" => "commons/vectorial_functions.md",
         ],
-        "Plans (deprecated)" => [
-            "Specify a Solver" => "plans/index.md",
-            "Problem" => "plans/problem.md",
-            "Objective" => [
-                "Cost objectvies" => "plans/objectives/cost.md",
-                "First-order objectives" => "plans/objectives/first_order.md",
-                "Second-order objectives" => "plans/objectives/second_order.md",
-                "Constrained objectives" => "plans/objectives/constrained.md",
-                "Splitting-based objectives" => "plans/objectives/splitting_based.md",
-                "Subproblem objectives" => "plans/objectives/sub.md",
-                "Vectorial objectives" => "plans/objectives/vectorial.md",
-                "Linear Systems" => "plans/objectives/linear_system.md",
-                "Decorators for objectives" => "plans/objectives/decorated.md",
-            ],
-            "Solver State" => "plans/state.md",
-            "Stepsize" => "plans/stepsize.md",
-            "Stopping Criteria" => "plans/stopping_criteria.md",
-            "Recording values" => "plans/record.md",
-        ],
-        "Developer Guide (WIP)" => [
+        "Developer Guide" => [
             "Introduction" => "base/index.md",
+            "Function" => "base/function.md",
+            "High-Level interface" => "base/high-level-interface.md",
+            "Keyword handling" => "base/keyword.md",
             "Problem" => "base/problem.md",
+            "Default Factory" => "base/default_factory.md",
             "Objective" => "base/objective.md",
+            "Solver" => "base/solver.md",
             "Solver State" => [
                 "Overview" => "base/state.md",
                 "Action" => "base/state/action.md",
                 "Callback" => "base/state/callback.md",
                 "Debug" => "base/state/debug.md",
                 "Decorator" => "base/state/decorator.md",
+                "Record" => "base/state/record.md",
+                "Sub tasks" => "base/state/sub.md",
             ],
+            "Step size" => "base/stepsize.md",
+            "Stopping Criterion" => "base/stopping_criterion.md",
         ],
         "Helpers" => [
             "Checks" => "helpers/checks.md",
@@ -254,8 +255,7 @@ makedocs(;
         "Changelog" => "changelog.md",
         "References" => "references.md",
     ],
-    plugins = [bib, links],
+    plugins = [bib, links, CodeBlocks(), LandingPage()],
 )
 deploydocs(; repo = "github.com/JuliaManifolds/Manopt.jl", push_preview = true)
-#back to main env
 Pkg.activate()

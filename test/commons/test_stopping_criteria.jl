@@ -1,0 +1,640 @@
+using Manifolds, ManifoldsBase, Manopt, Test, ManifoldsBase, Dates
+
+function to_display_string(obj)
+    buf = IOBuffer()
+    Base.show(buf, MIME"text/plain"(), obj)
+    return String(take!(buf))
+end
+
+@testset "StoppingCriteria" begin
+    @testset "Generic Tests" begin
+        @test_throws MethodError get_stopping_criteria(Manopt.Test.DummyStoppingCriteriaSet())
+        sa = StopAfterIteration(10)
+        sb = StopWhenChangeLess(0.1)
+        s = StopWhenAll(sa, sb)
+        @test !Manopt.indicates_convergence(s) #both are false so this is false
+        @test repr(s) == "StopWhenAll([$(repr(sa)), $(repr(sb))])"
+        @test Manopt.status_summary(s; context = :short) == "$(repr(sa)) & $(repr(sb))"
+        @test startswith(Manopt.status_summary(s), "Stop when")
+        @test get_reason(s) === ""
+        io = IOBuffer()
+        show(io, MIME"text/plain"(), sa)
+        @test startswith(String(take!(io)), "A stopping criterion to stop after 10 iterations")
+
+        # Trigger second one manually
+        s.criteria[2].last_change = 0.05
+        s.criteria[2].at_iteration = 3
+        @test length(get_reason(s.criteria[2])) > 0
+        s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1)])
+        @test get_stopping_criteria(s)[1].max_iterations == get_stopping_criteria(s2)[1].max_iterations
+
+        s3 = StopWhenCostLess(0.1)
+        p = DefaultManoptProblem(
+            Euclidean(), ManifoldGradientObjective((M, x) -> x^2, (M, x) -> 2x)
+        )
+        s = GradientDescentState(Euclidean(); p = 1.0)
+        @test !s3(p, s, 1)
+        @test length(get_reason(s3)) == 0
+        s.p = 0.3
+        @test !s3(p, s, -1) # a reset call does not fire
+        @test s3(p, s, 2)
+        @test length(get_reason(s3)) > 0
+        # repack
+        sn1 = StopAfterIteration(10)
+        sn = StopWhenAny(sn1, s3)
+        @test get_reason(sn) == ""
+        @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iterations
+        @test repr(sn) == "StopWhenAny([$(repr(sn1)), $(repr(s3))])"
+        # any/all over an empty set of criteria: identities false/true
+        @test !StopWhenAny()(p, s, 1)
+        @test StopWhenAll()(p, s, 1)
+        # all criteria fulfilled already at the start
+        s0 = StopAfterIteration(0) & StopAfterIteration(0)
+        @test s0(p, s, 0)
+        @test s0.at_iteration == 0
+
+        sn2 = StopAfterIteration(10) | s3
+        @test get_stopping_criteria(sn)[1].max_iterations ==
+            get_stopping_criteria(sn2)[1].max_iterations
+        @test get_stopping_criteria(sn)[2].threshold ==
+            get_stopping_criteria(sn2)[2].threshold
+        # then s3 is the only active one
+        @test get_active_stopping_criteria(sn) == [s3]
+        @test get_active_stopping_criteria(s3) == [s3]
+        @test get_active_stopping_criteria(StopAfterIteration(1)) == []
+        sm = StopWhenAll(StopAfterIteration(10), s3)
+        s1 = "StopAfterIteration(10)"
+
+        @test repr(StopAfterIteration(10)) == s1
+        @test !sm(p, s, 9)
+        @test sm(p, s, 11)
+        an = get_reason(sm)
+        @test count(==('\n'), an) == 2 # both have to be active
+        Manopt.set_parameter!(s3, :MinCost, 1.0e-2)
+        @test s3.threshold == 1.0e-2
+        # Dummy without iterations has a reasonable fallback
+        @test Manopt.get_count(
+            Manopt.Test.DummyStoppingCriterion(), Val(:Iterations)
+        ) == 0
+
+        sn = StopWhenAny([StopAfterIteration(10)])
+        @test sn isa StoppingCriterion
+    end
+
+    @testset "Test StopAfter" begin
+        p = Manopt.Test.DummyProblem{ManifoldsBase.DefaultManifold}()
+        o = Manopt.Test.DummyState()
+        s = StopAfter(Millisecond(30))
+        @test !Manopt.indicates_convergence(s)
+        @test Manopt.status_summary(s) == "A stopping criterion to stop after $(s.threshold)\n$(Manopt._MANOPT_INDENT)not reached"
+        @test repr(s) == "StopAfter(Millisecond(30))"
+        s(p, o, 0) # Start
+        @test s(p, o, 1) == false
+        @test get_reason(s) == ""
+        sleep(0.05)
+        @test s(p, o, 2) == true
+        @test length(get_reason(s)) > 0
+        @test_throws ErrorException StopAfter(Second(-1))
+        @test_throws ArgumentError StopAfter(Month(1))
+        @test_throws ErrorException Manopt.set_parameter!(s, :MaxTime, Second(-1))
+        Manopt.set_parameter!(s, :MaxTime, Second(2))
+        @test s.threshold == Second(2)
+    end
+
+    @testset "Stopping Criterion &/| operators" begin
+        a = StopAfterIteration(200)
+        b = StopWhenChangeLess(Euclidean(), 1.0e-6)
+        sb = "StopWhenChangeLess(1.0e-6; inverse_retraction_method=LogarithmicInverseRetraction())"
+        @test repr(b) == sb
+        @test get_reason(b) == ""
+        b2 = StopWhenChangeLess(1.0e-6) # second constructor, without a manifold
+        @test repr(b2) == sb
+        c = StopWhenGradientNormLess(1.0e-6)
+        sc = "StopWhenGradientNormLess(1.0e-6)"
+        @test repr(c) == sc
+        @test get_reason(c) == ""
+        # Trigger manually
+        c.last_change = 1.0e-11
+        c.at_iteration = 3
+        @test length(get_reason(c)) > 0
+        c2 = StopWhenSubgradientNormLess(1.0e-6)
+        sc2 = "StopWhenSubgradientNormLess(1.0e-6)"
+        @test repr(c2) == sc2
+        d = StopWhenAll(a, b, c)
+        @test typeof(d) === typeof(a & b & c)
+        @test typeof(d) === typeof(a & (b & c))
+        @test typeof(d) === typeof((a & b) & c)
+        Manopt.set_parameter!(d, :MinIterateChange, 1.0e-8)
+        @test d.criteria[2].threshold == 1.0e-8
+        @test length((d & d).criteria) == 6
+        e = a | b | c
+        @test typeof(e) === typeof(a | b | c)
+        @test typeof(e) === typeof(a | (b | c))
+        @test typeof(e) === typeof((a | b) | c)
+        Manopt.set_parameter!(e, :MinGradNorm, 1.0e-9)
+        @test e.criteria[3].threshold == 1.0e-9
+        # the gradient mapping criterion takes the same parameter
+        gm = StopWhenGradientMappingNormLess(1.0e-6)
+        Manopt.set_parameter!(gm, :MinGradNorm, 1.0e-3)
+        @test gm.threshold == 1.0e-3
+        @test length((e | e).criteria) == 6
+    end
+
+    @testset "Stopping Criterion print&summary" begin
+        f = StopWhenStepsizeLess(1.0e-6)
+        sf1 = "Stepsize s < 1.0e-6:$(Manopt._MANOPT_INDENT)not reached"
+        sf2 = "StopWhenStepsizeLess(1.0e-6)"
+        @test Manopt.status_summary(f) == "A stopping criterion to stop when the step size is less than 1.0e-6\n$(Manopt._MANOPT_INDENT)not reached"
+        @test Manopt.status_summary(f; context = :inline) == sf1
+        @test repr(f) == sf2
+        g = StopWhenCostLess(1.0e-4)
+        @test Manopt.status_summary(g; context = :inline) == "f(x) < $(1.0e-4):$(Manopt._MANOPT_INDENT)not reached"
+        @test repr(g) == "StopWhenCostLess(0.0001)"
+        @test startswith(Manopt.status_summary(g), "A stopping criterion to stop when the cost function")
+        @test !Manopt.indicates_convergence(g)
+        gf(M, p) = norm(p)
+        grad_gf(M, p) = p
+        gp = DefaultManoptProblem(Euclidean(2), ManifoldGradientObjective(gf, grad_gf))
+        gs = GradientDescentState(Euclidean(2))
+        Manopt.set_iterate!(gs, Euclidean(2), [0.0, 1.0e-2])
+        g(gp, gs, 0) # reset
+        @test length(get_reason(g)) == 0
+        @test !g(gp, gs, 1)
+        Manopt.set_iterate!(gs, Euclidean(2), [0.0, 1.0e-8])
+        @test g(gp, gs, 2)
+        @test length(get_reason(g)) > 0
+        h = StopWhenSmallerOrEqual(:p, 1.0e-4)
+        @test repr(h) == "StopWhenSmallerOrEqual(:p, $(1.0e-4))"
+        @test !Manopt.indicates_convergence(h)
+        @test get_reason(h) == ""
+        # Trigger manually
+        h.at_iteration = 1
+        @test length(get_reason(h)) > 0
+        swgcl1 = StopWhenGradientChangeLess(Euclidean(2), 1.0e-8)
+        swgcl2 = StopWhenGradientChangeLess(1.0e-8)
+        for swgcl in [swgcl1, swgcl2]
+            @test repr(swgcl) ==
+                "StopWhenGradientChangeLess($(1.0e-8); vector_transport_method=ParallelTransport())"
+            @test !Manopt.indicates_convergence(swgcl)
+            swgcl(gp, gs, 0) # reset
+            @test get_reason(swgcl) == ""
+            @test swgcl(gp, gs, 1) # change 0 -> true
+            @test endswith(Manopt.status_summary(swgcl), "reached")
+            @test length(get_reason(swgcl)) > 0
+        end
+        Manopt.set_parameter!(swgcl2, :MinGradientChange, 1.0e-9)
+        @test swgcl2.threshold == 1.0e-9
+    end
+
+    @testset "TCG stopping criteria" begin
+        # create dummy criterion
+        ho = ManifoldHessianObjective((M, x) -> x, (M, x) -> x, (M, x, X) -> X, (M, x, X) -> X)
+        hp = DefaultManoptProblem(Euclidean(), ho)
+        tcgs = TruncatedConjugateGradientState(
+            TangentSpace(Euclidean(), 1.0); X = 0.0, trust_region_radius = 2.0, randomize = false
+        )
+        tcgs.model_value = 1.0
+        s = StopWhenModelIncreased()
+        @test !s(hp, tcgs, 0)
+        @test length(get_reason(s)) == 0
+        s.model_value = 0.5 # tweak the model value to trigger a test
+        @test s(hp, tcgs, 1)
+        @test length(get_reason(s)) > 0
+        s2 = StopWhenCurvatureIsNegative()
+        tcgs.δHδ = -1.0
+        @test !s2(hp, tcgs, 0)
+        @test length(get_reason(s2)) == 0
+        @test s2(hp, tcgs, 1)
+        @test length(get_reason(s2)) > 0
+        s3 = StopWhenResidualIsReducedByFactorOrPower()
+        Manopt.set_parameter!(s3, :ResidualFactor, 0.5)
+        @test s3.κ == 0.5
+        Manopt.set_parameter!(s3, :ResidualPower, 0.5)
+        @test s3.θ == 0.5
+        @test get_reason(s3) == ""
+        # Trigger manually
+        s3.at_iteration = 1
+        @test length(get_reason(s3)) > 0
+    end
+
+    @testset "Stop with step size" begin
+        mgo = ManifoldGradientObjective((M, x) -> x^2, (M, x) -> 2x)
+        dmp = DefaultManoptProblem(Euclidean(), mgo)
+        gds = GradientDescentState(
+            Euclidean();
+            p = 1.0,
+            stopping_criterion = StopAfterIteration(100),
+            stepsize = Manopt.ConstantStepsize(Euclidean()),
+        )
+        s1 = StopWhenStepsizeLess(0.5)
+        @test !Manopt.indicates_convergence(s1)
+        @test !s1(dmp, gds, 1)
+        @test length(get_reason(s1)) == 0
+        gds.stepsize = Manopt.ConstantStepsize(Euclidean(), 0.25)
+        @test s1(dmp, gds, 2)
+        @test length(get_reason(s1)) > 0
+        Manopt.set_parameter!(gds, :StoppingCriterion, :MaxIteration, 200)
+        @test gds.stop.max_iterations == 200
+        Manopt.set_parameter!(s1, :MinStepsize, 1.0e-1)
+        @test s1.threshold == 1.0e-1
+    end
+
+    @testset "Test further setters" begin
+        mgo = ManifoldGradientObjective((M, x) -> x^2, (M, x) -> 2x)
+        dmp = DefaultManoptProblem(Euclidean(), mgo)
+        gds = GradientDescentState(
+            Euclidean();
+            p = 1.0,
+            stopping_criterion = StopAfterIteration(100),
+            stepsize = Manopt.ConstantStepsize(Euclidean()),
+        )
+        swecl = StopWhenEntryChangeLess(:p, (p, s, v, w) -> norm(w - v), 1.0e-5)
+        @test startswith(repr(swecl), "StopWhenEntryChangeLess(")
+        @test !Manopt.indicates_convergence(swecl)
+        @test startswith(Manopt.status_summary(swecl), "A stopping criterion to stop when the change of ")
+        Manopt.set_parameter!(swecl, :Threshold, 1.0e-4)
+        @test swecl.threshold == 1.0e-4
+        @test !swecl(dmp, gds, 1) #First call stores
+        @test length(get_reason(swecl)) == 0
+        @test swecl(dmp, gds, 2) #Second triggers (no change)
+        @test length(get_reason(swecl)) > 0
+        swecl(dmp, gds, 0) # reset
+        @test length(get_reason(swecl)) == 0
+    end
+
+    @testset "Subgradient Norm Stopping Criterion" begin
+        M = Euclidean(2)
+        p = [1.0, 2.0]
+        f, ∂f, _ = Manopt.Test.distance_task(M, p)
+        mso = ManifoldSubgradientObjective(f, ∂f)
+        mp = DefaultManoptProblem(M, mso)
+        c2 = StopWhenSubgradientNormLess(1.0e-6)
+        @test repr(c2) == "StopWhenSubgradientNormLess(1.0e-6)"
+        @test startswith(Manopt.status_summary(c2), "A stopping criterion to stop when the subgradient norm")
+
+        st = SubGradientMethodState(M; p = p, stopping_criterion = c2)
+        st.X = ∂f(M, 2p)
+        @test !c2(mp, st, 1)
+        st.X = ∂f(M, p)
+        @test c2(mp, st, 2)
+        @test length(get_reason(c2)) > 0
+        c2(mp, st, 0) # verify that reset works
+        @test length(get_reason(c2)) == 0
+        @test Manopt.indicates_convergence(c2)
+        Manopt.set_parameter!(c2, :MinSubgradNorm, 1.0e-8)
+        @test c2.threshold == 1.0e-8
+    end
+
+    @testset "StopWhenCostNaN, StopWhenCostChangeLess, StopWhenIterateNaN" begin
+        sc1 = StopWhenCostNaN()
+        @test !Manopt.indicates_convergence(sc1)
+        @test startswith(Manopt.status_summary(sc1), "A stopping criterion to stop when the cost function is")
+        f(M, p) = norm(p) > 2 ? NaN : norm(p)
+        M = Euclidean(2)
+        p = [1.0, 2.0]
+        @test startswith(repr(sc1), "StopWhenCostNaN()")
+        mco = ManifoldCostObjective(f)
+        mp = DefaultManoptProblem(M, mco)
+        s = NelderMeadState(M)
+        s.p = p
+        @test sc1(mp, s, 1) #always returns true since `f` is always NaN
+        s.p = [0.0, 0.1]
+        @test !sc1(mp, s, 0) # test reset. triggers again
+        @test length(get_reason(sc1)) == 0
+        @test sc1.at_iteration == -1
+        # Trigger manually
+        sc1.at_iteration = 1
+        @test length(get_reason(sc1)) > 0
+
+        sc2 = StopWhenCostChangeLess(1.0e-6)
+        @test startswith(repr(sc2), "StopWhenCostChangeLess(1.0e-6)")
+        @test startswith(Manopt.status_summary(sc2), "A stopping criterion to stop when the change of the cost")
+        @test !Manopt.indicates_convergence(sc2)
+        @test get_reason(sc2) == ""
+        s.p = [0.0, 0.1]
+        @test !sc2(mp, s, 1) # Init check
+        @test length(get_reason(sc2)) == 0
+        @test sc2(mp, s, 2) # change zero -> triggers
+        @test length(get_reason(sc2)) > 0
+        # Reset
+        @test !sc2(mp, s, 0) # reset
+        @test length(get_reason(sc2)) == 0
+
+        s.p .= NaN
+        sc3 = StopWhenIterateNaN()
+        @test startswith(repr(sc3), "StopWhenIterateNaN()")
+        @test !Manopt.indicates_convergence(sc3)
+        @test startswith(Manopt.status_summary(sc3), "A stopping criterion to stop when an entry of the iterate is")
+
+        @test sc3(mp, s, 1) #always returns true since p was now set to NaN
+        @test length(get_reason(sc3)) > 0
+        s.p = p
+        @test !sc3(mp, s, 0) # test reset, though this already again triggers
+        @test length(get_reason(sc3)) == 0 # verify reset
+        @test sc3.at_iteration == -1
+        # Trigger manually
+        sc3.at_iteration = 1
+        @test length(get_reason(sc3)) > 0
+        # a nested point representation is checked entry by entry
+        Mn = PowerManifold(Sphere(2), NestedPowerRepresentation(), 2)
+        stn = GradientDescentState(Mn; p = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+        mpn = DefaultManoptProblem(
+            Mn, ManifoldGradientObjective((N, q) -> 0.0, (N, q) -> zero_vector(N, q))
+        )
+        sc4 = StopWhenIterateNaN()
+        @test !sc4(mpn, stn, 1)
+        stn.p[1][1] = NaN
+        @test sc4(mpn, stn, 1)
+    end
+
+    @testset "StopWhenRepeated" begin
+        p = Manopt.Test.DummyProblem{ManifoldsBase.DefaultManifold}()
+        o = Manopt.Test.DummyState()
+        s = StopAfterIteration(2)
+        sc = StopWhenRepeated(s, 3)
+        sc2 = s × 3
+        @test typeof(sc) === typeof(sc2)
+        @test Manopt.indicates_convergence(sc) == Manopt.indicates_convergence(s)
+        @test has_converged(sc) == has_converged(s)
+        @test get_reason(sc) == ""
+        @test startswith(repr(sc), "StopWhenRepeated(")
+        @test startswith(Manopt.status_summary(sc), "A stopping criterion to stop when the inner criterion has indicated to stop 3 consecutive times")
+        @test startswith(Manopt.status_summary(sc; context = :short), "StopWhenRepeated(StopAfterIteration(2))×3")
+        # parameters reach the wrapped criterion
+        scp = StopWhenRepeated(StopAfterIteration(2), 3)
+        Manopt.set_parameter!(scp, :MaxIteration, 5)
+        @test scp.stopping_criterion.max_iterations == 5
+        # an inactive wrapper has not converged, even if the inner criterion fired before
+        Me = Euclidean(2)
+        ste = GradientDescentState(Me; p = [0.0, 0.0], X = [0.0, 0.0])
+        mpe = DefaultManoptProblem(Me, ManifoldGradientObjective((N, q) -> 0.0, (N, q) -> 2 .* q))
+        scr = StopWhenRepeated(StopWhenGradientNormLess(1.0e-6), 3)
+        @test !scr(mpe, ste, 1) # the inner criterion fires, the wrapper does not
+        ste.X .= [1.0, 0.0]
+        @test !scr(mpe, ste, 2) # the count is reset
+        @test !Manopt.is_active_stopping_criterion(scr)
+        @test !has_converged(scr)
+        ste.X .= [0.0, 0.0]
+        @test !scr(mpe, ste, 3)
+        @test !scr(mpe, ste, 4)
+        @test scr(mpe, ste, 5)
+        @test has_converged(scr)
+        @test !sc(p, o, 1) # still count 0
+        @test !sc(p, o, 2) # 1
+        @test !sc(p, o, 2) # 2
+        @test sc(p, o, 3) # 3 -> hits
+        @test length(get_reason(sc)) > 0
+        # reset
+        sc(p, o, 0) # reset
+        @test length(get_reason(sc)) == 0
+    end
+
+    @testset "StopWhenCriterionWithIterationCondition" begin
+        f(M, p) = 0.0 # Always triggers
+        M = Euclidean(2)
+        p = [1.0, 2.0]
+        mco = ManifoldCostObjective(f)
+        mp = DefaultManoptProblem(M, mco)
+        st = NelderMeadState(M)
+        st.p = p
+
+        s = StopWhenCostLess(1.0e-4)
+
+        sc = StopWhenCriterionWithIterationCondition(s, 5)
+        @test Manopt.indicates_convergence(sc) == Manopt.indicates_convergence(s)
+        @test has_converged(sc) == has_converged(s)
+        @test get_reason(sc) == ""
+        @test startswith(repr(sc), "StopWhenCriterionWithIterationCondition(")
+        @test startswith(Manopt.status_summary(sc; context = :short), repr(sc))
+        @test startswith(Manopt.status_summary(sc), "A stopping criterion to stop when the inner criterion is met and")
+        sc2 = s ⩼ 5
+        @test typeof(sc) === typeof(sc2)
+        sc4 = s ≟ 5
+        @test sc4.comp === (==(5))
+        sc6 = s ⩻ 5
+        @test sc6.comp === (<(5))
+        sc7 = s ≞ 10
+        @test !sc7.comp(12)
+        @test sc7.comp(20)
+        # parameters reach the wrapped criterion
+        scp = StopAfterIteration(2) ⩼ 5
+        Manopt.set_parameter!(scp, :MaxIteration, 5)
+        @test scp.stopping_criterion.max_iterations == 5
+
+        # test that it does not hit at 5
+        @test !sc(mp, st, 5) # not checked yet, since comp = >(5)
+        @test sc(mp, st, 6) # triggers
+        @test length(get_reason(sc)) > 0
+        sc(mp, st, 0) # reset
+        @test length(get_reason(sc)) == 0
+    end
+
+    @testset "StopWhenRelativeAPosterioriCostChangeLessOrEqual" begin
+        # an integer factor is promoted instead of erroring
+        @test StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr = 100).threshold ==
+            100 * eps(Float64)
+        sc = StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr = 100.0)
+        prob = DefaultManoptProblem(
+            Euclidean(), ManifoldGradientObjective((M, x) -> x^2, (M, x) -> 2x)
+        )
+        s = GradientDescentState(Euclidean(); p = 1.0)
+        @test !sc(prob, s, -1)
+        @test !sc(prob, s, 1)
+        @test length(get_reason(sc)) == 0
+        s.p = 1.0 - 1.0e-14
+
+        @test sc(prob, s, 2)
+        @test length(get_reason(sc)) > 0
+        @test startswith(
+            Manopt.status_summary(sc),
+            "A stopping criterion to stop when the relative posteriori cost change is less than",
+        )
+        @test startswith(Manopt.status_summary(sc; context = :inline), "(fₖ- fₖ₊₁)/max(|fₖ|, |fₖ₊₁|, 1) = ")
+        @test startswith(repr(sc), "StopWhenRelativeAPosterioriCostChangeLessOrEqual(")
+        @test !Manopt.indicates_convergence(sc)
+    end
+
+    @testset "StopWhenProjectedNegativeGradientNormLess" begin
+        sc = StopWhenProjectedNegativeGradientNormLess(1.0e-10)
+        @test startswith(repr(sc), "StopWhenProjectedNegativeGradientNormLess(")
+        @test startswith(Manopt.status_summary(sc), "A stopping criterion to stop when the projected negative gradient norm is less than")
+
+        M = Hyperrectangle([1.0], [2.0])
+        prob = DefaultManoptProblem(
+            M, ManifoldGradientObjective((M, x) -> x^2, (M, x) -> 2x)
+        )
+        s = GradientDescentState(M; p = [1.0], X = [2.0])
+        @test !sc(prob, s, -1)
+        @test length(get_reason(sc)) == 0
+        @test sc(prob, s, 1)
+        @test length(get_reason(sc)) > 0
+
+        @test startswith(
+            to_display_string(sc),
+            "A stopping criterion to stop when the projected negative gradient norm is less than",
+        )
+        @test startswith(Manopt.status_summary(sc; context = :inline), "|proj (-grad f)| < 1.0e-10")
+
+        Manopt.set_parameter!(sc, Val(:MinGradNorm), 1.0e-5)
+        @test sc.threshold == 1.0e-5
+        @test Manopt.indicates_convergence(sc)
+    end
+
+    @testset "has_converged" begin
+        M = Euclidean(1)
+        pr = Manopt.Test.DummyProblem{typeof(M)}()
+        s1 = StopWhenGradientNormLess(1.0e-4)
+        s2 = StopAfterIteration(10)
+        s3 = s1 & s2
+        s4 = s1 | s2
+        @test Manopt.indicates_convergence(s3)
+        @test !Manopt.indicates_convergence(s4)
+        @test !has_converged(s1)
+        @test !has_converged(s2)
+        @test !has_converged(s3)
+        @test !has_converged(s4)
+        # Tweak s1 to be active
+        s1.at_iteration = 1
+        # Check default
+        @test has_converged(s1)
+        # s3 does not trigger because s2 is not active yet
+        @test !has_converged(s3)
+        # But s4 does since we stopped with s1 due to convergence – when updated accordingly
+        s4.at_iteration = s1.at_iteration
+        @test has_converged(s4)
+        # Set s2 active as well
+        s2.at_iteration = 11
+        @test !has_converged(s2) # But it does not indicate we converged
+        # When internally also updating s3
+        s3.at_iteration = 11
+        @test has_converged(s3) # Now this is fine as well
+        @test has_converged(s4) # This continues to indicate that.
+        # Deactivate s1
+        s1.at_iteration = -1
+        # Now neither s3 (not all active) nor s4 (the active one not converged) indicate convergence
+        @test !has_converged(s1)
+        @test !has_converged(s3)
+        @test !has_converged(s4)
+        # from https://github.com/JuliaManifolds/Manopt.jl/issues/631
+        @testset "has_converged in combination with Any/All (#631)" begin
+            sh1 = StopWhenGradientNormLess(1.0e-4)   # indicates_convergence == true
+            sh2 = StopAfterIteration(10)             # indicates_convergence == false
+            sh3 = StopAfterIteration(20)
+            sh4 = (sh1 | sh2)
+            sh5 = sh4 & sh3                    # StopWhenAll(StopWhenAny(sh1, sh2), sh3)
+            # trigger that every leaf is active, i.e. the overall sc has stopped
+            sh1.at_iteration = 1; sh2.at_iteration = 11; sh3.at_iteration = 21
+            # but we also have to internally set any/all which would have happened otherwise as well
+            # for sh4 at 1 (from sh1) and sh5 and 21 (sh3)
+            sh4.at_iteration = 1; sh5.at_iteration = 21
+            # Then (a) sh4 has converged, since one of its components has
+            @test has_converged(sh4)
+            # As well as sh5, since one of its children does indicate convergence
+            @test has_converged(sh5)
+        end
+    end
+
+    # cf. reported bug in https://github.com/JuliaManifolds/Manopt.jl/issues/632
+    @testset "StopWhenAll/StopWhenAny short-circuit eligible criteria (#632)" begin
+        M = Euclidean(2)
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective((M, x) -> sum(x .^ 2), (M, x) -> 2x))
+        st = GradientDescentState(M; p = [1.0, 2.0])
+        # `&`: the first criterion is false, `|`: the first one is true;
+        # the second, stateful criterion is still evaluated and updated.
+        for sc in [
+                StopAfterIteration(100) & StopWhenChangeLess(M, 1.0e-9),
+                StopAfterIteration(1) | StopWhenChangeLess(M, 1.0e-9),
+            ]
+            Manopt.set_iterate!(st, M, [1.0, 2.0])
+            sc(mp, st, 0) # init stores the iterate
+            Manopt.set_iterate!(st, M, [0.5, 1.0])
+            sc(mp, st, 1)
+            @test sc.criteria[2].last_change ≈ distance(M, [1.0, 2.0], [0.5, 1.0])
+        end
+        # at initialization every criterion is evaluated exactly once
+        cmo = ManifoldCountObjective(M, ManifoldGradientObjective((M, x) -> sum(x .^ 2), (M, x) -> 2x), [:Cost])
+        mpc = DefaultManoptProblem(M, cmo)
+        for sc in [StopWhenCostNaN() | StopWhenCostLess(0.0), StopWhenCostNaN() & StopWhenCostLess(0.0)]
+            reset_counters!(cmo)
+            sc(mpc, st, 0)
+            @test get_count(cmo, :Cost) == 2
+        end
+        # Criteria eligible for short-circuiting are skipped once the result is fixed.
+        for sc in [
+                StopAfterIteration(100) & StopAfterIteration(1),
+                StopAfterIteration(1) | StopAfterIteration(100),
+            ]
+            sc(mp, st, 1)
+            @test sc.criteria[2].at_iteration == -1
+        end
+    end
+
+    @testset "Stopping criterion `requires_update` indicators." begin
+        for c in (
+                StopAfterIteration(1),
+                StopWhenCostLess(1.0),
+                StopWhenCostNaN(),
+                StopWhenCovarianceIllConditioned(1.0),
+                StopWhenGradientMappingNormLess(1.0),
+                StopWhenGradientNormLess(1.0),
+                StopWhenIterateNaN(),
+                StopWhenKKTResidualLess(1.0),
+                StopWhenLagrangeMultiplierLess(1.0),
+                StopWhenProjectedNegativeGradientNormLess(1.0),
+                StopWhenSmallerOrEqual(:p, 1.0),
+                StopWhenStepsizeLess(1.0),
+                StopWhenSubgradientNormLess(1.0),
+                StopAfter(Second(1)),
+                StopWhenAll(StopAfterIteration(1), StopWhenCostNaN()),
+                StopWhenAny(StopAfterIteration(1), StopWhenCostNaN()),
+            )
+            @test !Manopt.requires_update(typeof(c))
+        end
+
+        for c in (
+                StopWhenChangeLess(Euclidean(), 1.0),
+                StopWhenCostChangeLess(1.0),
+                StopWhenCriterionWithIterationCondition(StopAfterIteration(1)),
+                StopWhenEntryChangeLess(:p, (mp, s, x, y) -> abs(x - y), 1.0),
+                StopWhenGradientChangeLess(Euclidean(), 1.0),
+                StopWhenRepeated(StopAfterIteration(1), 2),
+                StopWhenRelativeAPosterioriCostChangeLessOrEqual(1.0),
+                StopWhenAny(StopAfterIteration(1), StopWhenCostChangeLess(1.0)),
+                StopWhenAll(StopAfterIteration(1), StopWhenCostChangeLess(1.0)),
+            )
+            @test Manopt.requires_update(typeof(c))
+        end
+    end
+
+    @testset "Type stability of Any/All" begin                # Keep tuple evaluation type-stable for heterogeneous stopping criteria.
+        cost_problem = DefaultManoptProblem(
+            Euclidean(2), ManifoldCostObjective((M, p) -> norm(p))
+        )
+        nelder_mead_state = NelderMeadState(Euclidean(2); p = [1.0, 2.0])
+        all_criteria = StopWhenAll(StopAfterIteration(1), StopWhenCostChangeLess(1.0))
+        any_criteria = StopWhenAny(StopAfterIteration(1), StopWhenCostChangeLess(1.0))
+        @test !(
+            @inferred Manopt.evaluate_all_criteria(
+                all_criteria.criteria, cost_problem, nelder_mead_state, 1
+            )
+        )
+        @test @inferred Manopt.evaluate_any_criteria(
+            any_criteria.criteria, cost_problem, nelder_mead_state, 1
+        )
+    end
+    @testset "Negative k resets" begin
+        M = Euclidean(2)
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective((M, p) -> sum(p .^ 2), (M, p) -> 2 .* p))
+        st = GradientDescentState(M; p = [0.0, 0.0])
+        still_active = Symbol[]
+        for sc in (
+                StopWhenGradientNormLess(1.0), StopAfterIteration(1), StopWhenCostLess(1.0), StopWhenCostNaN(),
+                StopWhenIterateNaN(), StopWhenStepsizeLess(1.0), StopWhenChangeLess(M, 1.0), StopWhenGradientChangeLess(M, 1.0),
+            )
+            sc.at_iteration = 1 # as if it had fired
+            sc(mp, st, -1)
+            (sc.at_iteration != -1) && push!(still_active, nameof(typeof(sc)))
+        end
+        @test still_active == Symbol[]
+    end
+end

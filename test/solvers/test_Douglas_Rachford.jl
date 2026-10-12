@@ -8,13 +8,15 @@ using ManifoldDiff: prox_distance, prox_distance!
     d2 = [0.0, 1.0, 0.0]
     d3 = [0.0, 0.0, 1.0]
     p = [0.0, 0.0, 1.0]
-    p_star = geodesic(M, d1, d2, distance(M, d1, d2) / 2)
+    p_star = shortest_geodesic(M, d1, d2, 0.5)
     f(M, p) = distance(M, p, d1)^2 + distance(M, p, d2)^2
     prox1a = (M, η, p) -> prox_distance(M, η, d1, p)
     prox2a = (M, η, p) -> prox_distance(M, η, d2, p)
+    # At least two proxes needed
     @test_throws ErrorException DouglasRachford(M, f, Array{Function, 1}([prox1a]), p)
     q1a = DouglasRachford(M, f, [prox1a, prox2a], p)
     @test isapprox(M, q1a, p_star; atol = 1.0e-14)
+    # only the reflection works in-place here, the proximal maps stay allocating
     q1i = DouglasRachford(
         M, f, [prox1a, prox2a], p; reflection_evaluation = InplaceEvaluation()
     )
@@ -22,7 +24,7 @@ using ManifoldDiff: prox_distance, prox_distance!
     prox1i = (M, q, η, p) -> prox_distance!(M, q, η, d1, p)
     prox2i = (M, q, η, p) -> prox_distance!(M, q, η, d2, p)
     q2 = copy(M, p)
-    DouglasRachford!(M, f, [prox1i, prox2i], q2; evaluation = InplaceEvaluation())
+    DouglasRachford!(M, f, [prox1i, prox2i], q2; evaluation = InplaceEvaluation(), reflection_evaluation = InplaceEvaluation())
     @test isapprox(M, q1a, q2)
     # compute the Riemannian center of mass (locally) on Sn
     # though also this is not that useful, but easy to test that DR works
@@ -30,11 +32,11 @@ using ManifoldDiff: prox_distance, prox_distance!
     prox3a = (M, η, p) -> prox_distance(M, η, d3, p)
     q3 = DouglasRachford(M, F2, [prox1a, prox2a, prox3a], p)
     p_star_2 = mean(M, [d1, d2, d3])
-    # since the default does not run that long -> rough estimate
+    # the default run reaches the center of mass up to machine precision
     @test isapprox(M, q3, p_star_2; atol = 1.0e-14)
     prox3i = (M, q, η, p) -> prox_distance!(M, q, η, d3, p)
     q4 = DouglasRachford(M, F2, [prox1i, prox2i, prox3i], p; evaluation = InplaceEvaluation())
-    # since the default does not run that long -> rough estimate
+    # the default run reaches the center of mass up to machine precision
     @test isapprox(M, q4, p_star_2; atol = 1.0e-14)
 
     #test getter/set
@@ -42,8 +44,9 @@ using ManifoldDiff: prox_distance, prox_distance!
     sr = "# Solver state for `Manopt.jl`s Douglas Rachford Algorithm\n"
     @test startswith(Manopt.status_summary(s; context = :default), sr)
     @test startswith(repr(s), "DouglasRachfordState(; ")
-    set_iterate!(s, d2)
+    set_iterate!(s, M, d2)
     @test get_iterate(s) == d2
+    @test s.s == d2 # the reflection point follows the iterate
     @testset "Debug and Record prox parameter" begin
         io = IOBuffer()
         mpo = ManifoldProximalMapObjective(f, [prox1a, prox2a, prox3a])
@@ -78,10 +81,14 @@ using ManifoldDiff: prox_distance, prox_distance!
         prox2b = (M, η, p) -> prox_distance(M, η, data[2], p)
         q1 = DouglasRachford(M, f3, [prox1b, prox2b], p)
         @test q1 == p_star
-        q2 = DouglasRachford(M, f3, [prox1b, prox2b], p; evaluation = InplaceEvaluation())
-        @test q1 == q2
         s = DouglasRachford(M, f3, [prox1b, prox2b], p; return_state = true)
-        q3 = get_solver_result(s)[]
-        @test q2 == q3
+        q2 = get_solver_result(s)[]
+        @test q1 == q2
+        # the cost is wrapped as well, so it can be recorded
+        s3 = DouglasRachford(
+            M, f3, [prox1b, prox2b], p;
+            stopping_criterion = StopAfterIteration(2), record = [:Cost], return_state = true,
+        )
+        @test get_record(s3) == [f3(M, p_star), f3(M, p_star)]
     end
 end

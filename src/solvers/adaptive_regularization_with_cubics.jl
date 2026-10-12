@@ -1,14 +1,130 @@
 @doc """
-    AdaptiveRegularizationState{P,T} <: AbstractHessianSolverState
+    AdaptiveRegularizationWithCubicsModelObjective <: AbstractManifoldSubObjective
+
+A model for the adaptive regularization with Cubics
+
+```math
+m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X ⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p
+       +  $(_tex(:frac, "σ", "3")) $(_tex(:norm, "X"))^3,
+```
+
+cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite)
+
+# Fields
+
+* `objective`: an [`AbstractManifoldHessianObjective`](@ref) providing ``f``, its gradient and Hessian
+* `σ`:         the current (cubic) regularization parameter
+
+# Constructors
+
+    AdaptiveRegularizationWithCubicsModelObjective(mho, σ=1.0)
+
+with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or a decorator containing such an objective.
+"""
+mutable struct AdaptiveRegularizationWithCubicsModelObjective{
+        O <: Union{AbstractManifoldHessianObjective, AbstractDecoratedManifoldObjective}, R,
+    } <: AbstractManifoldSubObjective{O}
+    objective::O
+    σ::R
+end
+# only the `σ` default: the two argument form is the struct's own constructor
+function AdaptiveRegularizationWithCubicsModelObjective(
+        mho::O
+    ) where {O <: Union{AbstractManifoldHessianObjective, AbstractDecoratedManifoldObjective}}
+    return AdaptiveRegularizationWithCubicsModelObjective{O, Float64}(mho, 1.0)
+end
+function set_parameter!(
+        f::AdaptiveRegularizationWithCubicsModelObjective, ::Union{Val{:σ}, Val{:RegularizationParameter}}, σ,
+    )
+    f.σ = σ
+    return f
+end
+get_objective(arcmo::AdaptiveRegularizationWithCubicsModelObjective) = arcmo.objective
+
+@doc """
+    get_cost(TpM, arcmo::AdaptiveRegularizationWithCubicsModelObjective, X)
+
+Evaluate the tangent space [`AdaptiveRegularizationWithCubicsModelObjective`](@ref)
+
+```math
+m(X) = f(p) + ⟨$(_tex(:grad)) f(p), X ⟩_p + $(_tex(:frac, "1", "2")) ⟨$(_tex(:Hess)) f(p)[X], X⟩_p
+       + $(_tex(:frac, "σ", "3")) $(_tex(:norm, "X"))^3,
+```
+
+at `X`, cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite).
+"""
+function get_cost(
+        TpM::TangentSpace, arcmo::AdaptiveRegularizationWithCubicsModelObjective, X
+    )
+    M = base_manifold(TpM)
+    p = TpM.point
+    c = get_objective_cost(M, arcmo, p)
+    G = get_objective_gradient(M, arcmo, p)
+    Y = get_objective_hessian(M, arcmo, p, X)
+    return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X) + arcmo.σ / 3 * norm(M, p, X)^3
+end
+function get_cost_function(arcmo::AdaptiveRegularizationWithCubicsModelObjective, recursive = false)
+    recursive && (return get_cost_function(arcmo.objective, recursive))
+    return (TpM, X) -> get_cost(TpM, arcmo, X)
+end
+@doc """
+    get_gradient(TpM, arcmo::AdaptiveRegularizationWithCubicsModelObjective, X)
+
+Evaluate the gradient of the [`AdaptiveRegularizationWithCubicsModelObjective`](@ref)
+
+```math
+$(_tex(:grad)) m(X) = $(_tex(:grad)) f(p) + $(_tex(:Hess)) f(p)[X]
+       + σ$(_tex(:norm, "X")) X,
+```
+
+at `X`, cf. Eq. (37) in [AgarwalBoumalBullinsCartis:2020](@cite).
+"""
+function get_gradient(
+        TpM::TangentSpace, arcmo::AdaptiveRegularizationWithCubicsModelObjective, X
+    )
+    M = base_manifold(TpM)
+    p = TpM.point
+    G = get_objective_gradient(M, arcmo, p)
+    return G + get_objective_hessian(M, arcmo, p, X) + arcmo.σ * norm(M, p, X) * X
+end
+function get_gradient!(
+        TpM::TangentSpace, Y, arcmo::AdaptiveRegularizationWithCubicsModelObjective, X
+    )
+    M = base_manifold(TpM)
+    p = TpM.point
+    get_objective_hessian!(M, Y, arcmo, p, X)
+    Y .= Y + get_objective_gradient(M, arcmo, p) + arcmo.σ * norm(M, p, X) * X
+    return Y
+end
+function Base.show(io::IO, arcmo::AdaptiveRegularizationWithCubicsModelObjective)
+    print(io, "AdaptiveRegularizationWithCubicsModelObjective(")
+    print(io, arcmo.objective); print(io, ", ")
+    print(io, arcmo.σ)
+    return print(io, ")")
+end
+function status_summary(arcmo::AdaptiveRegularizationWithCubicsModelObjective; context::Symbol = :default)
+    (context === :short) && return repr(arcmo)
+    (context === :inline) && return "The (tangent space) model for the adaptive regularization with cubics sub problem with parameter σ=$(arcmo.σ) for the objective $(status_summary(arcmo.objective; context = context))"
+    return """
+    The cubic polynomial based model for the sub problem of the Adaptive Regularization with cubics solver
+
+    ## Regularization parameter
+    σ = $(arcmo.σ)
+
+    ## Objective
+    $(_in_str(status_summary(arcmo.objective)))"""
+end
+
+@doc """
+    AdaptiveRegularizationState{P,T} <: AbstractManoptSolverState
 
 A state for the [`adaptive_regularization_with_cubics`](@ref) solver.
 
 # Fields
 
-* `η1`, `η1`: bounds for evaluating the regularization parameter
+* `η1`, `η2`: bounds for evaluating the regularization parameter
 * `γ1`, `γ2`:  shrinking and expansion factors for regularization parameter `σ`
 * `H`: the current Hessian evaluation
-* `s`: the current solution from the subsolver
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `q`: a point for the candidates to evaluate model and ρ
 $(_fields(:X; add_properties = [:as_Gradient]))
@@ -27,13 +143,14 @@ $(_fields(:stopping_criterion; name = "stop"))
 $(_fields([:sub_problem, :sub_state]))
 $(_fields(:callbacks; add_properties = [:as_dict]))
 
-Furthermore the following integral fields are defined
-
-# Constructor
+# Constructors
 
     AdaptiveRegularizationState(M, sub_problem, sub_state; kwargs...)
+    AdaptiveRegularizationState(M, sub_problem; evaluation=AllocatingEvaluation(), kwargs...)
 
-Construct the solver state with all fields stated as keyword arguments and the following defaults
+Construct the solver state with all fields stated as keyword arguments and the following defaults.
+Given a `sub_problem` and an `evaluation=` keyword, the sub problem solver is assumed to be the closed form solution,
+where `evaluation` determines how to call the sub function.
 
 ## Keyword arguments
 
@@ -41,11 +158,11 @@ Construct the solver state with all fields stated as keyword arguments and the f
 * `η2=0.9`
 * `γ1=0.1`
 * `γ2=2.0`
-* `σ=100/manifold_dimension(M)`
-* `σmin=1e-7
+* `σ=100.0/sqrt(manifold_dimension(M))`
+* `σmin=1e-10`
 * `ρ_regularization=1e3`
 $(_kwargs([:evaluation, :p, :retraction_method]))
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
 $(_kwargs(:X))
 """
@@ -87,18 +204,20 @@ mutable struct AdaptiveRegularizationState{
         )
     end
 end
+has_sub_problem(::Type{<:AdaptiveRegularizationState}) = true
 function AdaptiveRegularizationState(
         M::AbstractManifold, sub_problem::Pr, sub_state::St;
-        p::P = rand(M), X::T = zero_vector(M, p), σ::R = 100.0 / sqrt(manifold_dimension(M)),
+        p::P = rand(M), X::T = zero_vector(M, p), σ::Real = 100.0 / sqrt(manifold_dimension(M)),
         callbacks::C = Dict{Symbol, Function}(),
-        ρ_regularization::R = 1.0e3, stopping_criterion::SC = StopAfterIteration(100),
+        ρ_regularization::Real = 1.0e3, stopping_criterion::SC = StopAfterIteration(100),
         retraction_method::RTM = default_retraction_method(M, typeof(p)),
-        σmin::R = 1.0e-10, η1::R = 0.1, η2::R = 0.9, γ1::R = 0.1, γ2::R = 2.0,
+        σmin::Real = 1.0e-10, η1::Real = 0.1, η2::Real = 0.9, γ1::Real = 0.1, γ2::Real = 2.0,
     ) where {
-        P, T, R, Pr <: Union{<:AbstractManoptProblem, F} where {F},
+        P, T, Pr,
         St <: AbstractManoptSolverState, SC <: StoppingCriterion, RTM <: AbstractRetractionMethod,
         C <: AbstractDict{Symbol},
     }
+    σ, ρ_regularization, σmin, η1, η2, γ1, γ2 = promote(float(σ), ρ_regularization, σmin, η1, η2, γ1, γ2)
     return AdaptiveRegularizationState(
         sub_problem, sub_state;
         callbacks = callbacks, p = p, X = X, q = copy(M, p), H = copy(M, p, X), s = copy(M, p, X), σ, ρ = one(σ),
@@ -107,20 +226,26 @@ function AdaptiveRegularizationState(
     )
 end
 function AdaptiveRegularizationState(
-        M, sub_problem; evaluation::E = AllocatingEvaluation(), kwargs...
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
-    return AdaptiveRegularizationState(M, sub_problem, cfs; kwargs...)
+        M, sub_problem, sub_state::AbstractEvaluationType; kwargs...
+    )
+    return AdaptiveRegularizationState(M, sub_problem; evaluation = sub_state, kwargs...)
+end
+function AdaptiveRegularizationState(
+        M, sub_problem; evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :TangentVector)
+    cfs = ClosedFormSubSolverState()
+    return AdaptiveRegularizationState(M, sub_problem_, cfs; kwargs...)
 end
 get_iterate(s::AdaptiveRegularizationState) = s.p
-function set_iterate!(s::AdaptiveRegularizationState, p)
+function set_iterate!(s::AdaptiveRegularizationState, ::AbstractManifold, p)
     s.p = p
     return s
 end
 get_callbacks(state::AdaptiveRegularizationState) = state.callbacks
 get_gradient(s::AdaptiveRegularizationState) = s.X
-function set_gradient!(s::AdaptiveRegularizationState, X)
-    s.X = X
+function set_gradient!(s::AdaptiveRegularizationState, M, p, X)
+    copyto!(M, s.X, p, X)
     return s
 end
 function Base.show(io::IO, arcs::AdaptiveRegularizationState)
@@ -135,17 +260,12 @@ function Base.show(io::IO, arcs::AdaptiveRegularizationState)
 end
 function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :default)
     (context === :short) && (return repr(arcs))
-    i = get_count(arcs, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(arcs.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the adaptive regularization with cubics solver$(conv_inl)"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(arcs.stop) ? "Yes" : "No"
+    (context === :inline) && return "A solver state for the adaptive regularization with cubics solver$(_iteration_suffix(arcs))"
     as = _callbacks_summary(arcs)
-    sub = status_summary(arcs.sub_state; context = context)
-    sub = replace(sub, "\n" => "\n    | ", "\n#" => "\n$(_MANOPT_INDENT)##")
+    sub = _in_str(status_summary(arcs.sub_state; context = context); indent = 1, indent_end = "| ")
     s = """
     # Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)
-    $Iter
+    $(_iterations_str(arcs))
     ## Parameters$(as)
     * η1 | η2              : $(arcs.η1) | $(arcs.η2)
     * γ1 | γ2              : $(arcs.γ1) | $(arcs.γ2)
@@ -153,23 +273,23 @@ function status_summary(arcs::AdaptiveRegularizationState; context::Symbol = :de
     * ρ (ρ_regularization) : $(arcs.ρ) ($(arcs.ρ_regularization))
     * retraction method    : $(arcs.retraction_method)
     * sub solver state     :
-        | $(sub)
+    $(sub)
 
     ## Stopping criterion
     $(_in_str(status_summary(arcs.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $(_converged_str(arcs))"""
     return s
 end
 
 _doc_ARC_model = """
 ```math
-m_k(X) = f(p_k) + $(_tex(:inner, "X", "$(_tex(:grad)) f(p^{(k)})")) + $(_tex(:frac, "1", "2)) $(_tex(:inner, "X", "$(_tex(:Hess)) f(p^{(k)})[X]")) + $(_tex(:frac, "σ_k", "3"))$(_tex(:norm, "X"))^3"))
+m_k(X) = f(p_k) + $(_tex(:inner, "X", "$(_tex(:grad)) f(p_k)"; index = "p_k")) + $(_tex(:frac, "1", "2")) $(_tex(:inner, "X", "$(_tex(:Hess)) f(p_k)[X]"; index = "p_k")) + $(_tex(:frac, "σ_k", "3"))$(_tex(:norm, "X"))^3
 ```
 """
 
 _doc_ARC_improvement = """
 ```math
-  ρ_k = $(_tex(:frac, "f(p_k) - f($(_tex(:retr))_{p_k}(X_k))", "m_k(0) - m_k(X_k) + $(_tex(:frac, "σ_k", "3"))$(_tex(:norm, "X"))^3"))
+  ρ_k = $(_tex(:frac, "f(p_k) - f($(_tex(:retr))_{p_k}(X_k))", "m_k(0) - m_k(X_k) + $(_tex(:frac, "σ_k", "3"))$(_tex(:norm, "X_k"))^3"))
 ```
 """
 _doc_ARC_regularization_update = raw"""
@@ -198,7 +318,7 @@ $_doc_ARC_model
 on the tangent space at the current iterate ``p_k``, where ``X ∈ $(_math(:TangentSpace; p = "p_k"))`` and
 ``σ_k > 0`` is a regularization parameter.
 
-Let ``Xp^{(k)}`` denote the minimizer of the model ``m_k`` and use the model improvement
+Let ``X_k`` denote the minimizer of the model ``m_k`` and use the model improvement
 
 $_doc_ARC_improvement
 
@@ -206,7 +326,7 @@ With two thresholds ``η_2 ≥ η_1 > 0``
 set ``p_{k+1} = $(_tex(:retr))_{p_k}(X_k)`` if ``ρ ≥ η_1``
 and reject the candidate otherwise, that is, set ``p_{k+1} = p_k``.
 
-Further update the regularization parameter using factors ``0 < γ_1 < 1 < γ_2`` reads
+Further, the update of the regularization parameter using the factors ``0 < γ_1 < 1 < γ_2`` reads
 
 $_doc_ARC_regularization_update
 
@@ -220,7 +340,7 @@ the cost `f` and its gradient and Hessian might also be provided as a [`Manifold
 
 # Keyword arguments
 
-* `σ=100.0 / sqrt(manifold_dimension(M)`: initial regularization parameter
+* `σ=100.0 / sqrt(manifold_dimension(M))`: initial regularization parameter
 * `σmin=1e-10`: minimal regularization value ``σ_{\\min}``
 * `η1=0.1`: lower model success threshold
 * `η2=0.9`: upper model success threshold
@@ -229,19 +349,22 @@ the cost `f` and its gradient and Hessian might also be provided as a [`Manifold
 $(_kwargs(:evaluation))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `initial_tangent_vector=zero_vector(M, p)`: initialize any tangent vector data,
-* `maxIterLanczos=200`: a shortcut to set the stopping criterion in the sub solver,
+* `maxIterLanczos=min(300, manifold_dimension(M))`: a shortcut to set the stopping criterion in the sub solver,
 * `ρ_regularization=1e3`: a regularization to avoid dividing by zero for small values of cost and model
-$(_kwargs(:retraction_method)):
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)"))
+$(_kwargs(:retraction_method))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos-1)"))
+  the last criterion is only part of the default if the `sub_state` is a [`LanczosState`](@ref)
+* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(maxIterLanczos)`$(_sc(:Any))[`StopWhenFirstOrderProgress`](@ref)`(θ)`: the stopping criterion of the default sub solver
 $(_kwargs(:sub_kwargs))
+* `θ=0.5`: the ``θ`` parameter of the [`StopWhenFirstOrderProgress`](@ref) within the default `sub_stopping_criterion=`
 * `sub_objective=nothing`: a shortcut to modify the objective of the subproblem used within in the `sub_problem=` keyword
-  By default, this is initialized as a [`AdaptiveRegularizationWithCubicsModelObjective`](@ref), which can further be decorated by using the `sub_kwargs=` keyword.
-$(_kwargs(:sub_state; default = "`[`LanczosState`](@ref)`(M, copy(M,p))"))
-$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(M, sub_objective)"))
+  By default, this is initialized as an [`AdaptiveRegularizationWithCubicsModelObjective`](@ref), which can further be decorated by using the `sub_kwargs=` keyword.
+$(_kwargs(:sub_state; default = "`[`LanczosState`](@ref)`(TangentSpace(M, copy(M, p)))"))
+$(_kwargs(:sub_problem; default = "`[`DefaultManoptProblem`](@ref)`(`[`TangentSpace`](@extref `ManifoldsBase.TangentSpace`)`(M, copy(M, p)), sub_objective)"))
 
 $(_note(:OtherKeywords))
 
-If you provide the [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword is ignored.
+If you provide the [`ManifoldHessianObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
 
 $(_note(:TutorialMode))
@@ -258,30 +381,19 @@ function adaptive_regularization_with_cubics(
     return adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, rand(M); kwargs...)
 end
 function adaptive_regularization_with_cubics(
-        M::AbstractManifold,
-        f::TF,
-        grad_f::TDF,
-        Hess_f::THF,
-        p;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        kwargs...,
+        M::AbstractManifold, f::TF, grad_f::TDF, Hess_f::THF, p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     ) where {TF, TDF, THF}
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    Hess_f_ = _ensure_mutating_hessian(Hess_f, p, evaluation)
-    mho = ManifoldHessianObjective(f_, grad_f_, Hess_f_; evaluation = evaluation)
+    p_ = maybe_wrap_variable(p)
+    mho = ManifoldHessianObjective(f, grad_f, Hess_f; p = p, evaluation = evaluation)
     rs = adaptive_regularization_with_cubics(M, mho, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function adaptive_regularization_with_cubics(M::AbstractManifold, f, grad_f; kwargs...)
     return adaptive_regularization_with_cubics(M, f, grad_f, rand(M); kwargs...)
 end
 function adaptive_regularization_with_cubics(
-        M::AbstractManifold,
-        f::TF,
-        grad_f::TdF,
-        p;
+        M::AbstractManifold, f::TF, grad_f::TdF, p;
         evaluation = AllocatingEvaluation(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         kwargs...,
@@ -321,14 +433,13 @@ function adaptive_regularization_with_cubics!(
 end
 function adaptive_regularization_with_cubics!(
         M::AbstractManifold, f, grad_f, Hess_f::TH, p;
-        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
-        kwargs...,
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     ) where {TH <: Function}
     mho = ManifoldHessianObjective(f, grad_f, Hess_f; evaluation = evaluation)
     return adaptive_regularization_with_cubics!(M, mho, p; evaluation = evaluation, kwargs...)
 end
 function adaptive_regularization_with_cubics!(
-        M::AbstractManifold, mho::O, p = rand(M);
+        M::AbstractManifold, mho::O, p;
         callbacks = Dict{Symbol, Function}(),
         debug = if is_tutorial_mode()
             DebugIfEntry(
@@ -341,15 +452,15 @@ function adaptive_regularization_with_cubics!(
         initial_tangent_vector::T = zero_vector(M, p),
         maxIterLanczos = min(300, manifold_dimension(M)),
         objective_type = :Riemannian,
-        ρ_regularization::R = 1.0e3,
+        ρ_regularization::Real = 1.0e3,
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-        σmin::R = 1.0e-10,
-        σ::R = 100.0 / sqrt(manifold_dimension(M)),
-        η1::R = 0.1,
-        η2::R = 0.9,
-        γ1::R = 0.1,
-        γ2::R = 2.0,
-        θ::R = 0.5,
+        σmin::Real = 1.0e-10,
+        σ::Real = 100.0 / sqrt(manifold_dimension(M)),
+        η1::Real = 0.1,
+        η2::Real = 0.9,
+        γ1::Real = 0.1,
+        γ2::Real = 2.0,
+        θ::Real = 0.5,
         sub_kwargs = (;),
         sub_stopping_criterion::StoppingCriterion = StopAfterIteration(maxIterLanczos) |
             StopWhenFirstOrderProgress(θ),
@@ -362,11 +473,11 @@ function adaptive_regularization_with_cubics!(
                 stopping_criterion = sub_stopping_criterion,
                 sub_kwargs...,
             );
-            sub_kwargs,
+            sub_kwargs...,
         ),
         sub_objective = nothing,
         sub_problem = nothing,
-        stopping_criterion::StoppingCriterion = if sub_state isa LanczosState
+        stopping_criterion::StoppingCriterion = if (sub_state isa AbstractManoptSolverState) && (get_state(sub_state) isa LanczosState)
             StopAfterIteration(40) |
                 StopWhenGradientNormLess(1.0e-9) |
                 StopWhenAllLanczosVectorsUsed(maxIterLanczos - 1)
@@ -374,7 +485,7 @@ function adaptive_regularization_with_cubics!(
             StopAfterIteration(40) | StopWhenGradientNormLess(1.0e-9)
         end,
         kwargs...,
-    ) where {T, R, O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective}}
+    ) where {T, O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(adaptive_regularization_with_cubics!; kwargs...)
     dmho = decorate_objective!(M, mho; objective_type = objective_type, kwargs...)
     callbacks = process_callbacks_arg(callbacks, AdaptiveRegularizationState)
@@ -386,11 +497,10 @@ function adaptive_regularization_with_cubics!(
     if isnothing(sub_problem)
         sub_problem = DefaultManoptProblem(TangentSpace(M, copy(M, p)), sub_objective)
     end
-    sub_state_ = maybe_wrap_evaluation_type(sub_state)
     X = copy(M, p, initial_tangent_vector)
     dmp = DefaultManoptProblem(M, dmho)
     arcs = AdaptiveRegularizationState(
-        M, sub_problem, sub_state_;
+        M, sub_problem, sub_state;
         callbacks = callbacks, p = p, X = X, σ = σ,
         ρ_regularization = ρ_regularization,
         stopping_criterion = stopping_criterion,
@@ -403,7 +513,6 @@ function adaptive_regularization_with_cubics!(
     return get_solver_return(get_objective(dmp), darcs)
 end
 calls_with_kwargs(::typeof(adaptive_regularization_with_cubics!)) = (decorate_objective!, decorate_state!)
-
 function initialize_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationState)
     get_gradient!(dmp, arcs.X, arcs.p)
     return arcs
@@ -412,21 +521,22 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     M = get_manifold(dmp)
     mho = get_objective(dmp)
     # Update sub state
-    # Set point also in the sub problem (eventually the tangent space)
-    get_gradient!(M, arcs.X, mho, arcs.p)
+    # Set point also in the sub problem (eventually the tangent space);
+    # `arcs.X` already holds the gradient at `arcs.p`
     # Update base point in manifold
-    set_parameter!(arcs.sub_problem, :Manifold, :p, copy(M, arcs.p))
-    set_parameter!(arcs.sub_problem, :Objective, :σ, arcs.σ)
+    set_parameter!(arcs.sub_problem, Val(:Manifold), Val(:p), copy(M, arcs.p))
+    set_parameter!(arcs.sub_problem, Val(:Objective), Val(:σ), arcs.σ)
     set_iterate!(arcs.sub_state, M, copy(M, arcs.p, arcs.X))
-    set_parameter!(arcs.sub_state, :σ, arcs.σ)
+    set_parameter!(arcs.sub_state, Val(:σ), arcs.σ)
     #Solve the `sub_problem` via dispatch depending on type
     solve_arc_subproblem!(M, arcs.s, arcs.sub_problem, arcs.sub_state, arcs.p)
     # Compute ρ
     retract!(M, arcs.q, arcs.p, arcs.s, arcs.retraction_method)
     cost = get_cost(M, mho, arcs.p)
     ρ_num = cost - get_cost(M, mho, arcs.q)
-    ρ_vec = arcs.X + 0.5 * get_hessian(M, mho, arcs.p, arcs.s)
-    ρ_den = -inner(M, arcs.p, arcs.s, ρ_vec)
+    get_hessian!(M, arcs.H, mho, arcs.p, arcs.s)
+    ρ_vec = arcs.X + 0.5 * arcs.H
+    ρ_den = -real(inner(M, arcs.p, arcs.s, ρ_vec))
     ρ_reg = arcs.ρ_regularization * eps(Float64) * max(abs(cost), 1)
     arcs.ρ_denominator = ρ_den + ρ_reg # <= 0 -> the default debug kicks in
     arcs.ρ = (ρ_num + ρ_reg) / (ρ_den + ρ_reg)
@@ -452,15 +562,7 @@ function solve_arc_subproblem!(
     copyto!(M, s, p, get_solver_result(state))
     return s
 end
-function solve_arc_subproblem!(
-        M, s, problem::P, ::ClosedFormSubSolverState{AllocatingEvaluation}, p
-    ) where {P <: Function}
-    copyto!(M, s, p, problem(M, p))
-    return s
-end
-function solve_arc_subproblem!(
-        M, s, problem!::P, ::ClosedFormSubSolverState{InplaceEvaluation}, p
-    ) where {P <: Function}
+function solve_arc_subproblem!(M, s, problem!::F, ::ClosedFormSubSolverState, p) where {F <: Function}
     problem!(M, s, p)
     return s
 end

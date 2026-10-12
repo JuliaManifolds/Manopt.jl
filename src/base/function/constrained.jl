@@ -1,0 +1,61 @@
+"""
+    AbstractConstrainedFunction{CO, T} <: AbstractManifoldFunction
+
+A common supertype for functions that model functions of the subproblem for a
+constrained objective, which they therefore wrap.
+
+This supertype provides access to fields like `λ` and `μ` or `ρ` and `u`, so
+dual variables or penalty terms for constraints of type `T` used for a constrained objective
+of type `CO`.
+"""
+abstract type AbstractConstrainedFunction{CO, T} <: AbstractManifoldFunction end
+
+function set_parameter!(acf::AbstractConstrainedFunction{CO, T}, ::Val{:μ}, μ::T) where {CO, T}
+    acf.μ = μ
+    return acf
+end
+get_parameter(acf::AbstractConstrainedFunction, ::Val{:μ}) = acf.μ
+function set_parameter!(acf::AbstractConstrainedFunction{CO, T}, ::Val{:λ}, λ::T) where {CO, T}
+    acf.λ = λ
+    return acf
+end
+get_parameter(acf::AbstractConstrainedFunction, ::Val{:λ}) = acf.λ
+function set_parameter!(acf::AbstractConstrainedFunction{CO, T}, ::Val{:ρ}, ρ::T) where {CO, T}
+    acf.ρ = ρ
+    return acf
+end
+get_parameter(acf::AbstractConstrainedFunction, ::Val{:ρ}) = acf.ρ
+function set_parameter!(acf::AbstractConstrainedFunction{CO, T}, ::Val{:u}, u::T) where {CO, T}
+    acf.u = u
+    return acf
+end
+get_parameter(acf::AbstractConstrainedFunction, ::Val{:u}) = acf.u
+
+"""
+    AbstractConstrainedSlackFunction{T,R} <: AbstractManifoldFunction
+
+A common supertype for functors that model constraint functions with slack.
+
+This supertype additionally provides access to the fields
+
+* `μ::T`: the dual for the inequality constraints
+* `s::T`: the slack parameter
+* `β::R`: the barrier parameter
+"""
+abstract type AbstractConstrainedSlackFunction{T, R} <: AbstractManifoldFunction end
+
+function set_parameter!(acsf::AbstractConstrainedSlackFunction{T}, ::Val{:s}, s::T) where {T}
+    acsf.s = s
+    return acsf
+end
+get_parameter(acsf::AbstractConstrainedSlackFunction, ::Val{:s}) = acsf.s
+function set_parameter!(acsf::AbstractConstrainedSlackFunction{T}, ::Val{:μ}, μ::T) where {T}
+    acsf.μ = μ
+    return acsf
+end
+get_parameter(acsf::AbstractConstrainedSlackFunction, ::Val{:μ}) = acsf.μ
+function set_parameter!(acsf::AbstractConstrainedSlackFunction{T, R}, ::Val{:β}, β::R) where {T, R}
+    acsf.β = β
+    return acsf
+end
+get_parameter(acsf::AbstractConstrainedSlackFunction, ::Val{:β}) = acsf.β

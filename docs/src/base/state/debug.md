@@ -1,5 +1,9 @@
 # The Debug decorator for solver states
 
+```@meta
+CurrentModule = Manopt
+```
+
 ```@autodocs
 Modules = [Manopt]
 Pages = ["base/state/debug.jl"]

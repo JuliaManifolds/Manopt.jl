@@ -1,0 +1,139 @@
+using Manifolds, Manopt, Test
+
+# an objective that implements only the in-place accessors, to check the allocating fallbacks
+struct DummySymmetricLinearSystemObjective <: Manopt.AbstractSymmetricLinearSystemObjective end
+function Manopt.get_linear_operator!(M::AbstractManifold, Y, ::DummySymmetricLinearSystemObjective, p, X)
+    return copyto!(M, Y, p, 2 .* X)
+end
+function Manopt.get_vector_field!(M::AbstractManifold, Y, ::DummySymmetricLinearSystemObjective, p)
+    return copyto!(M, Y, p, [1.0, 2.0])
+end
+
+@testset "Symmetric Linear Systems and Conjugate Residual State" begin
+    M = ℝ^2
+    p = [1.0, 1.0]
+    TpM = TangentSpace(M, p)
+
+    Am = [2.0 1.0; 1.0 4.0]
+    bv = [1.0, 2.0]
+    X0 = [3.0, 4.0]
+    A(M, p, X) = Am * X
+    b(M, p) = bv
+    A!(M, Y, p, X) = (Y .= Am * X)
+    b!(M, Y, p) = (Y .= bv)
+
+    slso = SymmetricLinearSystemObjective(A, b)
+    slso2 = SymmetricLinearSystemObjective(A!, b!; evaluation = InplaceEvaluation())
+    @testset "Objective" begin
+        grad_value = A(M, p, X0) + b(M, p)
+        # the cost is the quadratic model 1/2⟨X, A[X]⟩ + ⟨b, X⟩, whose gradient is A[X] + b
+        cost_value = 0.5 * inner(M, p, X0, A(M, p, X0)) + inner(M, p, b(M, p), X0)
+        @test get_cost(TpM, slso, X0) ≈ cost_value
+        @test get_cost(TpM, slso2, X0) ≈ cost_value
+
+        @test Manopt.get_vector_field(M, slso, p) == bv
+        @test Manopt.get_vector_field(M, slso2, p) == bv
+        X1 = [0.0, 0.0]
+        Manopt.get_vector_field!(M, X1, slso, p)
+        @test X1 == bv
+        Manopt.get_vector_field!(M, X1, slso2, p)
+        @test X1 == bv
+
+        @test Manopt.get_vector_field(TpM, slso) == bv
+        @test Manopt.get_vector_field(TpM, slso2) == bv
+        Manopt.get_vector_field!(TpM, X1, slso)
+        @test X1 == bv
+        Manopt.get_vector_field!(TpM, X1, slso2)
+        @test X1 == bv
+
+
+        @test get_gradient(TpM, slso, X0) == grad_value
+        @test get_gradient(TpM, slso2, X0) == grad_value
+        Y0 = similar(X0)
+        @test get_gradient!(TpM, Y0, slso, X0) == grad_value
+        @test Y0 == grad_value
+        zero_vector!(TpM, Y0, X0)
+        @test get_gradient!(TpM, Y0, slso2, X0) == grad_value
+        @test Y0 == grad_value
+
+        hessAX0 = A(M, p, X0)
+        @test get_hessian(TpM, slso, p, X0) == hessAX0
+        @test get_hessian(TpM, slso2, p, X0) == hessAX0
+        zero_vector!(TpM, Y0, X0)
+        @test get_hessian!(TpM, Y0, slso, p, X0) == hessAX0
+        @test Y0 == hessAX0
+        zero_vector!(TpM, Y0, X0)
+        @test get_hessian!(TpM, Y0, slso2, p, X0) == hessAX0
+        @test Y0 == hessAX0
+    end
+    @testset "Decorated objectives pass through" begin
+        # these accessors have to peel exactly one decorator, so a `cache=` or `count=`
+        # decorator can still intercept the call instead of being unwrapped away
+        AX0 = Am * X0
+        for o in (slso, slso2)
+            ddo = Manopt.Test.DummyDecoratedObjective(o)
+            @test Manopt.get_linear_operator(M, ddo, p, X0) == AX0
+            Y = similar(X0)
+            @test Manopt.get_linear_operator!(M, Y, ddo, p, X0) == AX0
+            @test Y == AX0
+            @test Manopt.get_vector_field(M, ddo, p) == bv
+            fill!(Y, 0.0)
+            Manopt.get_vector_field!(M, Y, ddo, p)
+            @test Y == bv
+            @test Manopt.get_vector_field(TpM, ddo) == bv
+            fill!(Y, 0.0)
+            Manopt.get_vector_field!(TpM, Y, ddo)
+            @test Y == bv
+        end
+    end
+    @testset "Conjugate residual state" begin
+        crs = ConjugateResidualState(TpM, slso)
+        @test set_iterate!(crs, TpM, X0) == crs # setters return state
+        @test get_iterate(crs) == X0
+        @test set_gradient!(crs, TpM, get_iterate(crs), X0) == crs # setters return state
+        @test get_gradient(crs) == X0
+        @test startswith(
+            Manopt.status_summary(crs; context = :default),
+            "# Solver state for `Manopt.jl`s Conjugate Residual Method\n"
+        )
+        crs2 = ConjugateResidualState(TpM, slso2)
+        # tolerances of different types are promoted instead of erroring
+        @test Manopt.StopWhenRelativeResidualLess(1, 1.0e-8).c == 1.0
+        @test set_iterate!(crs2, TpM, X0) == crs2 # setters return state
+        @test get_iterate(crs2) == X0
+        @test set_gradient!(crs2, TpM, get_iterate(crs2), X0) == crs2 # setters return state
+        @test get_gradient(crs2) == X0
+        @test startswith(
+            Manopt.status_summary(crs2; context = :default),
+            "# Solver state for `Manopt.jl`s Conjugate Residual Method\n"
+        )
+    end
+    @testset "StopWhenRelativeResidualLess" begin
+        dmp = DefaultManoptProblem(TpM, slso)
+        crs = ConjugateResidualState(TpM, slso; X = X0)
+        swrr = StopWhenRelativeResidualLess(1.0, 1.0e-3) # initial norm 1.0 (reset on init), ε=1e-3
+        @test startswith(repr(swrr), "StopWhenRelativeResidualLess(1.0, 0.001)")
+        # initially this resets norm
+        swrr(dmp, crs, 0)
+        @test swrr.c == norm(bv)
+        @test swrr(dmp, crs, 1) == false
+        # stop reason is also empty still
+        @test length(get_reason(swrr)) == 0
+        # Manually set residual small
+        crs.r = [1.0e-5, 1.0e-5]
+        @test swrr(dmp, crs, 2) == true
+        @test swrr.norm_r == norm(crs.r)
+        @test length(get_reason(swrr)) > 0
+        @test Manopt.indicates_convergence(swrr)
+    end
+    @testset "Allocating fallbacks on the abstract type" begin
+        # only the in-place accessors are implemented, the allocating ones fall back to them
+        o = DummySymmetricLinearSystemObjective()
+        @test Manopt.get_linear_operator(M, o, p, X0) == 2 .* X0
+        @test Manopt.get_vector_field(M, o, p) == [1.0, 2.0]
+        @test Manopt.get_vector_field(TpM, o) == [1.0, 2.0]
+        Y = zero_vector(M, p)
+        @test Manopt.get_vector_field!(TpM, Y, o) == [1.0, 2.0]
+        @test Y == [1.0, 2.0]
+    end
+end

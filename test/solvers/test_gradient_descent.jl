@@ -28,6 +28,17 @@ using ManifoldDiff: grad_distance
             return_state = true,
         )
         p = get_solver_result(s)[]
+        # the Wolfe-Powell bisection collapses to two adjacent floats within 26 iterations here
+        q = gradient_descent(
+            M, f, grad_f, data[1];
+            stepsize = WolfePowellLinesearch(), stopping_criterion = StopAfterIteration(26),
+        )
+        @test isapprox(M, q, apprpstar; atol = 1.0e-8)
+        # with `return_objective = true` the minimizer is still returned as a number
+        sc5 = (; stopping_criterion = StopAfterIteration(5))
+        o_r, p_r = gradient_descent(M, f, grad_f, data[1]; return_objective = true, sc5...)
+        @test p_r isa Float64
+        @test p_r == gradient_descent(M, f, grad_f, data[1]; stopping_criterion = StopAfterIteration(5))
         res_debug = String(take!(my_io))
         @test res_debug === " f(x): 1.357071\n"
         p2 = gradient_descent(
@@ -37,6 +48,7 @@ using ManifoldDiff: grad_distance
         )
         @test p == p2
         step = NonmonotoneLinesearch(;
+            p = p,
             stepsize_reduction = 0.99,
             sufficient_decrease = 0.1,
             memory_size = 2,
@@ -106,6 +118,14 @@ using ManifoldDiff: grad_distance
             ),
         )
         @test isapprox(M, p, p8; atol = 1.0e-13)
+        # the averaged gradient keeps the number point wrapped
+        p9 = gradient_descent(
+            M, f, grad_f, data[1];
+            direction = AverageGradient(; n = 5),
+            stepsize = ConstantLength(),
+            stopping_criterion = StopAfterIteration(800),
+        )
+        @test isapprox(M, p9, apprpstar; atol = 1.0e-9)
         M2 = Euclidean()
         @test_logs (
             :warn,
@@ -121,7 +141,6 @@ using ManifoldDiff: grad_distance
         )
         @test_throws DomainError NonmonotoneLinesearch(; memory_size = 0)(M2)
 
-        rec = get_record(s)
         # after one step for local enough data -> equal to real valued data
         @test isapprox(M, p, apprpstar, atol = 5.0e-10)
     end
@@ -133,13 +152,12 @@ using ManifoldDiff: grad_distance
         f(M, p) = 1 / 8 * sum(distance.(Ref(M), pts, Ref(p)) .^ 2)
         grad_f(M, p) = 1 / 4 * sum(-log.(Ref(M), Ref(p), pts))
         n2 = gradient_descent(M, f, grad_f, pts[1])
-        n2a = gradient_descent(M, f, grad_f)
         # `gradient_descent` allocated n2 newly
         @test !isapprox(M, pts[1], n2)
         @test isapprox(M, north, n2)
         Random.seed!(43)
         n2a = gradient_descent(M, f, grad_f)
-        # `gradient_descent` allocated n2 newly
+        # `gradient_descent` allocated n2a newly
         @test isapprox(M, north, n2a)
         n3 = gradient_descent(
             M, f, grad_f, pts[1];
@@ -148,15 +166,31 @@ using ManifoldDiff: grad_distance
             debug = [], # do not warn about increasing step here
         )
         @test isapprox(M, north, n3)
+        # with `momentum = 0` the rule reduces to plain gradient descent
+        n3a = gradient_descent(
+            M, f, grad_f, pts[1]; stepsize = ConstantLength(), debug = [],
+        )
+        n3b = gradient_descent(
+            M, f, grad_f, pts[1];
+            direction = MomentumGradient(; momentum = 0.0),
+            stepsize = ConstantLength(),
+            debug = [],
+        )
+        @test isapprox(M, n3a, n3b)
         n4 = gradient_descent(
             M, f, grad_f, pts[1];
             direction = AverageGradient(M; n = 5),
+            stepsize = ConstantLength(),
             stopping_criterion = StopAfterIteration(800),
         )
         @test isapprox(M, north, n4; atol = 1.0e-7)
         n5 = copy(M, pts[1])
         r = gradient_descent!(M, f, grad_f, n5; return_state = true)
         @test isapprox(M, n5, n2)
+        grad_f!(M, X, p) = (X .= grad_f(M, p))
+        n5b = copy(M, pts[1])
+        gradient_descent!(M, f, grad_f!, n5b; evaluation = InplaceEvaluation())
+        @test isapprox(M, n5b, n2)
         @test startswith(Manopt.status_summary(r; context = :default), "# Solver state for `Manopt.jl`s Gradient Descent")
         # State and a count objective, putting stats behind print
         n6 = gradient_descent(
@@ -164,6 +198,12 @@ using ManifoldDiff: grad_distance
             count = [:Gradient], return_objective = true, return_state = true,
         )
         @test Manopt.status_summary(n6; context = :default) == "$(Manopt.status_summary(n6[2]; context = :default))\n\n$(Manopt.status_summary(n6[1]; context = :default))"
+        # the line search reuses the gradient: one evaluation at the start and one per iteration
+        n7 = gradient_descent(
+            M, f, grad_f, pts[1];
+            count = [:Gradient], return_objective = true, stopping_criterion = StopAfterIteration(5),
+        )
+        @test get_count(n7[1], :Gradient) == 6
 
         @testset "Callbacks" begin
             sk_record = Tuple{Symbol, Int}[]

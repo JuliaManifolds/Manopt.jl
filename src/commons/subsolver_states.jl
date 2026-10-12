@@ -1,0 +1,180 @@
+"""
+    LevenbergMarquardtBoxSubsolver <: AbstractManoptSolverState
+
+Wrap the sub solver state of a [`LevenbergMarquardt`](@ref) run on a manifold with box
+constraints, where the sub solver result is trimmed to the box by a generalized Cauchy
+direction search.
+
+# Fields
+
+* `internal_state`: the state of the sub solver that is wrapped
+* `last_gcd_result`, `last_gcd_stepsize`: the status and the maximal step size returned by
+  the last generalized Cauchy direction search, see [`find_generalized_cauchy_direction!`](@ref)
+
+# Constructor
+
+    LevenbergMarquardtBoxSubsolver(M::AbstractManifold, sub_state, p)
+
+Wrap `sub_state`, where `p` determines the number type of the stored step size.
+"""
+mutable struct LevenbergMarquardtBoxSubsolver{TSt <: AbstractManoptSolverState, F <: Real} <: AbstractManoptSolverState
+    internal_state::TSt
+    last_gcd_result::Symbol
+    last_gcd_stepsize::F
+end
+function LevenbergMarquardtBoxSubsolver(::AbstractManifold, sub_state_::AbstractManoptSolverState, p)
+    return LevenbergMarquardtBoxSubsolver{typeof(sub_state_), number_eltype(p)}(
+        sub_state_, :not_searched, NaN,
+    )
+end
+function Base.show(io::IO, lmbs::LevenbergMarquardtBoxSubsolver)
+    print(io, "LevenbergMarquardtBoxSubsolver(", lmbs.internal_state, "; ")
+    print(io, "last_gcd_result = :", lmbs.last_gcd_result)
+    return print(io, ", last_gcd_stepsize = ", lmbs.last_gcd_stepsize, ")")
+end
+function status_summary(lmbs::LevenbergMarquardtBoxSubsolver; context::Symbol = :default)
+    _is_inline(context) && return repr(lmbs)
+    return """
+    # Solver state for a box constrained Levenberg-Marquardt subproblem
+    * last generalized Cauchy direction: :$(lmbs.last_gcd_result) (step size: $(lmbs.last_gcd_stepsize))
+
+    ## Inner solver state
+    $(_in_str(status_summary(lmbs.internal_state; context = context); indent = 1, headers = 1, indent_end = "| "))"""
+end
+"""
+    hessian_value(ha::LevenbergMarquardtBoxSubsolver, M, p, X::UnitVector, Y)
+
+Evaluate the quadratic form associated with the stored Hessian approximation.
+"""
+function hessian_value(ha::LevenbergMarquardtBoxSubsolver, M::AbstractManifold, p, X::UnitVector, Y)
+    return hessian_value(ha.internal_state, M, p, X, Y)
+end
+
+"""
+    hessian_value_diag(ha::LevenbergMarquardtBoxSubsolver, M, p, X)
+
+Evaluate the quadratic form associated with the stored Hessian approximation.
+"""
+function hessian_value_diag(ha::LevenbergMarquardtBoxSubsolver, M::AbstractManifold, p, X)
+    return hessian_value_diag(ha.internal_state, M, p, X)
+end
+
+"""
+    CoordinatesNormalSystemState <: AbstractManoptSolverState
+
+A solver state indicating that the [`LevenbergMarquardtLinearSurrogateObjective`](@ref) is
+solved using a linear system in coordinates of the tangent space at the current iterate.
+
+# Fields
+
+* `A`: an ``n×n`` matrix storing the normal-equations linear operator from [`get_linear_operator`](@ref) in coordinates, where `n` is the number of coordinates
+* `b`: an ``n`` vector storing the right hand side of the normal equations in coordinates
+* `basis::`[`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`): the basis the coordinates refer to
+* `c`: an ``n`` vector storing the solution of the linear system in coordinates
+* `linsolve!`: a function `(c, A, b) -> c` solving the linear system in-place of `c`
+
+# Constructor
+    CoordinatesNormalSystemState(
+        M::AbstractManifold;
+        p = rand(M),
+        linsolve = default_lm_lin_solve!,
+        basis = DefaultOrthonormalBasis(),
+        A = nothing
+    )
+
+Construct the state, where not providing a memory for `A` uses the `number_eltype` of `p` to
+determine the element type of the matrix to store. Note that the keyword is `linsolve`,
+while the field it is stored in is called `linsolve!`.
+"""
+mutable struct CoordinatesNormalSystemState{F, TA <: AbstractMatrix, TB <: AbstractVector, TBA <: AbstractBasis} <: AbstractManoptSolverState
+    A::TA
+    b::TB
+    basis::TBA
+    c::TB
+    linsolve!::F
+end
+function CoordinatesNormalSystemState(
+        M::AbstractManifold;
+        p = rand(M), linsolve::F = default_lm_lin_solve!, basis::B = DefaultOrthonormalBasis(), A = nothing
+    ) where {F, B <: AbstractBasis}
+    n = number_of_coordinates(M, basis)
+    c = zeros(number_eltype(p), n)
+    if isnothing(A)
+        A = zeros(eltype(c), n, n)
+    end
+    b = zeros(eltype(c), n)
+    return CoordinatesNormalSystemState{F, typeof(A), typeof(b), B}(A, b, basis, c, linsolve)
+end
+
+function Base.show(io::IO, cnss::CoordinatesNormalSystemState)
+    return print(io, "CoordinatesNormalSystemState(; basis = ", cnss.basis, ", linsolve = ", cnss.linsolve!, ")")
+end
+function status_summary(cnss::CoordinatesNormalSystemState; context::Symbol = :default)
+    _is_inline(context) && return repr(cnss)
+    return """
+    # Solver state to solve the normal system of a Levenberg-Marquardt subproblem in coordinates
+    * basis:    $(cnss.basis)
+    * linsolve: $(cnss.linsolve!)
+    * system size: $(size(cnss.A, 1))"""
+end
+
+function get_solver_result(
+        dmp::DefaultManoptProblem{<:TangentSpace, <:NormalEquationsObjective{<:AbstractLevenbergMarquardtLinearSurrogateObjective}},
+        cnss::CoordinatesNormalSystemState
+    )
+    TpM = get_manifold(dmp)
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    return get_vector(M, p, cnss.c, cnss.basis)
+end
+"""
+    hessian_value(ha::CoordinatesNormalSystemState, M, p, X::UnitVector, Y)
+
+Evaluate the quadratic form associated with the stored Hessian approximation.
+Returns the scalar ``c_b^{$(_tex(:top))} A c`` where ``c_b`` are the coordinates of the
+[`UnitVector`](@ref) `X` at `p` (assumed to correspond to the basis `ha.basis`),
+``c`` are the coordinates of the tangent vector `Y` at `p` (in the basis `ha.basis`)
+and ``A`` is `ha.A`.
+"""
+function hessian_value(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X::UnitVector, Y)
+    b = to_coordinate_index(M, X, ha.basis)
+    return dot(view(ha.A, b, :), get_coordinates(M, p, Y, ha.basis))
+end
+
+"""
+    hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X::UnitVector)
+
+Evaluate the quadratic form associated with the Hessian approximation of a [`CoordinatesNormalSystemState`](@ref).
+Returns the scalar ``c^{$(_tex(:top))} A c`` where ``c`` are the coordinates of the
+[`UnitVector`](@ref) `X` at `p` (in the basis `ha.basis`) and ``A`` is `ha.A`.
+"""
+function hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X::UnitVector)
+    b = to_coordinate_index(M, X, ha.basis)
+    return ha.A[b, b]
+end
+"""
+    hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X)
+
+Evaluate the quadratic form associated with the Hessian approximation of a [`CoordinatesNormalSystemState`](@ref).
+Returns the scalar ``c^{$(_tex(:top))} A c`` where ``c`` are the coordinates of `X` at `p`
+(in the basis `ha.basis`) and ``A`` is `ha.A`.
+"""
+function hessian_value_diag(ha::CoordinatesNormalSystemState, M::AbstractManifold, p, X)
+    c = get_coordinates(M, p, X, ha.basis)
+    return dot(c, ha.A, c)
+end
+
+
+# The objective here should be a LevenbergMarquardtLinearSurrogateObjective, but might be decorated as well, so for now let's not type it (yet?)
+function solve!(dmp::DefaultManoptProblem{<:TangentSpace, <:NormalEquationsObjective}, cnss::CoordinatesNormalSystemState)
+    # Update A and b
+    TpM = get_manifold(dmp)
+    M = base_manifold(TpM)
+    p = base_point(TpM)
+    neo = get_objective(dmp)
+    get_linear_operator!(M, cnss.A, neo, p, cnss.basis)
+    get_vector_field!(M, cnss.b, neo, p, cnss.basis)
+    cnss.b .*= -1
+    cnss.linsolve!(cnss.c, cnss.A, cnss.b)
+    return cnss
+end

@@ -20,19 +20,35 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
     arcmo = AdaptiveRegularizationWithCubicsModelObjective(mho)
 
     @testset "Accessors for the Objective" begin
-        isapprox(
+        @test isapprox(
             M, p0, Manopt.get_objective_gradient(M, arcmo, p0), get_gradient(M, mho, p0)
         )
         X0 = zero_vector(M, p0)
         Manopt.get_objective_gradient!(M, X0, arcmo, p0)
-        isapprox(M, p0, X0, get_gradient(M, mho, p0))
+        @test isapprox(M, p0, X0, get_gradient(M, mho, p0))
 
         g = Manopt.get_gradient_function(arcmo)
-        isapprox(M, p0, g(M2, p0), get_gradient(M, mho, p0))
+        @test isapprox(M, p0, g(M2, zero_vector(M, p0)), get_gradient(M, mho, p0))
         X0 = zero_vector(M, p0)
         X1 = similar(X0)
         Manopt.get_objective_preconditioner!(M, X1, arcmo, p0, X0)
-        isapprox(M, p0, X1, get_preconditioner(M, mho, p0, X0))
+        @test isapprox(M, p0, X1, get_preconditioner(M, mho, p0, X0))
+        # a decorated sub objective passes every accessor through to the one it wraps
+        Xr = get_gradient(M, mho, p0)
+        d_arcmo = Manopt.decorate_objective!(M, arcmo; return_objective = true)
+        Y = zero_vector(M, p0)
+        @test Manopt.get_objective_cost(M, d_arcmo, p0) == get_cost(M, mho, p0)
+        @test isapprox(M, p0, Manopt.get_objective_gradient(M, d_arcmo, p0), Xr)
+        Manopt.get_objective_gradient!(M, Y, d_arcmo, p0)
+        @test isapprox(M, p0, Y, Xr)
+        @test isapprox(M, p0, Manopt.get_objective_hessian(M, d_arcmo, p0, Xr), get_hessian(M, mho, p0, Xr))
+        Manopt.get_objective_hessian!(M, Y, d_arcmo, p0, Xr)
+        @test isapprox(M, p0, Y, get_hessian(M, mho, p0, Xr))
+        @test isapprox(
+            M, p0, Manopt.get_objective_preconditioner(M, d_arcmo, p0, Xr), get_preconditioner(M, mho, p0, Xr)
+        )
+        Manopt.get_objective_preconditioner!(M, Y, d_arcmo, p0, Xr)
+        @test isapprox(M, p0, Y, get_preconditioner(M, mho, p0, Xr))
         @test startswith(repr(arcmo), "AdaptiveRegularizationWithCubicsModelObjective(")
         @test startswith(Manopt.status_summary(arcmo), "The cubic polynomial based model for the sub problem of the Adaptive")
     end
@@ -49,12 +65,35 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         @test startswith(repr(arcs), "AdaptiveRegularizationState(")
         p1 = rand(M)
         X1 = rand(M; vector_at = p1)
-        set_iterate!(arcs, p1)
+        set_iterate!(arcs, M, p1)
         @test arcs.p == p1
-        set_gradient!(arcs, X1)
+        set_gradient!(arcs, M, p1, X1)
         @test arcs.X == X1
+        # numeric keywords of different types are promoted
+        arcs_i = AdaptiveRegularizationState(
+            M, DefaultManoptProblem(M2, arcmo), GradientDescentState(M2; p = zero_vector(M, p0));
+            p = p0, η1 = 0, γ2 = 2, ρ_regularization = 1000,
+        )
+        @test (arcs_i.η1, arcs_i.γ2, arcs_i.ρ_regularization) === (0.0, 2.0, 1000.0)
+        # the in-place entry requires the point it works in place of
+        @test_throws MethodError adaptive_regularization_with_cubics!(M, mho)
+        q_ref = adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, p0)
+        q_int = adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, p0; γ2 = 2, θ = 1 // 2, ρ_regularization = 1000)
+        @test isapprox(M, q_ref, q_int)
         lst = LanczosState(M2; maxIterLanczos = 1)
         @test startswith(repr(lst), "LanczosState(; ")
+        set_iterate!(lst, M2, X1)
+        @test get_iterate(lst) == X1
+        # initializing clears the solution, so a reused state does not return the previous one
+        lst_reuse = LanczosState(M2; maxIterLanczos = 2)
+        copyto!(M2, lst_reuse.S, X1)
+        @test !iszero(get_solver_result(lst_reuse))
+        Manopt.initialize_solver!(DefaultManoptProblem(M2, arcmo), lst_reuse)
+        @test iszero(get_solver_result(lst_reuse))
+        # the `coefficients` field is shown, not the iterate `X` a second time
+        lst2 = LanczosState(M2; maxIterLanczos = 2)
+        lst2.coefficients .= [7.0, 8.0]
+        @test occursin("coefficients = [7.0, 8.0]", repr(lst2))
         @test startswith(Manopt.status_summary(lst), "# Solver state for `Manopt.jl`s Lanczos Iteration")
         @testset "Lanczos Callback" begin
             lanczos_record = Tuple{Symbol, Int}[]
@@ -68,6 +107,12 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
                 (:Stop, 0),
             ]
         end
+        # the gradient stored in the state is reused instead of evaluated again
+        co_c, _ = adaptive_regularization_with_cubics(
+            M, f, grad_f, Hess_f, p0; count = [:Gradient], return_objective = true,
+            return_state = true, stopping_criterion = StopAfterIteration(5),
+        )
+        @test get_count(co_c, :Gradient) == 5
         arcs2 = AdaptiveRegularizationState(
             M, DefaultManoptProblem(M2, arcmo), lst; p = p0, stopping_criterion = StopWhenAllLanczosVectorsUsed(1),
         )
@@ -75,6 +120,9 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         push!(arcs2.sub_state.Lanczos_vectors, X1)
         # 1 Lanczos was reached
         @test stop_solver!(arcs2.sub_problem, arcs2.sub_state, 1)
+        @test stop_solver!(arcs2.sub_problem, arcs2, 1)
+        # one vector more than configured still stops
+        push!(arcs2.sub_state.Lanczos_vectors, X1)
         @test stop_solver!(arcs2.sub_problem, arcs2, 1)
         arcs3 = AdaptiveRegularizationState(
             M, DefaultManoptProblem(M2, arcmo), LanczosState(M2; maxIterLanczos = 2); p = p0
@@ -104,8 +152,24 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
             atol = 1.0e-14,
         )
 
+        # a stopping criterion that allows more steps than `maxIterLanczos` makes the
+        # state grow its tridiagonal matrix and its coefficient storage
+        arcs5 = AdaptiveRegularizationState(
+            M, DefaultManoptProblem(M2, arcmo), LanczosState(M2; maxIterLanczos = 1, σ = 2.0); p = p0
+        )
+        initialize_solver!(arcs5.sub_problem, arcs5.sub_state)
+        copyto!(M, arcs5.sub_state.X, p0, get_gradient(M, mho, p0))
+        step_solver!(arcs5.sub_problem, arcs5.sub_state, 1)
+        @test size(arcs5.sub_state.tridig_matrix) == (1, 1)
+        step_solver!(arcs5.sub_problem, arcs5.sub_state, 2)
+        @test size(arcs5.sub_state.tridig_matrix) == (2, 2)
+        @test length(arcs5.sub_state.coefficients) == 2
+        @test length(arcs5.sub_state.Lanczos_vectors) == 2
+
         st1 = StopWhenFirstOrderProgress(0.5)
         @test startswith(repr(st1), "StopWhenFirstOrderProgress(0.5)")
+        @test startswith(Manopt.status_summary(st1; context = :short), "StopWhenFirstOrderProgress")
+        @test startswith(Manopt.status_summary(st1), "A stopping criterion to stop when the Lanczos model")
         @test Manopt.indicates_convergence(st1)
         @test get_reason(st1) == ""
         # fake a trigger
@@ -143,24 +207,63 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
                 (:Step, 1),
                 (:BeforeStop, 1),
             ]
-            @test sk_record[(end - 1):end] == [(:BeforeStop, sk_record[end - 1][2]), (:Stop, sk_record[end][2])]
+            @test first.(sk_record[(end - 1):end]) == [:BeforeStop, :Stop]
         end
 
         f1(M, p) = p
         f1!(M, q, p) = copyto!(M, q, p)
         r = copy(M, p1)
-        Manopt.solve_arc_subproblem!(
-            M, r, f1, Manopt.ClosedFormSubSolverState{AllocatingEvaluation}(), p0
-        )
-        @test r == p0
-        r = copy(M, p1)
-        Manopt.solve_arc_subproblem!(
-            M, r, f1!, Manopt.ClosedFormSubSolverState{InplaceEvaluation}(), p0
-        )
+        Manopt.solve_arc_subproblem!(M, r, f1!, Manopt.ClosedFormSubSolverState(), p0)
         @test r == p0
         # Dummy construction with a function for the `sub_problem`
         arcs4 = AdaptiveRegularizationState(M, f1; p = p0)
         @test arcs4.sub_state isa Manopt.ClosedFormSubSolverState
+        arcs5 = AdaptiveRegularizationState(M, f1, AllocatingEvaluation(); p = p0)
+        @test arcs5.sub_state isa Manopt.ClosedFormSubSolverState
+        # an allocating closed form sub solver is wrapped, so it can be called in place
+        alloc_sub = (M, p) -> -grad_f(M, p)
+        arcs6 = AdaptiveRegularizationState(M, alloc_sub, AllocatingEvaluation(); p = p0)
+        @test arcs6.sub_problem isa Manopt.AbstractManifoldFunction
+        q_alloc = adaptive_regularization_with_cubics(
+            M, f, grad_f, Hess_f, p0;
+            sub_problem = alloc_sub, sub_state = AllocatingEvaluation(),
+            stopping_criterion = StopAfterIteration(2),
+        )
+        @test is_point(M, q_alloc)
+        @testset "sub_kwargs reach the sub state decoration" begin
+            # `sub_kwargs` was passed to `decorate_state!` unsplatted, so it was silently dropped
+            sd = adaptive_regularization_with_cubics(
+                M, f, grad_f, Hess_f, p0;
+                sub_kwargs = (; debug = [""]), maxIterLanczos = 3, return_state = true,
+            )
+            @test Manopt.is_state_decorator(sd.sub_state)
+            @test get_state(sd.sub_state) isa Manopt.LanczosState
+            # a decorated sub state must not lose the Lanczos criterion from the default
+            for st in (sd, adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, p0; maxIterLanczos = 3, return_state = true))
+                sc = Manopt.get_stopping_criterion(st)
+                @test any(c -> c isa Manopt.StopWhenAllLanczosVectorsUsed, sc.criteria)
+            end
+            # and it still evaluates through the decorator instead of erroring
+            s2 = adaptive_regularization_with_cubics(
+                M, f, grad_f, Hess_f, p0;
+                sub_kwargs = (; debug = [""]), maxIterLanczos = 3,
+                stopping_criterion = StopAfterIteration(20) | Manopt.StopWhenAllLanczosVectorsUsed(2),
+                return_state = true,
+            )
+            @test is_point(M, get_solver_result(s2))
+        end
+        # setting the iterate on a closed form sub state is a no-op, not an error
+        @test Manopt.set_iterate!(
+            Manopt.ClosedFormSubSolverState(), M, p0
+        ) isa Manopt.ClosedFormSubSolverState
+        # and the solver can actually be run through that path
+        q_cf = adaptive_regularization_with_cubics(
+            M, f, grad_f, Hess_f, p0;
+            sub_problem = (M, X, p) -> (X .= -grad_f(M, p); X),
+            sub_state = InplaceEvaluation(),
+            stopping_criterion = StopAfterIteration(2),
+        )
+        @test is_point(M, q_cf)
     end
 
     @testset "A few solver runs" begin
@@ -228,20 +331,15 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         # test that this still returns the minimizer, that is when starting
         # at the minimizer
         r1 = adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, p_min)
+        @test isapprox(M, p_min, r1)
     end
 
     @testset "A short solver run on the circle" begin
         Mc, fc, grad_fc, pc0, pc_star = Manopt.Test.Circle_mean_task()
         hess_fc(Mc, p, X) = 1.0
         p0 = 0.2
-        p1 = adaptive_regularization_with_cubics(
-            Mc, fc, grad_fc, hess_fc, p0; θ = 0.5, σ = 100.0
-        )
+        p1 = adaptive_regularization_with_cubics(Mc, fc, grad_fc, hess_fc, p0; θ = 0.5, σ = 100.0)
         @test fc(Mc, p0) > fc(Mc, p1)
-        p2 = adaptive_regularization_with_cubics(
-            Mc, fc, grad_fc, hess_fc, p0; θ = 0.5, σ = 100.0, evaluation = InplaceEvaluation()
-        )
-        @test fc(Mc, p0) > fc(Mc, p2)
     end
 
     @testset "Start at a point with _exactly_ gradient zero - In Tutorial mode" begin

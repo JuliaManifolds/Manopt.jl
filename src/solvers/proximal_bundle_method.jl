@@ -13,10 +13,11 @@ $(_fields(:callbacks; add_properties = [:as_dict]))
 * `bundle_size`:              the maximal size of the bundle
 * `c`:                        convex combination of the approximation errors
 * `d`:                        descent direction
-* `δ`:                        parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(i + 1)``, else ``μ += δ μ``
+* `δ`:                        parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(k + 1)``, else ``μ += δ μ``
 * `ε`:                        stepsize-like parameter related to the injectivity radius of the manifold
 * `η`:                        curvature-dependent term for updating the approximation errors
 $(_fields(:inverse_retraction_method))
+* `lin_errors`:               linearization errors at the last serious step
 * `λ`:                        convex coefficients that solve the subproblem
 * `m`:                        the parameter to test the decrease of the cost
 * `μ`:                        (initial) proximal parameter for the subproblem
@@ -37,17 +38,19 @@ $(_fields([:sub_problem, :sub_state]))
 
 Generate the state for the [`proximal_bundle_method`](@ref) on the manifold `M`
 
+## Input
+
+$(_args([:M, :sub_problem, :sub_state]))
+
 # Keyword arguments
 
 * `bundle_size=50`
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:inverse_retraction_method))
 * `m=0.0125`
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
-$(_kwargs(:sub_problem; default = "`[`proximal_bundle_method_subsolver`](@ref)` "))
-$(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)` "))
 $(_kwargs(:vector_transport_method))
 $(_kwargs(:X)) to specify the type of tangent vector to use.
 * `α₀=1.2`
@@ -106,15 +109,14 @@ mutable struct ProximalBundleMethodState{
             IR <: AbstractInverseRetractionMethod, TR <: AbstractRetractionMethod,
             SC <: StoppingCriterion, VT <: AbstractVectorTransportMethod,
         }
-        R = promote_type(typeof(m), typeof(α₀), typeof(ε), typeof(δ), typeof(μ))
+        R = float(promote_type(typeof(m), typeof(α₀), typeof(ε), typeof(δ), typeof(μ)))
         m = convert(R, m); α₀ = convert(R, α₀); ε = convert(R, ε); δ = convert(R, δ); μ = convert(R, μ)
-        _sub_state = maybe_wrap_evaluation_type(sub_state)
         return ProximalBundleMethodState(
-            sub_problem, _sub_state;
+            sub_problem, sub_state;
             approx_errors = [zero(R)], bundle = [(copy(M, p), copy(M, p, X))], bundle_size = bundle_size,
             c = zero(R), callbacks = callbacks, d = copy(M, p, X),
             inverse_retraction_method = inverse_retraction_method, lin_errors = [zero(R)],
-            m = m, p = p, p_last_serious = copy(M, p), retraction_method = retraction_method,
+            m = m, p = copy(M, p), p_last_serious = p, retraction_method = retraction_method,
             stopping_criterion = stopping_criterion, transported_subgradients = [copy(M, p, X)],
             vector_transport_method = vector_transport_method, X = X, α = zero(R), α₀ = α₀, δ = δ, ε = ε,
             η = zero(R), λ = [zero(R)], μ = μ, ν = zero(R)
@@ -142,22 +144,31 @@ mutable struct ProximalBundleMethodState{
         )
     end
 end
-ProximalBundleMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Proximal Bunde Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
+has_sub_problem(::Type{<:ProximalBundleMethodState}) = true
+ProximalBundleMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Proximal Bundle Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
+function ProximalBundleMethodState(
+        M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType;
+        kwargs...,
+    )
+    return ProximalBundleMethodState(M, sub_problem; evaluation = sub_state, kwargs...)
+end
 function ProximalBundleMethodState(
         M::AbstractManifold, sub_problem = proximal_bundle_method_subsolver;
-        evaluation::E = AllocatingEvaluation(), kwargs...,
-    ) where {E <: AbstractEvaluationType}
-    cfs = ClosedFormSubSolverState(; evaluation = evaluation)
-    return ProximalBundleMethodState(M, sub_problem, cfs; kwargs...)
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :MaybeResizeVector)
+    cfs = ClosedFormSubSolverState()
+    return ProximalBundleMethodState(M, sub_problem_, cfs; kwargs...)
 end
 
 get_iterate(pbms::ProximalBundleMethodState) = pbms.p_last_serious
 function set_iterate!(pbms::ProximalBundleMethodState, M, p)
     copyto!(M, pbms.p_last_serious, p)
+    pbms.p = p
     return pbms
 end
 get_subgradient(pbms::ProximalBundleMethodState) = pbms.d
-provided_callbacks(::Type{ProximalBundleMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Subsolver])
+additional_callbacks(::Type{<:ProximalBundleMethodState}) = [:BeforeSubsolver, :Subsolver]
 get_callbacks(pbms::ProximalBundleMethodState) = pbms.callbacks
 
 function show(io::IO, pbms::ProximalBundleMethodState)
@@ -174,15 +185,11 @@ function show(io::IO, pbms::ProximalBundleMethodState)
 end
 function status_summary(pbms::ProximalBundleMethodState; context::Symbol = :default)
     (context === :short) && return repr(pbms)
-    i = get_count(pbms, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(pbms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the proximal bundle method$(conv_inl)"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(pbms.stop) ? "Yes" : "No"
+    (context === :inline) && return "A solver state for the proximal bundle method$(_iteration_suffix(pbms))"
     as = _callbacks_summary(pbms)
     s = """
     # Solver state for `Manopt.jl`s Proximal Bundle Method
-    $Iter
+    $(_iterations_str(pbms))
     ## Parameters$(as)
     * bundle size:                                $(pbms.bundle_size)
     * inverse retraction:                         $(pbms.inverse_retraction_method)
@@ -198,9 +205,48 @@ function status_summary(pbms::ProximalBundleMethodState; context::Symbol = :defa
 
     ## Stopping criterion
     $(_in_str(status_summary(pbms.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $(_converged_str(pbms))"""
     return s
 end
+
+
+function proximal_bundle_method_subsolver end
+function proximal_bundle_method_subsolver! end
+_doc_proximal_bundle_method_subsolver = """
+    λ = proximal_bundle_method_subsolver(M, p_last_serious, μ, approximation_errors, transported_subgradients)
+    proximal_bundle_method_subsolver!(M, λ, p_last_serious, μ, approximation_errors, transported_subgradients)
+
+solver for the subproblem of the proximal bundle method.
+
+The subproblem for the proximal bundle method is
+```math
+\\begin{align*}
+    $(_tex(:argmin))_{λ ∈ ℝ^{$(_tex(:abs, "L_l"))}} &
+    $(_tex(:frac, "1", "2 μ_l")) $(_tex(:Bigl)) \\lVert $(_tex(:sum, "j ∈ L_l")) λ_j $(_tex(:rm, "P"))_{p_k←q_j} X_{q_j}$(_tex(:Bigr))\\rVert^2
+    + $(_tex(:sum, "j ∈ L_l")) λ_j \\, c_j^k
+    \\\\
+    $(_tex(:text, "s. t.")) $(_tex(:quad)) &
+    $(_tex(:sum, "j ∈ L_l")) λ_j = 1,
+    $(_tex(:quad)) λ_j ≥ 0
+    $(_tex(:quad)) $(_tex(:text, "for all ")) j ∈ L_l,
+\\end{align*}
+```
+where ``L_l = $(_tex(:set, "k"))`` if ``q_k`` is a serious iterate, and ``L_l = L_{l-1}  ∪ $(_tex(:set, "k"))`` otherwise.
+See [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
+
+!!! tip
+    A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
+    is available if these two packages are loaded.
+"""
+
+@doc "$(_doc_proximal_bundle_method_subsolver)"
+proximal_bundle_method_subsolver!(M, λ, p_last_serious, μ, approximation_errors, transported_subgradients)
+
+@doc "$(_doc_proximal_bundle_method_subsolver)"
+proximal_bundle_method_subsolver(
+    M, p_last_serious, μ, approximation_errors, transported_subgradients
+)
+
 
 _doc_PBM_dk = raw"""
 ```math
@@ -213,11 +259,12 @@ with ``X_{q_j} ∈ ∂f(q_j)``, ``p_k`` the last serious iterate,
 sub solver, see for example the [`proximal_bundle_method_subsolver`](@ref).
 """
 _doc_PBM = """
-    proximal_bundle_method(M, f, ∂f, p=rand(M), kwargs...)
-    proximal_bundle_method!(M, f, ∂f, p, kwargs...)
+    proximal_bundle_method(M, f, ∂f, p=rand(M); kwargs...)
+    proximal_bundle_method!(M, f, ∂f, p; kwargs...)
 
-perform a proximal bundle method ``p^{(k+1)} = $(_tex(:retr))_{p^{(k)}}(-d_k)``,
-where ``$(_tex(:retr))`` is a retraction and
+perform a proximal bundle method with the candidate update ``q_{k+1} = $(_tex(:retr))_{p_k}(-d_k)``
+if ``$(_tex(:norm, "d_k")) ≤ ε`` and ``q_{k+1} = $(_tex(:retr))_{p_k}$(_tex(:bigl))(-ε $(_tex(:frac, "d_k", _tex(:norm, "d_k")))$(_tex(:bigr)))`` otherwise,
+where ``$(_tex(:retr))`` is a retraction, ``ε`` is the `ε` keyword argument, and
 
 $(_doc_PBM_dk)
 
@@ -238,12 +285,13 @@ $(_kwargs(:evaluation))
 $(_kwargs(:inverse_retraction_method))
 * `m=0.0125`:        a real number that controls the decrease of the cost function
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
+$(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)"))
 $(_kwargs(:sub_problem; default = "`[`proximal_bundle_method_subsolver`](@ref)`"))
 $(_kwargs(:sub_state; default = "`[`AllocatingEvaluation`](@ref)` "))
 $(_kwargs(:vector_transport_method))
+$(_kwargs(:X)) to specify the type of tangent vector to use.
 * `α₀=1.2`:          initialization value for `α`, used to update `η`
-* `δ=1.0`:           parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(i + 1)``, else ``μ += δ μ``
+* `δ=-1.0`:          parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(k + 1)``, else ``μ += δ μ``
 * `ε=1e-2`:          stepsize-like parameter related to the injectivity radius of the manifold
 * `μ=0.5`:           initial proximal parameter for the subproblem
 
@@ -254,11 +302,15 @@ $(_note(:OutputSection))
 
 @doc "$(_doc_PBM)"
 function proximal_bundle_method(
-        M::AbstractManifold, f::TF, ∂f::TdF, p = rand(M); kwargs...
+        M::AbstractManifold, f::TF, ∂f::TdF, p = rand(M);
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     ) where {TF, TdF}
     keywords_accepted(proximal_bundle_method; kwargs...)
-    p_star = copy(M, p)
-    return proximal_bundle_method!(M, f, ∂f, p_star; kwargs...)
+    f_ = maybe_wrap_function(f, p; result = :Number)
+    ∂f_ = maybe_wrap_function(∂f, p, evaluation; result = :TangentVector)
+    p_star = copy(M, maybe_wrap_variable(p))
+    rs = proximal_bundle_method!(M, f_, ∂f_, p_star; evaluation = evaluation, kwargs...)
+    return maybe_unwrap_variable(p, rs)
 end
 calls_with_kwargs(::typeof(proximal_bundle_method)) = (proximal_bundle_method!,)
 
@@ -266,7 +318,7 @@ calls_with_kwargs(::typeof(proximal_bundle_method)) = (proximal_bundle_method!,)
 function proximal_bundle_method!(
         M::AbstractManifold,
         f::TF,
-        ∂f!!::TdF,
+        ∂f::TdF,
         p;
         m = 0.0125,
         bundle_size = 50,
@@ -278,38 +330,34 @@ function proximal_bundle_method!(
             1.0e-8; names = ["-ν"]
         ) | StopAfterIteration(5000),
         vector_transport_method::VTransp = default_vector_transport_method(M, typeof(p)),
+        X = zero_vector(M, p),
         α₀ = 1.2,
         ε = 1.0e-2,
-        δ = -1.0, #0.0,
-        μ = 0.5, #1.0,
-        sub_problem = proximal_bundle_method_subsolver,
+        δ = -1.0,
+        μ = 0.5,
         sub_state::Union{AbstractEvaluationType, AbstractManoptSolverState} = evaluation,
+        sub_problem = sub_state isa InplaceEvaluation ?
+            proximal_bundle_method_subsolver! : proximal_bundle_method_subsolver,
         kwargs..., #especially may contain debug
     ) where {TF, TdF, TRetr, IR, VTransp}
     keywords_accepted(proximal_bundle_method!; kwargs...)
-    sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation = evaluation)
+    sgo = ManifoldSubgradientObjective(f, ∂f; evaluation = evaluation, p = p)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
-    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     pbms = ProximalBundleMethodState(
-        M,
-        sub_problem,
-        maybe_wrap_evaluation_type(sub_state);
-        p = p,
-        m = m,
-        bundle_size = bundle_size,
+        M, sub_problem, sub_state;
+        p = p, m = m, bundle_size = bundle_size,
         callbacks = process_callbacks_arg(callbacks, ProximalBundleMethodState),
         inverse_retraction_method = inverse_retraction_method,
         retraction_method = retraction_method,
         stopping_criterion = stopping_criterion,
         vector_transport_method = vector_transport_method,
-        α₀ = α₀,
-        ε = ε,
-        δ = δ,
-        μ = μ,
+        X = X,
+        α₀ = α₀, ε = ε, δ = δ, μ = μ,
     )
     pbms = decorate_state!(pbms; kwargs...)
-    return get_solver_return(solve!(mp, pbms))
+    solve!(mp, pbms)
+    return get_solver_return(get_objective(mp), pbms)
 end
 calls_with_kwargs(::typeof(proximal_bundle_method!)) = (decorate_objective!, decorate_state!)
 
@@ -322,6 +370,10 @@ function initialize_solver!(
     pbms.bundle = [(copy(M, pbms.p), copy(M, pbms.p, pbms.X))]
     empty!(pbms.λ)
     push!(pbms.λ, zero(R))
+    empty!(pbms.lin_errors)
+    push!(pbms.lin_errors, zero(R))
+    empty!(pbms.approx_errors)
+    push!(pbms.approx_errors, zero(R))
     return pbms
 end
 function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, k)
@@ -335,10 +387,10 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
     v = [
         -2 * ej /
             norm(
-                M,
-                pbms.p_last_serious,
-                inverse_retract(M, pbms.p_last_serious, qj, pbms.inverse_retraction_method),
-            )^2 for
+            M,
+            pbms.p_last_serious,
+            inverse_retract(M, pbms.p_last_serious, qj, pbms.inverse_retraction_method),
+        )^2 for
             (ej, (qj, Xj)) in zip(pbms.lin_errors, pbms.bundle) if !(qj ≈ pbms.p_last_serious)
     ]
     if !isempty(v)
@@ -370,7 +422,9 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
             ),
         ) / (pbms.ε * norm_d)
     end
-    if get_cost(mp, pbms.p) ≤ (get_cost(mp, pbms.p_last_serious) + pbms.m * pbms.ν)
+    f_p = get_cost(mp, pbms.p)
+    f_last_serious = get_cost(mp, pbms.p_last_serious)
+    if f_p ≤ (f_last_serious + pbms.m * pbms.ν)
         copyto!(M, pbms.p_last_serious, pbms.p)
         if pbms.δ < zero(eltype(pbms.μ))
             pbms.μ = log(k + 1)
@@ -384,7 +438,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
         push!(pbms.bundle, (copy(M, pbms.p), copy(M, pbms.p, pbms.X)))
         push!(
             pbms.lin_errors,
-            get_cost(mp, pbms.p_last_serious) - get_cost(mp, pbms.p) + inner(
+            f_last_serious - f_p + inner(
                 M,
                 pbms.p_last_serious,
                 vector_transport_to(
@@ -397,7 +451,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
         )
         push!(
             pbms.approx_errors,
-            get_cost(mp, pbms.p_last_serious) - get_cost(mp, pbms.p) +
+            f_last_serious - f_p +
                 inner(
                 M,
                 pbms.p_last_serious,
@@ -417,7 +471,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
                 ),
             )^2,
         )
-        if length(pbms.bundle) == pbms.bundle_size
+        if length(pbms.bundle) > pbms.bundle_size
             deleteat!(pbms.bundle, 1)
             deleteat!(pbms.lin_errors, 1)
             deleteat!(pbms.approx_errors, 1)
@@ -430,18 +484,9 @@ get_solver_result(pbms::ProximalBundleMethodState) = pbms.p_last_serious
 #
 #
 # Dispatching on different types of sub solvers
-# (a) closed form allocating
+# closed form in-place
 function _proximal_bundle_subsolver!(
-        M, pbms::ProximalBundleMethodState{P, T, F, ClosedFormSubSolverState{AllocatingEvaluation}}
-    ) where {P, T, F}
-    pbms.λ = pbms.sub_problem(
-        M, pbms.p_last_serious, pbms.μ, pbms.approx_errors, pbms.transported_subgradients
-    )
-    return pbms
-end
-# (b) closed form in-place
-function _proximal_bundle_subsolver!(
-        M, pbms::ProximalBundleMethodState{P, T, F, ClosedFormSubSolverState{InplaceEvaluation}}
+        M, pbms::ProximalBundleMethodState{P, T, F, ClosedFormSubSolverState}
     ) where {P, T, F}
     pbms.sub_problem(
         M, pbms.λ, pbms.p_last_serious, pbms.μ, pbms.approx_errors, pbms.transported_subgradients,
@@ -474,21 +519,6 @@ function (sc::StopWhenLagrangeMultiplierLess)(
     return false
 end
 
-@doc """
-    DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
-
-print a warning if the stopping parameter of the bundle method increases.
-
-# Constructor
-    DebugWarnIfLagrangeMultiplierIncreases(warn=:Once; tol=1e2)
-
-Initialize the warning to warning level (`:Once`) and introduce a tolerance for the test of `1e2`.
-
-The `warn` level can be set to `:Once` to only warn the first time the cost increases,
-to `:Always` to report an increase every time it happens, and it can be set to `:No`
-to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
-All other symbols are handled as if they were `:Always:`
-"""
 function (d::DebugWarnIfLagrangeMultiplierIncreases)(
         ::AbstractManoptProblem, st::ProximalBundleMethodState, k::Int
     )
@@ -499,7 +529,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             @warn """The stopping parameter increased by at least $(d.tol).
             At iteration #$k the stopping parameter -ν increased from $(d.old_value) to $(new_value).\n
             Consider changing either the initial proximal parameter `μ`, its update coefficient `δ`, or
-            the stepsize-like parameter `ε` related to the invectivity radius of the manifold in the
+            the stepsize-like parameter `ε` related to the injectivity radius of the manifold in the
             `proximal_bundle_method` call.
             """
             if d.status === :Once
@@ -510,7 +540,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             @warn """The stopping parameter is negative.
             At iteration #$k the stopping parameter -ν became negative.\n
             Consider changing either the initial proximal parameter `μ`, its update coefficient `δ`, or
-            the stepsize-like parameter `ε` related to the invectivity radius of the manifold in the
+            the stepsize-like parameter `ε` related to the injectivity radius of the manifold in the
             `proximal_bundle_method` call.
             """
         else

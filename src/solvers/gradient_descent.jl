@@ -27,9 +27,9 @@ $(_args(:M))
 ## Keyword arguments
 
 * `direction=`[`IdentityUpdateRule`](@ref)`()` specify a processor to modify the gradient direction
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`GradientDescentState`](@ref)`; retraction_method=retraction_method)"))
 $(_kwargs(:retraction_method))
 $(_kwargs(:X; add_properties = [:as_Memory]))
@@ -71,19 +71,19 @@ function GradientDescentState(
         callbacks, direction, p, stepsize, stopping_criterion, retraction_method, X,
     )
 end
-provided_callbacks(::Type{GradientDescentState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
-get_callbacks(state::GradientDescentState) = state.callbacks
+additional_callbacks(::Type{<:GradientDescentState}) = [:Stepsize]
+get_callbacks(gds::GradientDescentState) = gds.callbacks
+set_iterate!(gds::GradientDescentState, M, p) = copyto!(M, gds.p, p)
 
 function (r::IdentityUpdateRule)(
         mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
     )
     get_gradient!(mp, s.X, s.p)
-    return get_stepsize(mp, s, k; gradient = s.X), s.X
+    return get_stepsize(mp, s, k, -s.X; gradient = s.X), s.X
 end
 
 function default_stepsize(
-        M::AbstractManifold,
-        ::Type{GradientDescentState};
+        M::AbstractManifold, ::Type{GradientDescentState};
         retraction_method = default_retraction_method(M),
     )
     # take a default with a slightly defensive initial step size.
@@ -92,29 +92,25 @@ function default_stepsize(
     )
 end
 function get_message(gds::GradientDescentState)
-    # for now only step size is quipped with messages
+    # for now only step size is equipped with messages
     return get_message(gds.stepsize)
 end
 
 function Base.show(io::IO, gds::GradientDescentState)
-    print(io, "GradientDescentState(; callbacks = ", gds.callbacks, ", ")
-    print(io, ", direction = ", gds.direction, " p = ", gds.p)
+    print(io, "GradientDescentState(; callbacks = ", gds.callbacks)
+    print(io, ", direction = ", gds.direction, ", p = ", gds.p)
     print(io, ", stepsize = ", gds.stepsize, ", stopping_criterion = ", status_summary(gds.stop; context = :short))
-    print(io, ", retraction_method = ", gds.retraction_method, " X= ", gds.X)
+    print(io, ", retraction_method = ", gds.retraction_method, ", X = ", gds.X)
     return print(io, ")")
 end
 
 function status_summary(gds::GradientDescentState; context::Symbol = :default)
     (context === :short) && return repr(gds)
-    i = get_count(gds, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(gds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the gradient descent solver$(conv_inl)"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
+    (context === :inline) && return "A solver state for the gradient descent solver$(_iteration_suffix(gds))"
     as = _callbacks_summary(gds)
     s = """
     # Solver state for `Manopt.jl`s Gradient Descent
-    $Iter
+    $(_iterations_str(gds))
     ## Parameters$(as)
     * direction: $(status_summary(gds.direction; context = :inline))
     * retraction method: $(gds.retraction_method)
@@ -124,13 +120,13 @@ function status_summary(gds::GradientDescentState; context::Symbol = :default)
 
     ## Stopping criterion
     $(_in_str(status_summary(gds.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $(_converged_str(gds))"""
     return s
 end
 
 _doc_gd_iterate = raw"""
 ```math
-p_{k+1} = \operatorname{retr}_{p_k}\bigl( s_k\operatorname{grad}f(p_k) \bigr),
+p_{k+1} = \operatorname{retr}_{p_k}\bigl( -s_k\operatorname{grad}f(p_k) \bigr),
 \qquad k=0,1,…
 ```
 where ``s_k > 0`` denotes a step size.
@@ -181,22 +177,21 @@ gradient_descent(M::AbstractManifold, args...; kwargs...)
 
 function gradient_descent(
         M::AbstractManifold, f, grad_f, p = rand(M);
-        differential = nothing,
+        differential = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    p_ = maybe_wrap_variable(p)
     mgo = ManifoldGradientObjective(
-        f_, grad_f_; evaluation = evaluation, differential = differential
+        f, grad_f; differential = differential, evaluation = evaluation, p = p,
     )
     rs = gradient_descent(M, mgo, p_; kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function gradient_descent(
         M::AbstractManifold, mgo::O, p = rand(M); kwargs...
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
+    keywords_accepted(gradient_descent; kwargs...)
     q = copy(M, p)
     return gradient_descent!(M, mgo, q; kwargs...)
 end
@@ -207,19 +202,17 @@ gradient_descent!(M::AbstractManifold, args...; kwargs...)
 
 function gradient_descent!(
         M::AbstractManifold, f, grad_f, p;
-        differential = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        differential = missing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
-    keywords_accepted(gradient_descent; kwargs...)
+    keywords_accepted(gradient_descent!; kwargs...)
     mgo = ManifoldGradientObjective(
         f, grad_f; differential = differential, evaluation = evaluation
     )
     return gradient_descent!(M, mgo, p; kwargs...)
 end
 function gradient_descent!(
-        M::AbstractManifold,
-        mgo::O,
-        p;
+        M::AbstractManifold, mgo::O, p;
         callbacks = Dict{Symbol, Function}(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
@@ -241,7 +234,7 @@ function gradient_descent!(
         X = zero_vector(M, p),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
-    # all explicit others others from above are anyways accepted here, so we only have to pass kwargs in
+    # all explicit others from above are anyways accepted here, so we only have to pass kwargs in
     keywords_accepted(gradient_descent!; kwargs...)
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
@@ -268,9 +261,9 @@ function initialize_solver!(mp::AbstractManoptProblem, s::GradientDescentState)
     initialize_stepsize!(s.stepsize)
     return s
 end
-function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, k)
-    step, s.X = s.direction(p, s, k)
-    callback(:Stepsize, p, s, k)
-    ManifoldsBase.retract_fused!(get_manifold(p), s.p, s.p, s.X, -step, s.retraction_method)
+function step_solver!(amp::AbstractManoptProblem, s::GradientDescentState, k)
+    step, s.X = s.direction(amp, s, k)
+    callback(:Stepsize, amp, s, k)
+    ManifoldsBase.retract_fused!(get_manifold(amp), s.p, s.p, s.X, -step, s.retraction_method)
     return s
 end

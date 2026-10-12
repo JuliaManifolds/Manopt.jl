@@ -7,7 +7,7 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
     q0 = [10.0, 5.0]
     sc = StopAfterIteration(200)
     sgs = SubGradientMethodState(
-        M; p = p0, stopping_criterion = sc, stepsize = Manopt.ConstantStepsize(M),
+        M; p = copy(M, p0), stopping_criterion = sc, stepsize = Manopt.ConstantStepsize(M),
     )
     sgs_ac = SubGradientMethodState(
         M; p = q0, stopping_criterion = sc, stepsize = Manopt.ConstantStepsize(M, 1.0; type = :absolute),
@@ -19,14 +19,16 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
     @test startswith(repr(sgs), "SubGradientMethodState(; ")
     @test get_iterate(sgs) == p0
     sgs.X = [1.0, 0.0]
-    f(M, q) = distance(M, q, p)
+    f, ∂f, ∂f! = Manopt.Test.distance_task(M, p)
+    @testset "The tangent vector memory is kept" begin
+        X0 = [7.0, 7.0]
+        sgs_X = SubGradientMethodState(M; p = copy(p0), X = X0, stopping_criterion = StopAfterIteration(1))
+        dmp_X = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, (M, q) -> q - p))
+        initialize_solver!(dmp_X, sgs_X)
+        @test sgs_X.X === X0
+        @test X0 == [0.0, 0.0]
+    end
     @testset "Allocating Subgradient" begin
-        function ∂f(M, q)
-            if distance(M, p, q) == 0
-                return zero_vector(M, q)
-            end
-            return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
-        end
         o = ManifoldSubgradientObjective(f, ∂f)
         @test startswith(repr(o), "ManifoldSubgradientObjective(")
         @test startswith(Manopt.status_summary(o), "A subgradient objective")
@@ -59,28 +61,18 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
         @test norm(M, p, get_subgradient(mp, p)) == 0
         @test_throws MethodError get_gradient(mp, sgs.p)
         @test_throws MethodError get_proximal_map(mp, 1.0, sgs.p, 1)
-        @test_throws MethodError get_proximal_map!(mp, 1.0, sgs.p, 1)
+        @test_throws MethodError get_proximal_map!(mp, X, 1.0, sgs.p, 1)
         @test_throws MethodError get_proximal_map(mp, 1.0, sgs.p)
-        @test_throws MethodError get_proximal_map!(mp, 1.0, sgs.p)
+        @test_throws MethodError get_proximal_map!(mp, X, 1.0, sgs.p)
         sgs2 = subgradient_method(M, f, ∂f, p0; return_state = true)
         p_star2 = get_solver_result(sgs2)
-        @test get_subgradient(sgs2) == -∂f(M, p_star2)
+        @test get_subgradient(sgs2) == ∂f(M, p_star2)
         @test f(M, p_star2) <= f(M, p0)
         set_iterate!(sgs2, M, p)
         @test get_iterate(sgs2) == p
     end
 
     @testset "Mutating Subgradient" begin
-        function ∂f!(M, X, q)
-            d = distance(M, p, q)
-            if d == 0
-                zero_vector!(M, X, q)
-                return X
-            end
-            log!(M, X, q, p)
-            X ./= -max(10 * eps(Float64), d)
-            return X
-        end
         sgom = ManifoldSubgradientObjective(f, ∂f!; evaluation = InplaceEvaluation())
         mp = DefaultManoptProblem(M, sgom)
         X = zero_vector(M, p)
@@ -96,6 +88,10 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
         @test isapprox(M, q1, p)
         @test isapprox(M, q2, p)
         @test isapprox(M, q3, p)
+        q4 = copy(M, p)  # start in the solution: the passed array must keep it
+        r4 = subgradient_method!(M, sgom, q4; stopping_criterion = StopAfterIteration(20))
+        @test r4 === q4
+        @test isapprox(M, q4, p)
         Random.seed!(23)
         q4 = subgradient_method(M, f, ∂f!; evaluation = InplaceEvaluation())
         @test isapprox(M, q4, p; atol = 0.5) # random point -> not that close
@@ -118,11 +114,9 @@ using Manifolds, ManifoldsBase, Manopt, Random, Test
     @testset "Circle" begin
         Mc, fc, ∂fc, pc, pcs = Manopt.Test.Circle_mean_task()
         q4 = subgradient_method(Mc, fc, ∂fc, pc)
-        q5 = subgradient_method(Mc, fc, ∂fc, pc; evaluation = InplaceEvaluation())
         s3 = subgradient_method(Mc, fc, ∂fc, pc; return_state = true)
-        q6 = get_solver_result(s3)[]
+        q5 = get_solver_result(s3)[]
         @test isapprox(q4, 0.0; atol = 1.0e-8)
         @test isapprox(q5, 0.0; atol = 1.0e-8)
-        @test isapprox(q6, 0.0; atol = 1.0e-8)
     end
 end

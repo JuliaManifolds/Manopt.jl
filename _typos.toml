@@ -9,7 +9,7 @@ nd = "nd" # like in 2nd
 [files]
 extend-exclude = [
 "tutorials/*.html",
-# rendered from tutorials/*.qmd -Z we do not want typos twice
+# rendered from tutorials/*.qmd, so we do not want to check for typos twice
 "docs/src/tutorials/*.md",
 "joss/paper.md",
 ]

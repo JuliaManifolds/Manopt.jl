@@ -1,8 +1,4 @@
 using Manifolds, Manopt, Test, ManifoldsBase, RecursiveArrayTools
-using LinearAlgebra: I
-
-using Random
-Random.seed!(42)
 # Test the additional manifold functions
 #
 @testset "Additional Manifold functions" begin
@@ -61,6 +57,13 @@ Random.seed!(42)
         @test mid_point(M, 0, π / 2) ≈ π / 4
         # Without being too far away -> classical mid point
         @test mid_point(M, 0, 0.1, π / 2) == mid_point(M, 0, 0.1)
+        # the same also works for the 1-element-array representation of `Circle`
+        @test mid_point(M, [0.0], [Float64(π)], [1.0]) ≈ [π / 2]
+        @test mid_point(M, [0.0], [Float64(π)], [-1.0]) ≈ [-π / 2]
+        # the in-place variant has to honour the reference point as well
+        y = [0.0]
+        @test mid_point!(M, y, [0.0], [Float64(π)], [1.0]) ≈ [π / 2]
+        @test mid_point!(M, y, [0.0], [Float64(π)], [-1.0]) ≈ [-π / 2]
     end
     @testset "max_stepsize" begin
         M = Sphere(2)
@@ -115,6 +118,11 @@ Random.seed!(42)
 
         M = ProbabilitySimplex(3)
         @test Manopt.max_stepsize(M) == 1.0
+
+        Mspd = SymmetricPositiveDefinite(2)
+        pspd = [2.0 0.0; 0.0 0.5]
+        @test Manopt.max_stepsize(Mspd, pspd) == log(floatmax(Float64))
+        @test Manopt.max_stepsize(Mspd) == Manopt.max_stepsize(Mspd, pspd)
     end
     @testset "Vector space default" begin
         @test Manopt.Rn(Val(:Manopt), 3) isa ManifoldsBase.DefaultManifold

@@ -4,17 +4,19 @@ on:
     branches: [master]
     tags: [v*]
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 jobs:
   docs:
     name: Documentation
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip documentation') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: quarto-dev/quarto-actions/setup@v2
         with:
           version: "1.7.29"
-      - uses: julia-actions/setup-julia@latest
+      - uses: julia-actions/setup-julia@v3
         with:
           version: "1.12"
       - name: Julia Cache

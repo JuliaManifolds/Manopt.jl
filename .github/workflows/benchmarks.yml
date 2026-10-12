@@ -1,0 +1,37 @@
+name: Run Benchmarks
+on:
+  pull_request_target:
+    types: [labeled, opened, synchronize, reopened]
+    branches: [ master ]
+    paths-ignore:
+      - 'docs/**'
+      - 'CITATION.bib'
+      - 'LICENSE'
+      - 'Changelog.md'
+      - 'Readme.md'
+      - '.zenodo.json'
+      - '_typos.toml'
+      - '.github/workflows/changelog.yml'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/clear_preview.yml'
+      - '.github/workflows/documenter.yml'
+      - '.github/workflows/format.yml'
+      - '.github/workflows/nightly.yml'
+      - '.github/workflows/spell_check.yml'
+      - '.github/workflows/TagBot.yml'
+      - '.github/dependabot.yml'
+permissions:
+  pull-requests: write    # needed to post comments
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    # only on pull requests a maintainer labelled `benchmark`: adding a label needs write
+    # access, so this is also the safeguard for running the pull request's code under
+    # `pull_request_target`
+    if: contains(github.event.pull_request.labels.*.name, 'benchmark')
+    steps:
+      - uses: MilesCranmer/AirspeedVelocity.jl@action-v1
+        with:
+          julia-version: '1'
+          bench-on: ${{ github.event.pull_request.head.sha }}

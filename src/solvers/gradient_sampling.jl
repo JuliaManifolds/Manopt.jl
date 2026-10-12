@@ -1,13 +1,13 @@
 function gradient_sampling_subsolver end
 function gradient_sampling_subsolver! end
 
-"""
+_doc_gradient_sampling_subsolver = """
     λ = gradient_sampling_subsolver(M, p, sampled_gradients)
     gradient_sampling_subsolver!(M, λ, p, sampled_gradients)
 
-solver for the subproblem of the [gradient_sampling](@ref) algorithm.
+solver for the subproblem of the [`gradient_sampling`](@ref) algorithm.
 
-Let ``Y_j``, ``j=0,…m`` denote the `sampled_gradients`
+Let ``Y_j``, ``j=0,…,m`` denote the `sampled_gradients`
 already provided transported to the tangent space at `p`
 
 The subproblem then reads
@@ -24,10 +24,15 @@ The subproblem then reads
 ```
 
 !!! tip
-    A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
+    A default subsolver based on [`RipQP.jl`](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels.jl`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
     is available if these two packages are loaded.
 """
+
+@doc "$(_doc_gradient_sampling_subsolver)"
 gradient_sampling_subsolver(M::AbstractManifold, p, sampled_gradients)
+
+@doc "$(_doc_gradient_sampling_subsolver)"
+gradient_sampling_subsolver!(M::AbstractManifold, λ, p, sampled_gradients)
 """
     GradientSamplingState
 
@@ -36,7 +41,7 @@ The mathematical symbols are adapted from [HosseiniUschmajew:2017](@cite)
 
 # Fields
 $(_fields(:callbacks; add_properties = [:as_dict]))
-* `convex_hull_coefficients<:AbstractVector{R}` store the solution vector of the sub problem, i.e. the coefficients of the result in the convex hull
+* `convex_hull_coeffs<:AbstractVector{R}` store the solution vector of the sub problem, i.e. the coefficients of the result in the convex hull
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `sampled_points<:AbstractVector{P}` memory to store the vector of sampled points
 * `sampled_vectors<:AbstractVector{T}` memory to store the vector of (transported) gradients
@@ -47,7 +52,7 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 $(_fields(:stopping_criterion; name = "stop"))
 $(_fields([:stepsize, :sub_problem, :sub_state, :retraction_method, :vector_transport_method]))
 $(_fields(:X; add_properties = [:as_Gradient]))
-$(_fields(:X; name = "Y")) a tangent vector to assemble the solution in.
+$(_fields(:X; name = "Y")), used to assemble the solution in
 
 # Constructor
     GradientSamplingState(
@@ -64,16 +69,16 @@ $(_args(:sub_state))
 
 ## Keyword arguments
 
-$(_kwargs(:callbacks; show_type = false, add_properties = [:as_dict]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
-* `sample_size = 5` set the number of sampling points. If you initialise `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
+* `sample_size = 5` set the number of sampling points. If you initialize `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
   this parameter has no effect.
 * `sampling_radius = 0.5`
 * `sampling_radius_reduction = 0.5`
 * `sampling_radius_threshold = 1.0e-2` a threshold ``ϵ_{$(_tex(:rm, "opt"))}`` to be used in the stopping criterion
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`GradientSamplingState`](@ref)`; retraction_method=retraction_method)"))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))([`StopWhenGradientNormLess`](@ref)`(subgradient_norm_threshold)`$(_sc(:All))[`StopWhenSmallerOrEqual`](@ref)`(:sampling_radius, sampling_radius_threshold))"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))([`StopWhenSubgradientNormLess`](@ref)`(subgradient_norm_threshold)`$(_sc(:All))[`StopWhenSmallerOrEqual`](@ref)`(:sampling_radius, sampling_radius_threshold))"))
 * `subgradient_norm_reduction = 0.5`
 * `subgradient_norm_tolerance = 0.1`
 * `subgradient_norm_threshold = 1.0e-3` a threshold ``δ_{$(_tex(:rm, "opt"))}`` to be used in the stopping criterion
@@ -130,11 +135,20 @@ mutable struct GradientSamplingState{
         )
     end
 end
-
+has_sub_problem(::Type{<:GradientSamplingState}) = true
 function GradientSamplingState(
-        M::AbstractManifold,
-        sub_problem = gradient_sampling_subsolver!,
-        sub_state = InplaceEvaluation();
+        M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...
+    )
+    return GradientSamplingState(M, sub_problem; evaluation = sub_state, kwargs...)
+end
+function GradientSamplingState(
+        M::AbstractManifold, sub_problem = gradient_sampling_subsolver!; evaluation::AbstractEvaluationType = InplaceEvaluation(), kwargs...
+    )
+    sub_problem_ = maybe_wrap_function(sub_problem, evaluation; result = :Point)
+    return GradientSamplingState(M, sub_problem_, ClosedFormSubSolverState(); kwargs...)
+end
+function GradientSamplingState(
+        M::AbstractManifold, sub_problem::Pr, sub_state::St;
         callbacks::C = Dict{Symbol, Function}(),
         p::P = rand(M),
         X::T = zero_vector(M, p),
@@ -142,15 +156,15 @@ function GradientSamplingState(
         sample_size::Int = 5,
         sampled_points::Vector{P} = [copy(M, p) for _ in 1:(sample_size + 1)],
         sampled_vectors::Vector{T} = [copy(M, p, X) for _ in 1:(sample_size + 1)],
-        sampling_radius::R = 0.5,
-        convex_hull_coeffs::Vector{R} = [zero(R) for _ in 1:(sample_size + 1)],
-        sampling_radius_reduction::R = 0.5,
-        sampling_radius_threshold::R = 1.0e-2,
-        subgradient_norm_reduction::R = 0.5,
-        subgradient_norm_tolerance::R = 0.1,
-        subgradient_norm_threshold::R = 1.0e-3,
+        sampling_radius::Real = 0.5,
+        convex_hull_coeffs::AbstractVector{<:Real} = [zero(sampling_radius) for _ in 1:(sample_size + 1)],
+        sampling_radius_reduction::Real = 0.5,
+        sampling_radius_threshold::Real = 1.0e-2,
+        subgradient_norm_reduction::Real = 0.5,
+        subgradient_norm_tolerance::Real = 0.1,
+        subgradient_norm_threshold::Real = 1.0e-3,
         stopping_criterion::SC = StopAfterIteration(200) | (
-            StopWhenGradientNormLess(subgradient_norm_threshold) & (
+            StopWhenSubgradientNormLess(subgradient_norm_threshold) & (
                 StopWhenSmallerOrEqual(:sampling_radius, sampling_radius_threshold)
             )
         ),
@@ -158,10 +172,18 @@ function GradientSamplingState(
             M, GradientSamplingState; retraction_method = retraction_method
         ),
         vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
-    ) where {P, T, R <: Real, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, C <: AbstractDict{Symbol}}
+    ) where {P, T, SC <: StoppingCriterion, S <: Stepsize, RTM <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, C <: AbstractDict{Symbol}, Pr, St <: AbstractManoptSolverState}
+    R = float(
+        promote_type(
+            typeof(sampling_radius), typeof(sampling_radius_reduction),
+            typeof(subgradient_norm_reduction), typeof(subgradient_norm_tolerance),
+            eltype(convex_hull_coeffs),
+        )
+    )
+    coeffs = convert.(Ref(R), convex_hull_coeffs)
     m1 = length(sampled_points)
     m2 = length(sampled_vectors)
-    m3 = length(convex_hull_coeffs)
+    m3 = length(coeffs)
     ((m1 != m2) || (m2 != m3)) && throw(
         ErrorException(
             """
@@ -172,11 +194,11 @@ function GradientSamplingState(
     )
     return GradientSamplingState(;
         callbacks = callbacks,
-        convex_hull_coeffs = convex_hull_coeffs,
+        convex_hull_coeffs = coeffs,
         p = p,
         sampled_points = sampled_points, sampled_vectors = sampled_vectors,
-        sampling_radius = sampling_radius, sampling_radius_reduction = sampling_radius_reduction,
-        subgradient_norm_tolerance = subgradient_norm_tolerance, subgradient_norm_reduction = subgradient_norm_reduction,
+        sampling_radius = convert(R, sampling_radius), sampling_radius_reduction = convert(R, sampling_radius_reduction),
+        subgradient_norm_tolerance = convert(R, subgradient_norm_tolerance), subgradient_norm_reduction = convert(R, subgradient_norm_reduction),
         sub_problem = sub_problem, sub_state = sub_state,
         stepsize = stepsize, stopping_criterion = stopping_criterion, retraction_method = retraction_method,
         vector_transport_method = vector_transport_method, X = X, Y = copy(M, p, X),
@@ -190,51 +212,49 @@ end
 #
 #
 # Accessors
-get_iterate(gss::GradientSamplingState) = gss.p
-get_solver_result(gss::GradientSamplingState) = gss.p
-get_gradient(gss::GradientSamplingState) = gss.X
-provided_callbacks(::Type{GradientSamplingState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:BeforeSubsolver, :Stepsize, :Subsolver])
+get_subgradient(gss::GradientSamplingState) = gss.Y
+additional_callbacks(::Type{<:GradientSamplingState}) = [:BeforeSubsolver, :Stepsize, :Subsolver]
 get_callbacks(gss::GradientSamplingState) = gss.callbacks
+function set_iterate!(gss::GradientSamplingState, M, p)
+    copyto!(M, gss.p, p)
+    return gss
+end
 
 function Base.show(io::IO, gss::GradientSamplingState)
     print(io, "GradientSamplingState(; ")
     print(io, "callbacks = ", gss.callbacks, ", ")
     print(io, "convex_hull_coeffs = ", gss.convex_hull_coeffs, ", p = ", gss.p, ", ")
-    print(io, "sampled_point = ", gss.sampled_points, ", sampled_vectors = ", gss.sampled_vectors, ", ")
+    print(io, "sampled_points = ", gss.sampled_points, ", sampled_vectors = ", gss.sampled_vectors, ", ")
     print(io, "sampling_radius = ", gss.sampling_radius, ", sampling_radius_reduction = ", gss.sampling_radius_reduction, ", ")
     print(io, "subgradient_norm_reduction = ", gss.subgradient_norm_reduction, ", subgradient_norm_tolerance = ", gss.subgradient_norm_tolerance, ", ")
     print(io, "sub_problem = ", gss.sub_problem, ", sub_state = ", gss.sub_state, ", ")
     print(io, "stepsize = ", gss.stepsize, ", stopping_criterion = ", gss.stop, ", ")
-    print(io, "retraction_method = ", gss.retraction_method, " vector_transport_method = ", gss.vector_transport_method, ", ")
-    print(io, "X = ", gss.X, "m Y = ", gss.Y)
+    print(io, "retraction_method = ", gss.retraction_method, ", vector_transport_method = ", gss.vector_transport_method, ", ")
+    print(io, "X = ", gss.X, ", Y = ", gss.Y)
     return print(io, ")")
 end
 
 function status_summary(gss::GradientSamplingState; context::Symbol = :default)
     (context === :short) && return repr(gss)
-    i = get_count(gss, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(gss.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the gradient sampling solver$(conv_inl)"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(gss.stop) ? "Yes" : "No"
+    (context === :inline) && return "A solver state for the gradient sampling solver$(_iteration_suffix(gss))"
     as = _callbacks_summary(gss)
     s = """
     # Solver state for `Manopt.jl`s Gradient Sampling Algorithm
-    $Iter
+    $(_iterations_str(gss))
     ## Parameters$(as)
     * retraction method:         $(_MANOPT_INDENT)$(gss.retraction_method)
     * sampling radius:           $(_MANOPT_INDENT)$(gss.sampling_radius)
     * sampling radius reduction: $(_MANOPT_INDENT)$(gss.sampling_radius_reduction)
-    * subgradient_norm_reduction:$(_MANOPT_INDENT)$(gss.subgradient_norm_reduction)
-    * subgradient_norm_tolerance:$(_MANOPT_INDENT)$(gss.subgradient_norm_tolerance)
+    * subgradient norm reduction:$(_MANOPT_INDENT)$(gss.subgradient_norm_reduction)
+    * subgradient norm tolerance:$(_MANOPT_INDENT)$(gss.subgradient_norm_tolerance)
     * vector transport method:   $(_MANOPT_INDENT)$(gss.vector_transport_method)
 
     ## Stepsize
-    $(_in_str(status_summary(gss.stepsize; context = context); indent = 1, headers = 1))
+    $(_in_str(status_summary(gss.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-    $(_in_str(status_summary(gss.stop; context = context); indent = 1, headers = 1))
-    This indicates convergence: $Conv"""
+    $(_in_str(status_summary(gss.stop; context = context); indent = 0, headers = 1))
+    The algorithm converged: $(_converged_str(gss))"""
     return s
 end
 
@@ -246,12 +266,12 @@ _doc_gradient_sampling = """
 
 perform the gradient sampling algorithm as introduced in [HosseiniUschmajew:2017](@cite).
 
-The algorithm samples a set of `sampling_size = ```m`` many points in a ball around the current iterate,
+The algorithm samples a set of `sample_size` = ``m`` many points in a ball around the current iterate,
 evaluates the gradient at these points and transports these to the current iterate.
 It then builds a surrogate in the tangent space consisting of these ``m`` tangent vectors
 and the gradient at the current iterate to determine a new descent direction in the convex
 hull of these. See [`gradient_sampling_subsolver`](@ref) for the actual sub problem that is solved.
-If this  direction exceeds, the `subgradient_norm_tolerance` the step is rejected and both
+If the norm of this direction falls below the `subgradient_norm_tolerance`, the step is rejected and both
 the ball radius and this tolerance are reduced.
 
 # Input
@@ -266,18 +286,24 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:differential))
 $(_kwargs(:evaluation; add_properties = [:GradientExample]))
 $(_kwargs(:retraction_method))
-* `sample_size = `$(_link(:manifold_dimension))`+1` set the number of sampling points. If you initialise `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
+* `sample_size = `$(_link(:manifold_dimension))`+1` set the number of sampling points. If you initialize `sampled_points`, `sampled_vectors`, and `convex_hull_coeffs` directly
   this parameter has no effect.
 * `sampling_radius = 0.5`
 * `sampling_radius_reduction = 0.5`
 * `sampling_radius_threshold = 1.0e-2` a threshold ``ϵ_{$(_tex(:rm, "opt"))}`` to be used in the stopping criterion
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`GradientSamplingState`](@ref)`; retraction_method=retraction_method)"))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))([`StopWhenGradientNormLess`](@ref)`(subgradient_norm_threshold)`$(_sc(:All))[`StopWhenSmallerOrEqual`](@ref)`(:sampling_radius, sampling_radius_threshold))"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)`$(_sc(:Any))([`StopWhenSubgradientNormLess`](@ref)`(subgradient_norm_threshold)`$(_sc(:All))[`StopWhenSmallerOrEqual`](@ref)`(:sampling_radius, sampling_radius_threshold))"))
+$(_kwargs(:sub_problem; default = "`[`gradient_sampling_subsolver!`](@ref)` "))
+$(_kwargs(:sub_state; default = "`[`InplaceEvaluation`](@ref)`()"))
 * `subgradient_norm_reduction = 0.5`
 * `subgradient_norm_tolerance = 0.1`
 * `subgradient_norm_threshold = 1.0e-3` a threshold ``δ_{$(_tex(:rm, "opt"))}`` to be used in the stopping criterion
 $(_kwargs(:vector_transport_method))
 $(_kwargs(:X; add_properties = [:as_Gradient]))
+
+$(_note(:OtherKeywords))
+
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_gradient_sampling)"
@@ -285,23 +311,20 @@ gradient_sampling(M::AbstractManifold, args...; kwargs...)
 
 function gradient_sampling(
         M::AbstractManifold, f, grad_f, p = rand(M);
-        differential = nothing,
+        differential = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    mgo = ManifoldGradientObjective(
-        f_, grad_f_; evaluation = evaluation, differential = differential
-    )
+    p_ = maybe_wrap_variable(p)
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation = evaluation, differential = differential, p = p)
     rs = gradient_sampling(M, mgo, p_; kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function gradient_sampling(
         M::AbstractManifold, mgo::O, p = rand(M); kwargs...
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
+    keywords_accepted(gradient_sampling; kwargs...)
     return gradient_sampling!(M, mgo, q; kwargs...)
 end
 calls_with_kwargs(::typeof(gradient_sampling)) = (gradient_sampling!,)
@@ -311,10 +334,10 @@ gradient_sampling!(M::AbstractManifold, args...; kwargs...)
 
 function gradient_sampling!(
         M::AbstractManifold, f, grad_f, p;
-        differential = nothing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        differential = missing, evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     )
-    keywords_accepted(gradient_sampling; kwargs...)
+    keywords_accepted(gradient_sampling!; kwargs...)
     mgo = ManifoldGradientObjective(
         f, grad_f; differential = differential, evaluation = evaluation
     )
@@ -335,7 +358,7 @@ function gradient_sampling!(
         sampling_radius_reduction::Real = 0.5, sampling_radius_threshold::Real = 1.0e-2,
         subgradient_norm_reduction::Real = 0.5, subgradient_norm_tolerance::Real = 0.1, subgradient_norm_threshold::Real = 1.0e-3,
         stopping_criterion::StoppingCriterion = StopAfterIteration(100) | (
-            StopWhenGradientNormLess(subgradient_norm_threshold) & (
+            StopWhenSubgradientNormLess(subgradient_norm_threshold) & (
                 StopWhenSmallerOrEqual(:sampling_radius, sampling_radius_threshold)
             )
         ),
@@ -345,12 +368,12 @@ function gradient_sampling!(
         vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(M, typeof(p)),
         kwargs..., #collect rest
     ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
-    # all explicit others others from above are anyways accepted here, so we only have to pass kwargs in
+    # all explicit others from above are anyways accepted here, so we only have to pass kwargs in
     keywords_accepted(gradient_sampling!; kwargs...)
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     s = GradientSamplingState(
-        M, sub_problem, maybe_wrap_evaluation_type(sub_state);
+        M, sub_problem, sub_state;
         callbacks = process_callbacks_arg(callbacks, GradientSamplingState),
         p = p,
         sample_size = sample_size,
@@ -376,12 +399,11 @@ calls_with_kwargs(::typeof(gradient_sampling!)) = (decorate_objective!, decorate
 # Solver implementation
 function initialize_solver!(mp::AbstractManoptProblem, gss::GradientSamplingState)
     get_gradient!(mp, gss.X, gss.p)
+    initialize_stepsize!(gss.stepsize)
     return gss
 end
 
-function step_solver!(
-        mp::AbstractManoptProblem, gss::GradientSamplingState, i
-    )
+function step_solver!(mp::AbstractManoptProblem, gss::GradientSamplingState, k)
     M = get_manifold(mp)
     # resample on TpM, map to manifold and make sure they are within radius
     for (j, (pj, Xj)) in enumerate(zip(gss.sampled_points, gss.sampled_vectors))
@@ -398,14 +420,16 @@ function step_solver!(
     end
     # re-use the tangent vector memory to evaluate the gradients
     # and transport them to the current iterate
-    for (i, (pj, Xj)) in enumerate(zip(gss.sampled_points, gss.sampled_vectors))
-        get_gradient!(mp, Xj, pj) # we only have to transport the elements 2,3,...:
-        (i > 1) && vector_transport_to!(M, Xj, pj, Xj, gss.p)
+    copyto!(M, gss.sampled_vectors[1], gss.p, gss.X) # the gradient at the iterate is already known
+    for (j, (pj, Xj)) in enumerate(zip(gss.sampled_points, gss.sampled_vectors))
+        (j == 1) && continue # we only have to evaluate and transport the elements 2,3,...:
+        get_gradient!(mp, Xj, pj)
+        vector_transport_to!(M, Xj, pj, Xj, gss.p, gss.vector_transport_method)
     end
     # solve sub problem in convex_hull_coeffs
-    callback(:BeforeSubsolver, mp, gss, i)
+    callback(:BeforeSubsolver, mp, gss, k)
     _gradient_sampling_subsolver(M, gss)
-    callback(:Subsolver, mp, gss, i)
+    callback(:Subsolver, mp, gss, k)
     # reconstruct tangent vector from the coefficients (w_l in HU17) in Y
     zero_vector!(M, gss.Y, gss.p)
     for (λj, Xj) in zip(gss.convex_hull_coeffs, gss.sampled_vectors)
@@ -419,23 +443,16 @@ function step_solver!(
     else
         # We already have the gradient in the sampled vectors[1]
         # and set normed -Y as search direction
-        step = get_stepsize(mp, gss, i, -gss.Y / norm(M, gss.p, gss.Y); gradient = gss.sampled_vectors[1])
-        callback(:Stepsize, mp, gss, i)
+        step = get_stepsize(mp, gss, k, -gss.Y / norm(M, gss.p, gss.Y); gradient = gss.sampled_vectors[1])
+        callback(:Stepsize, mp, gss, k)
         ManifoldsBase.retract_fused!(M, gss.p, gss.p, -gss.Y / norm(M, gss.p, gss.Y), step, gss.retraction_method)
         get_gradient!(mp, gss.X, gss.p)
     end
     return gss
 end
-
+# closed form in-place
 function _gradient_sampling_subsolver(
-        M, gss::GradientSamplingState{P, T, R, F, ClosedFormSubSolverState{AllocatingEvaluation}}
-    ) where {P, T, R, F} # Point, Vector, Reals, Function (of closed form problem)
-    gss.convex_hull_coeffs = gss.sub_problem(M, gss.p, gss.sampled_vectors)
-    return gss
-end
-# (b) closed form in-place
-function _gradient_sampling_subsolver(
-        M, gss::GradientSamplingState{P, T, R, F, ClosedFormSubSolverState{InplaceEvaluation}}
+        M, gss::GradientSamplingState{P, T, R, F, ClosedFormSubSolverState}
     ) where {P, T, R, F}
     gss.sub_problem(M, gss.convex_hull_coeffs, gss.p, gss.sampled_vectors)
     return gss

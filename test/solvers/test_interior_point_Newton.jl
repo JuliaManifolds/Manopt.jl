@@ -31,9 +31,52 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             M, ConstrainedManifoldObjective(f, grad_f; g = g, grad_g = grad_g, M = M), f
         )
         @test ipnsc.sub_state isa Manopt.ClosedFormSubSolverState
-
+        @testset "the step manifold keeps a product manifold as one factor" begin
+            Mp = Sphere(2) × Sphere(2)
+            fp(N, q) = q[N, 1][1]^2 + q[N, 2][1]^2
+            grad_fp(N, q) = zero_vector(N, q)
+            gp(N, q) = [q[N, 1][3] - 1.0]
+            grad_gp(N, q) = [zero_vector(N, q)]
+            cmop = ConstrainedManifoldObjective(fp, grad_fp; g = gp, grad_g = grad_gp, M = Mp)
+            ipsp = InteriorPointNewtonState(Mp, cmop, fp)
+            @test get_manifold(ipsp.step_problem)[1] === Mp
+        end
+        @testset "closed form sub solver can take a step" begin
+            # the documented closed form constructor built a state `step_solver!` could not run
+            cmo = ConstrainedManifoldObjective(
+                f, grad_f; g = g, grad_g = grad_g, M = M, hess_f = Hess_f, hess_g = Hess_g,
+            )
+            dmp = DefaultManoptProblem(M, cmo)
+            q0 = (1.0 / sqrt(3.0)) .* [1.0, 1.0, 1.0]
+            # the condensed system is solved on `N = M × ℝ^n`, in place of `X`
+            closed!(N, X, β, μ, λ, s, q) = zero_vector!(N, X, q)
+            ips = InteriorPointNewtonState(
+                M, cmo, closed!; p = copy(M, q0), evaluation = InplaceEvaluation(),
+            )
+            @test ips.sub_state isa Manopt.ClosedFormSubSolverState
+            @test ips.sub_problem === closed!
+            @test Manopt.step_solver!(dmp, ips, 1) === ips
+            @test is_point(M, get_iterate(ips))
+            # the step size is initialized with the solver
+            awn = AdaptiveWNGradient()(M)
+            awn.count = 7
+            ips_s = InteriorPointNewtonState(M, cmo, closed!; p = copy(M, q0), evaluation = InplaceEvaluation(), stepsize = awn)
+            Manopt.initialize_solver!(dmp, ips_s)
+            @test awn.count == 0
+            # the step size of the state only backtracks, as the one of the solver
+            @test ips.stepsize.stop_increasing_at_step == 0
+        end
+        @testset "sub_stopping_criterion reaches the sub solver" begin
+            s = interior_point_Newton(
+                M, f, grad_f, Hess_f, (1.0 / sqrt(3.0)) .* [1.0, 1.0, 1.0];
+                g = g, grad_g = grad_g, Hess_g = Hess_g, stopping_criterion = StopAfterIteration(1),
+                sub_stopping_criterion = StopAfterIteration(1), return_state = true,
+            )
+            sub_stop = get_state(s.sub_state).stop
+            @test sub_stop isa StopAfterIteration
+            @test sub_stop.max_iterations == 1
+        end
         p_0 = (1.0 / (sqrt(3.0))) .* [1.0, 1.0, 1.0]
-        # p_0 = 1.0 / sqrt(2) .* [0.0, 1.0, 1.0]
         p_opt = [0.0, 0.0, 1.0]
         record = [:Iterate]
         dbg = [
@@ -41,7 +84,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             :Stop, 10, DebugMessages(:Info, :Always),
         ]
 
-        sc = StopAfterIteration(800) | StopWhenKKTResidualLess(1.0e-2)
+        sc = StopAfterIteration(800) | StopWhenKKTResidualLess(1.0e-10)
         # (a) classical call w/ recording
         res = interior_point_Newton(
             M, f, grad_f, Hess_f, p_0;
@@ -52,7 +95,21 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
         )
 
         q = get_solver_result(res)
-        @test distance(M, q, [0.0, 0.0, 1.0]) < 2.0e-4
+        @test distance(M, q, p_opt) < 2.0e-4
+        # sub_kwargs reach the sub problem as keywords
+        q_sub = interior_point_Newton(
+            M, f, grad_f, Hess_f, p_0;
+            g = g, grad_g = grad_g, Hess_g = Hess_g, stopping_criterion = sc,
+            sub_kwargs = (record = [:Iterate],),
+        )
+        @test q_sub == q
+        # a decorated sub objective, here with a counter, gives the same result
+        q_sub2 = interior_point_Newton(
+            M, f, grad_f, Hess_f, p_0;
+            g = g, grad_g = grad_g, Hess_g = Hess_g, stopping_criterion = sc,
+            sub_kwargs = (count = [:Cost],),
+        )
+        @test q_sub2 == q
 
         # (b) inplace call
         q2 = copy(M, p_0)
@@ -64,13 +121,16 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
 
         # (c) call with objective - but then we also test the Centrality cond
         coh = ConstrainedManifoldObjective(
-            f, grad_f, g, grad_g, nothing, nothing; hess_f = Hess_f, hess_g = Hess_g, M = M, p = p_0
+            f, grad_f, g, grad_g, missing, missing;
+            hess_f = Hess_f, hess_g = Hess_g, M = M, p = p_0
         )
         ipcc = InteriorPointCentralityCondition(coh, 0.9)
         q3 = interior_point_Newton(
             M, coh, p_0; stopping_criterion = sc, centrality_condition = ipcc
         )
-        @test distance(M, q3, [0.0, 0.0, 1.0]) < 2.0e-4
+        @test distance(M, q3, p_opt) < 2.0e-4
+        # the objective variant also has the documented default start point
+        @test hasmethod(interior_point_Newton, Tuple{typeof(M), typeof(coh)})
         @testset "Callback Test" begin
             sk_record = Tuple{Symbol, Int}[]
             cb(symbol, problem, state, k) = push!(sk_record, (symbol, k))
@@ -120,5 +180,21 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test, RecursiveArrayTools
             scatter!(scene, π1.(P), π2.(P), π3.(P); color = :white, markersize = 9)
             display(scene)
         end
+    end
+    @testset "mixed constraints (m ≠ n)" begin
+        M = Manifolds.Euclidean(3)
+        f(M, p) = sum(p)
+        grad_f(M, p) = ones(3)
+        Hess_f(M, p, X) = zeros(3)
+        q = interior_point_Newton(
+            M, f, grad_f, Hess_f, [1.0, 1.0, 2.0];
+            g = [(M, p) -> -p[1]], grad_g = [(M, p) -> [-1.0, 0, 0]], Hess_g = [(M, p, X) -> zeros(3)],
+            h = [(M, p) -> p[2] - 1.0, (M, p) -> p[3] - 2.0],
+            grad_h = [(M, p) -> [0.0, 1, 0], (M, p) -> [0.0, 0, 1]],
+            Hess_h = [(M, p, X) -> zeros(3), (M, p, X) -> zeros(3)],
+            stopping_criterion = StopAfterIteration(3),
+        )
+        @test q[2] ≈ 1.0 atol = 1.0e-8
+        @test q[3] ≈ 2.0 atol = 1.0e-8
     end
 end

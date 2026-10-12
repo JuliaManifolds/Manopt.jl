@@ -7,7 +7,7 @@ stores option values for a [`subgradient_method`](@ref) solver
 
 $(_fields(:callbacks; add_properties = [:as_dict]))
 $(_fields(:p; add_properties = [:as_Iterate]))
-* `p_star`: optimal value
+* `p_star`: the best point visited; the result is returned and, for the in-place variant, stored here
 $(_fields([:retraction_method, :stepsize]))
 $(_fields(:stopping_criterion; name = "stop"))
 * `X`: the current element from the possible subgradients at `p` that was last evaluated.
@@ -16,11 +16,11 @@ $(_fields(:stopping_criterion; name = "stop"))
 
     SubGradientMethodState(M::AbstractManifold; kwargs...)
 
-Initialise the Subgradient method state
+Initialize the Subgradient method state
 
 # Keyword arguments
 
-$(_kwargs(:callbacks; add_properties = [:process_note]))
+$(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`SubGradientMethodState`](@ref)`)"))
@@ -29,7 +29,7 @@ $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct SubGradientMethodState{
         P, T, C <: AbstractDict{Symbol}, RM <: AbstractRetractionMethod, S <: Stepsize, SC <: StoppingCriterion,
-    } <: AbstractManoptSolverState where {P, T}
+    } <: AbstractManoptSolverState
     callbacks::C
     p::P
     p_star::P
@@ -54,32 +54,29 @@ mutable struct SubGradientMethodState{
             TM <: AbstractManifold, P, T, C <: AbstractDict{Symbol}, SC <: StoppingCriterion, S <: Stepsize, TR <: AbstractRetractionMethod,
         }
         return SubGradientMethodState(;
-            callbacks = callbacks, p = p, p_star = copy(M, p),
+            # the input point stores the result (best visited); the iterate roams on a copy
+            callbacks = callbacks, p = copy(M, p), p_star = p,
             retraction_method = retraction_method, stepsize = stepsize, stopping_criterion = stopping_criterion, X = X
         )
     end
 end
 get_callbacks(sgms::SubGradientMethodState) = sgms.callbacks
-provided_callbacks(::Type{SubGradientMethodState}) = union(_MANOPT_DEFAULT_CALLBACKS, [:Stepsize])
+additional_callbacks(::Type{<:SubGradientMethodState}) = [:Stepsize]
 function Base.show(io::IO, sgms::SubGradientMethodState)
     print(io, "SubGradientMethodState(; ")
     print(io, "callbacks = ", sgms.callbacks, ", ")
-    print(io, "p = ", sgms.p, "p_star = ", sgms.p_star)
+    print(io, "p = ", sgms.p, ", p_star = ", sgms.p_star)
     print(io, ", retraction_method = ", sgms.retraction_method)
     print(io, ", stepsize = ", sgms.stepsize, ", stopping_criterion = ", sgms.stop, ", X = ", sgms.X)
     return print(io, ")")
 end
 function status_summary(sgms::SubGradientMethodState; context::Symbol = :default)
     (context === :short) && return repr(sgms)
-    i = get_count(sgms, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(sgms.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the subgradient method$(conv_inl)"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(sgms.stop) ? "Yes" : "No"
+    (context === :inline) && return "A solver state for the subgradient method$(_iteration_suffix(sgms))"
     as = _callbacks_summary(sgms)
     s = """
     # Solver state for `Manopt.jl`s Subgradient Method
-    $Iter
+    $(_iterations_str(sgms))
     ## Parameters$(as)
     * retraction method: $(sgms.retraction_method)
 
@@ -87,8 +84,8 @@ function status_summary(sgms::SubGradientMethodState; context::Symbol = :default
     $(_in_str(status_summary(sgms.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
-    $(_in_str(status_summary(sgms.stop; context = context); indent = 1, headers = 1))
-    This indicates convergence: $Conv"""
+    $(_in_str(status_summary(sgms.stop; context = context); indent = 0, headers = 1))
+    The algorithm converged: $(_converged_str(sgms))"""
     return s
 end
 get_iterate(sgs::SubGradientMethodState) = sgs.p
@@ -107,7 +104,7 @@ _doc_SGM = """
     subgradient_method!(M, f, ∂f, p; kwargs...)
     subgradient_method!(M, sgo, p; kwargs...)
 
-perform a subgradient method ``p^{(k+1)} = $(_tex(:retr))\\bigl(p^{(k)}, s^{(k)}∂f(p^{(k)})\\bigr)``,
+perform a subgradient method ``p^{(k+1)} = $(_tex(:retr))_{p^{(k)}}\\bigl(-s^{(k)}∂f(p^{(k)})\\bigr)``,
 where ``$(_tex(:retr))`` is a retraction, ``s^{(k)}`` is a step size.
 
 Though the subgradient might be set valued,
@@ -130,11 +127,9 @@ $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`SubGradientMe
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(5000)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 
-and the ones that are passed to [`decorate_state!`](@ref) for decorators.
+$(_note(:OtherKeywords))
 
-# Output
-
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_SGM)"
@@ -146,15 +141,13 @@ function subgradient_method(
         M::AbstractManifold, f, ∂f, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(), kwargs...,
     )
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    ∂f_ = _ensure_mutating_gradient(∂f, p, evaluation)
-    sgo = ManifoldSubgradientObjective(f_, ∂f_; evaluation = evaluation)
+    p_ = maybe_wrap_variable(p)
+    sgo = ManifoldSubgradientObjective(f, ∂f; evaluation = evaluation, p = p)
     rs = subgradient_method(M, sgo, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function subgradient_method(
-        M::AbstractManifold, sgo::O, p; kwargs...
+        M::AbstractManifold, sgo::O, p = rand(M); kwargs...
     ) where {O <: Union{ManifoldSubgradientObjective, AbstractDecoratedManifoldObjective}}
     keywords_accepted(subgradient_method; kwargs...)
     q = copy(M, p)
@@ -200,7 +193,7 @@ calls_with_kwargs(::typeof(subgradient_method!)) = (decorate_objective!, decorat
 function initialize_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState)
     M = get_manifold(mp)
     copyto!(M, sgs.p_star, sgs.p)
-    sgs.X = zero_vector(M, sgs.p)
+    zero_vector!(M, sgs.X, sgs.p)
     initialize_stepsize!(sgs.stepsize)
     return sgs
 end
@@ -209,7 +202,7 @@ function step_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState, k)
     step = get_stepsize(mp, sgs, k; gradient = sgs.X)
     callback(:Stepsize, mp, sgs, k)
     M = get_manifold(mp)
-    retract!(M, sgs.p, sgs.p, -step * sgs.X, sgs.retraction_method)
+    ManifoldsBase.retract_fused!(M, sgs.p, sgs.p, sgs.X, -step, sgs.retraction_method)
     (get_cost(mp, sgs.p) < get_cost(mp, sgs.p_star)) && copyto!(M, sgs.p_star, sgs.p)
     return sgs
 end

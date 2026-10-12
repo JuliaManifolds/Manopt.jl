@@ -14,28 +14,47 @@ using LinearAlgebra: I, tr
         mI = -Matrix{Float64}(I, d, d)
         grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
         p0 = project(M, ones(d))
+        # This run (and the following ones) converge to the minimizer in 12 iterations
         sol = augmented_Lagrangian_method(M, f, grad_f, p0; g = g, grad_g = grad_g)
+        # a user-supplied multiplier vector is updated in place and the run is unchanged
+        μ0 = ones(d)
+        sol_μ = augmented_Lagrangian_method(M, f, grad_f, p0; g = g, grad_g = grad_g, μ = μ0)
+        @test sol_μ == sol
+        @test μ0 != ones(d)
         @test distance(M, sol, v0) < 8 * 1.0e-4
         sol2 = copy(M, p0)
         augmented_Lagrangian_method!(M, f, grad_f, sol2; g = g, grad_g = grad_g)
         @test sol2 == sol
+        sol3 = copy(M, p0)
         augmented_Lagrangian_method!(
-            M,
-            f,
-            grad_f,
-            sol2;
-            g = g,
-            grad_g = grad_g,
-            gradient_inequality_range = NestedPowerRepresentation(),
+            M, f, grad_f, sol3;
+            g = g, grad_g = grad_g, gradient_inequality_range = NestedPowerRepresentation(),
         )
-        @test sol2 ≈ sol
-
+        @test sol3 ≈ sol atol = 5.0e-5
+        # decorating keywords must work for the in-place variant too, and an
+        # already decorated objective must be accepted
+        sol4 = copy(M, p0)
+        augmented_Lagrangian_method!(
+            M, f, grad_f, sol4; g = g, grad_g = grad_g, count = [:Cost],
+        )
+        @test sol4 ≈ sol atol = 5.0e-5
+        sol5 = copy(M, p0)
+        dco = Manopt.decorate_objective!(
+            M, ConstrainedManifoldObjective(f, grad_f; g = g, grad_g = grad_g, M = M);
+            count = [:Cost],
+        )
+        augmented_Lagrangian_method!(M, dco, sol5)
+        @test get_count(dco, :Cost) > 0
+        @test sol5 ≈ sol atol = 5.0e-5
         co = ConstrainedManifoldObjective(f, grad_f; g = g, grad_g = grad_g, M = M)
         mp = DefaultManoptProblem(M, co)
         # dummy ALM problem
         sp = DefaultManoptProblem(M, ManifoldCostObjective(f))
         ss = NelderMeadState(M)
         alms = AugmentedLagrangianMethodState(M, co, sp, ss; p = p0)
+        # scalar keywords of different types are promoted
+        alms_i = AugmentedLagrangianMethodState(M, co, sp, ss; p = p0, ρ = 1, λ_max = 20, τ = 4 // 5)
+        @test (alms_i.ρ, alms_i.λ_max, alms_i.λ_min, alms_i.τ) === (1.0, 20.0, -20.0, 0.8)
         set_iterate!(alms, M, 2 .* p0)
         @test Manopt.get_message(alms) == ""
         @test get_iterate(alms) == 2 .* p0
@@ -43,39 +62,52 @@ using LinearAlgebra: I, tr
             Manopt.status_summary(alms; context = :default),
             "# Solver state for `Manopt.jl`s Augmented Lagrangian Method\n"
         )
+        @test startswith(repr(alms), "AugmentedLagrangianMethodState(DefaultManoptProblem(")
+        @test Manopt.status_summary(alms; context = :short) == repr(alms)
         @test Manopt.get_sub_problem(alms) === sp
         @test Manopt.get_sub_state(alms) === ss
         # With dummy closed form solution
         almsc = AugmentedLagrangianMethodState(M, co, f)
         @test almsc.sub_state isa Manopt.ClosedFormSubSolverState
+        # With dummy closed form solution
+        almsc = AugmentedLagrangianMethodState(M, co, f, AllocatingEvaluation())
+        @test almsc.sub_state isa Manopt.ClosedFormSubSolverState
+        @testset "closed form sub solver can take a step" begin
+            # the closed form state could be built but never stepped: `step_solver!` was
+            # unrestricted and always went through `solve!` on the sub problem
+            step(M, p) = exp(M, p, -0.05 .* grad_f(M, p))
+            closed_a(M, ρ, μ, λ, p) = step(M, p)                          # allocating
+            closed_i!(M, q, ρ, μ, λ, p) = copyto!(M, q, step(M, p))       # in place
+            sa = AugmentedLagrangianMethodState(M, co, closed_a; p = copy(M, p0))
+            si = AugmentedLagrangianMethodState(
+                M, co, closed_i!, InplaceEvaluation(); p = copy(M, p0),
+            )
+            # an allocating closed form is wrapped on construction, an in-place one is not
+            @test sa.sub_problem isa Manopt.InplaceManifoldFunction
+            @test si.sub_problem === closed_i!
+            for s in (sa, si)
+                @test Manopt.step_solver!(mp, s, 1) === s
+                @test is_point(M, get_iterate(s))
+            end
+            # both evaluation types have to take the same step
+            @test isapprox(M, get_iterate(sa), get_iterate(si))
+            @test isapprox(M, get_iterate(sa), step(M, p0))
+            # and the multiplier update ran, so the tolerance was tightened
+            @test sa.ϵ < 1.0e-3
+        end
 
         alm_record = Tuple{Symbol, Int}[]
         alm_cb(symbol, problem, state, k) = append!(alm_record, [(symbol, k)])
         augmented_Lagrangian_method(
-            M,
-            f,
-            grad_f,
-            p0;
-            g = g,
-            grad_g = grad_g,
-            stopping_criterion = StopAfterIteration(1),
-            callbacks = alm_cb,
+            M, f, grad_f, p0;
+            g = g, grad_g = grad_g, stopping_criterion = StopAfterIteration(1), callbacks = alm_cb,
         )
         @test alm_record == [
-            (:BeforeInit, 0),
-            (:Init, 0),
-            (:BeforeStop, 0),
-            (:BeforeStep, 1),
-            (:Subsolver, 1),
-            (:Step, 1),
-            (:BeforeStop, 1),
-            (:Stop, 1),
+            (:BeforeInit, 0), (:Init, 0), (:BeforeStop, 0),
+            (:BeforeStep, 1), (:BeforeSubsolver, 1), (:Subsolver, 1), (:Step, 1), (:BeforeStop, 1), (:Stop, 1),
         ]
         almsc_cb = AugmentedLagrangianMethodState(
-            M,
-            co,
-            f;
-            callbacks = Dict(:Step => alm_cb),
+            M, co, f; callbacks = Dict(:Step => alm_cb),
         )
         @test occursin("active callbacks", Manopt.status_summary(almsc_cb; context = :default))
     end
@@ -84,19 +116,38 @@ using LinearAlgebra: I, tr
         f(M, p) = (p + 5)^2
         grad_f(M, p) = 2 * p + 10
         g(M, p) = -p # in other words p ≥ 0
-        grad_g(M, p) = -1
+        grad_g(M, p) = -1.0
         s = augmented_Lagrangian_method(
-            M,
-            f,
-            grad_f,
-            4.0;
-            g = g,
-            grad_g = grad_g,
-            stopping_criterion = StopAfterIteration(20),
-            return_state = true,
+            M, f, grad_f, 4.0;
+            g = g, grad_g = grad_g,
+            stopping_criterion = StopAfterIteration(20), return_state = true,
         )
         q = get_solver_result(s)[]
         @test q isa Real
         @test f(M, q) < f(M, 4)
+    end
+    @testset "Sub problem penalty parameters" begin
+        # The cost and the gradient of the sub problem have to be set up with the same penalty
+        # parameter ρ. If they disagree, the sub solver minimizes a different function than the
+        # one it computes gradients for, and since ρ grows geometrically the two drift apart.
+        M = Euclidean(2)
+        f(M, p) = p[1]
+        grad_f(M, p) = [1.0, 0.0]
+        h(M, p) = [p[1]^2 + p[2]^2 - 1.0]
+        grad_h(M, p) = [[2 * p[1], 2 * p[2]]]
+        s = augmented_Lagrangian_method(
+            M, f, grad_f, [0.5, 0.5];
+            h = h, grad_h = grad_h, equality_constraints = 1,
+            stopping_criterion = StopAfterIteration(20), return_state = true,
+        )
+        sub_objective = Manopt.get_objective(s.sub_problem)
+        sub_cost = Manopt.get_cost_function(sub_objective)
+        # the gradient is wrapped for the in-place dispatch, so it needs one more unwrap
+        sub_gradient = sub_objective.functions.gradient.f
+        @test sub_cost.ρ == sub_gradient.ρ
+        @test sub_cost.μ == sub_gradient.μ
+        @test sub_cost.λ == sub_gradient.λ
+        # with matching parameters the solver reaches the minimizer (-1, 0)
+        @test distance(M, get_solver_result(s), [-1.0, 0.0]) < 1.0e-3
     end
 end

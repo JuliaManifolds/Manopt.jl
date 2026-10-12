@@ -15,22 +15,11 @@ convex_bundle_method!
 ConvexBundleMethodState
 ```
 
-## Stopping criteria
-
-```@docs
-StopWhenLagrangeMultiplierLess
-```
-
-## Debug functions
-
-```@docs
-DebugWarnIfLagrangeMultiplierIncreases
-```
-
 ## Helpers and internal functions
 
 ```@docs
 convex_bundle_method_subsolver
+convex_bundle_method_subsolver!
 DomainBackTrackingStepsize
 DomainBackTracking
 NullStepBackTrackingStepsize

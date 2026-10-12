@@ -1,0 +1,97 @@
+using Manifolds, Manopt, Random, Test
+
+@testset "Constrained set objective" begin
+    M = Hyperbolic(2)
+    c = Manifolds._hyperbolize(M, [0, 0])
+    r = 1.0
+    N = 200
+    σ = 1.5
+    Random.seed!(42)
+    # N random points moved to top left to have a mean outside
+    pts = [
+        exp(
+            M, c,
+            get_vector(
+                M, c, σ .* randn(manifold_dimension(M)) .+ [2.5, 2.5],
+                DefaultOrthonormalBasis(),
+            ),
+        ) for _ in 1:N
+    ]
+    f(M, p) = 1 / (2 * length(pts)) .* sum(distance(M, p, q)^2 for q in pts)
+    grad_f(M, p) = -1 / length(pts) .* sum(log(M, p, q) for q in pts)
+    function grad_f!(M, X, p)
+        zero_vector!(M, X, p)
+        Y = zero_vector(M, p)
+        for q in pts
+            log!(M, Y, p, q)
+            X .+= Y
+        end
+        X .*= -1 / length(pts)
+        return X
+    end
+    project_C, project_C! = Manopt.Test.ball_projection(M, c, r)
+    g(M, p) = distance(M, c, p)^2 - r^2
+    indicator_C(M, p) = (g(M, p) ≤ 0) ? 0 : Inf
+
+    csoa = ManifoldConstrainedSetObjective(f, grad_f, project_C)
+    csoa2 = ManifoldConstrainedSetObjective(f, grad_f, project_C; indicator = indicator_C)
+    csoi = ManifoldConstrainedSetObjective(
+        f, grad_f!, project_C!; evaluation = InplaceEvaluation()
+    )
+    csoi2 = ManifoldConstrainedSetObjective(
+        f, grad_f!, project_C!; evaluation = InplaceEvaluation(), indicator = indicator_C
+    )
+
+    # a point outside of C, at distance 2r from its center c
+    q_out = exp(M, c, get_vector(M, c, [2 * r, 0.0], DefaultOrthonormalBasis()))
+    # a projection that reproduces a point of C only up to round-off
+    project_R(M, p) = norm(M, c, log(M, c, p)) > r ? project_C(M, p) : exp(M, c, log(M, c, p))
+    csor = ManifoldConstrainedSetObjective(f, grad_f, project_R)
+    p_in = exp(M, c, get_vector(M, c, [r / 2, 0.0], DefaultOrthonormalBasis()))
+    @test csor.indicator(M, p_in) == 0
+    @test isinf(csor.indicator(M, q_out))
+    # the default indicator also works for number points
+    csoc = ManifoldConstrainedSetObjective((M, p) -> p^2, (M, p) -> 2p, (M, p) -> clamp(p, -1.0, 1.0); p = 0.5)
+    @test csoc.indicator(Circle(), 0.5) == 0
+    @test isinf(csoc.indicator(Circle(), 2.0))
+
+    for objective in [csoa, csoa2, csoi, csoi2]
+        @test get_cost(M, objective, c) == f(M, c)
+        @test startswith(repr(objective), "ManifoldConstrainedSetObjective(")
+        @test Manopt.status_summary(objective; context = :short) == repr(objective)
+        @test startswith(Manopt.status_summary(objective; context = :inline), "A set-constrained objective of")
+        @test startswith(Manopt.status_summary(objective), "A set-constrained objective\n")
+        @test objective.indicator(M, c) == 0
+        @test isinf(objective.indicator(M, q_out))
+        @test Manopt.get_cost_function(objective)(M, c) == f(M, c)
+        @test get_gradient(M, objective, c) == grad_f(M, c)
+        X = zero_vector(M, c)
+        get_gradient!(M, X, objective, c)
+        Y = zero_vector(M, c)
+        grad_f!(M, Y, c)
+        @test X == Y
+        if objective ∈ [csoa, csoa2]
+            @test Manopt.get_gradient_function(objective)(M, c) == grad_f(M, c)
+        else
+            @test Manopt.get_gradient_function(objective; evaluation = InplaceEvaluation())(M, X, c) == grad_f!(M, Y, c)
+            @test X == Y
+        end
+        dmp = DefaultManoptProblem(M, objective)
+        p = get_projected_point(dmp, c)
+        @test p == c # c is already in C
+        get_projected_point!(dmp, p, c)
+        @test p == c
+        p = get_projected_point(M, objective, c)
+        @test p == c
+        # the allocating projection of a decorated objective
+        dco = Manopt.ManifoldCountObjective(M, objective, [:Cost])
+        @test get_projected_point(M, dco, c) == c
+        get_projected_point!(M, p, objective, c)
+        @test p == c
+        # and a point outside of C is projected onto its boundary
+        p = get_projected_point(M, objective, q_out)
+        @test isapprox(distance(M, c, p), r)
+        get_projected_point!(M, p, objective, q_out)
+        @test isapprox(distance(M, c, p), r)
+    end
+end

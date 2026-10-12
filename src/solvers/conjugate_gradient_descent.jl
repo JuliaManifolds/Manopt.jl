@@ -1,24 +1,21 @@
 function default_stepsize(
-        M::AbstractManifold,
-        ::Type{<:ConjugateGradientDescentState};
+        M::AbstractManifold, ::Type{<:ConjugateGradientDescentState};
+        p = rand(M),
         retraction_method = default_retraction_method(M),
     )
     # take a default with a slightly defensive initial step size.
+    initial_stepsize = one(real(float(number_eltype(p))))
     return ArmijoLinesearch(
-        M; retraction_method = retraction_method, initial_stepsize = 1.0
+        M; retraction_method = retraction_method, initial_stepsize = initial_stepsize
     )
 end
 function status_summary(cgds::ConjugateGradientDescentState; context::Symbol = :default)
     (context === :short) && (return repr(cgds))
-    i = get_count(cgds, :Iterations)
-    conv_inl = (i > 0) ? (indicates_convergence(cgds.stop) ? " (converged" : " (stopped") * " after $i iterations)" : ""
-    (context === :inline) && return "A solver state for the conjugate gradient descent solver$(conv_inl)"
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(cgds.stop) ? "Yes" : "No"
+    (context === :inline) && return "A solver state for the conjugate gradient descent solver$(_iteration_suffix(cgds))"
     as = _callbacks_summary(cgds)
     return """
     # Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver
-    $Iter
+    $(_iterations_str(cgds))
     ## Parameters$(as)
     * conjugate gradient coefficient:$(_MANOPT_INDENT)$(cgds.coefficient) (last β=$(cgds.β))
     * restart condition:             $(_MANOPT_INDENT)$(cgds.restart_condition)
@@ -26,11 +23,11 @@ function status_summary(cgds::ConjugateGradientDescentState; context::Symbol = :
     * vector transport method:       $(_MANOPT_INDENT)$(cgds.vector_transport_method)
 
     ## Stepsize
-    $(_in_str(status_summary(cgds.stop; context = context); indent = 0, headers = 1))
+    $(_in_str(status_summary(cgds.stepsize; context = context); indent = 0, headers = 1))
 
     ## Stopping criterion
     $(_in_str(status_summary(cgds.stop; context = context); indent = 0, headers = 1))
-    This indicates convergence: $Conv"""
+    The algorithm converged: $(_converged_str(cgds))"""
 end
 
 _doc_CG_formula = raw"""
@@ -40,7 +37,7 @@ p_{k+1} = \operatorname{retr}_{p_k} \bigl( s_kδ_k \bigr),
 """
 _doc_update_delta_k = raw"""
 ````math
-δ_k=\operatorname{grad}f(p_k) + β_k \delta_{k-1}
+δ_k = -\operatorname{grad}f(p_k) + β_k \mathcal T_{p_k←p_{k-1}} δ_{k-1}
 ````
 """
 
@@ -50,23 +47,24 @@ _doc_CG = """
     conjugate_gradient_descent(M, gradient_objective, p)
     conjugate_gradient_descent!(M, gradient_objective, p; kwargs...)
 
-perform a conjugate gradient based descent-
+perform a conjugate gradient based descent
 
 $(_doc_CG_formula)
 
 where ``$(_tex(:retr))`` denotes a retraction on the `Manifold` `M`
 and one can employ different rules to update the descent direction ``δ_k`` based on
-the last direction ``δ_{k-1}`` and both gradients ``$(_tex(:grad))f(x_k)``,``$(_tex(:grad)) f(x_{k-1})``.
+the last direction ``δ_{k-1}`` and both gradients ``$(_tex(:grad))f(p_k)``, ``$(_tex(:grad)) f(p_{k-1})``.
 The [`Stepsize`](@ref) ``s_k`` may be determined by a [`Linesearch`](@ref).
 
 Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldFirstOrderObjective`](@ref) `gradient_objective` directly.
 
-Available update rules are [`SteepestDescentCoefficientRule`](@ref), which yields a [`gradient_descent`](@ref),
-[`ConjugateDescentCoefficient`](@ref) (the default), [`DaiYuanCoefficientRule`](@ref), [`FletcherReevesCoefficient`](@ref),
+Available update rules are [`SteepestDescentCoefficient`](@ref), which yields a [`gradient_descent`](@ref),
+[`ConjugateDescentCoefficient`](@ref) (the default), [`DaiYuanCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
 [`HagerZhangCoefficient`](@ref), [`HestenesStiefelCoefficient`](@ref),
 [`LiuStoreyCoefficient`](@ref), and [`PolakRibiereCoefficient`](@ref).
-These can all be combined with a [`ConjugateGradientBealeRestartRule`](@ref) rule.
+A [`HybridCoefficient`](@ref) combines several of these into one coefficient,
+and all of them can be wrapped in a [`ConjugateGradientBealeRestart`](@ref).
 
 They all compute ``β_k`` such that this algorithm updates the search direction as
 
@@ -78,16 +76,18 @@ $(_args([:M, :f, :grad_f, :p]))
 
 # Keyword arguments
 
+$(_kwargs(:callbacks; add_properties = [:process_note]))
 * `coefficient::DirectionUpdateRule=`[`ConjugateDescentCoefficient`](@ref)`()`:
   rule to compute the descent direction update coefficient ``β_k``, as a functor, where
   the resulting function maps are `(amp, cgs, k) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
-  `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
-* `restart_condition::AbstractRestartCondition=`[`NeverRestart`](@ref)`()`:
+  `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iteration.
+$(_kwargs([:differential, :evaluation]))
+$(_kwargs(:X; name = "initial_gradient", add_properties = [:as_Memory]))
+* `restart_condition::AbstractRestartCondition=`[`RestartOnNonDescent`](@ref)`()`:
   rule when the algorithm should restart, i.e. use the negative gradient instead of the computed direction,
-  as a functior where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
-  `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
-$(_kwargs([:differential, :evaluation, :retraction_method]))
-$(_kwargs(:callbacks; add_properties = [:process_note]))
+  as a functor where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
+  `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iteration.
+$(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`ArmijoLinesearch`](@ref)`()"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
 $(_kwargs(:vector_transport_method))
@@ -106,14 +106,15 @@ function conjugate_gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
     return conjugate_gradient_descent(M, f, grad_f, rand(M); kwargs...)
 end
 function conjugate_gradient_descent(
-        M::AbstractManifold, f::TF, grad_f::TDF, p; evaluation = AllocatingEvaluation(), kwargs...
+        M::AbstractManifold, f::TF, grad_f::TDF, p;
+        differential = missing, evaluation = AllocatingEvaluation(), kwargs...,
     ) where {TF, TDF}
-    p_ = _ensure_mutating_variable(p)
-    f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation = evaluation)
+    p_ = maybe_wrap_variable(p)
+    mgo = ManifoldGradientObjective(
+        f, grad_f; differential = differential, evaluation = evaluation, p = p
+    )
     rs = conjugate_gradient_descent(M, mgo, p_; evaluation = evaluation, kwargs...)
-    return _ensure_matching_output(p, rs)
+    return maybe_unwrap_variable(p, rs)
 end
 function conjugate_gradient_descent(
         M::AbstractManifold, mgo::O, p = rand(M); kwargs...
@@ -127,29 +128,24 @@ calls_with_kwargs(::typeof(conjugate_gradient_descent)) = (conjugate_gradient_de
 @doc "$(_doc_CG)"
 conjugate_gradient_descent!(M::AbstractManifold, params...; kwargs...)
 function conjugate_gradient_descent!(
-        M::AbstractManifold,
-        f::TF,
-        grad_f::TDF,
-        p;
-        differential = nothing,
+        M::AbstractManifold, f::TF, grad_f::TDF, p;
+        differential = missing,
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         kwargs...,
     ) where {TF, TDF}
     mgo = ManifoldGradientObjective(
-        f, grad_f; differential = differential, evaluation = evaluation
+        f, grad_f; differential = differential, evaluation = evaluation, p = p
     )
     return conjugate_gradient_descent!(M, mgo, p; kwargs...)
 end
 function conjugate_gradient_descent!(
-        M::AbstractManifold,
-        mgo::O,
-        p;
+        M::AbstractManifold, mgo::O, p;
         callbacks = Dict{Symbol, Function}(),
         coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = ConjugateDescentCoefficient(),
         restart_condition::AbstractRestartCondition = RestartOnNonDescent(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
-            M, ConjugateGradientDescentState; retraction_method = retraction_method
+            M, ConjugateGradientDescentState; p = p, retraction_method = retraction_method
         ),
         stopping_criterion::StoppingCriterion = StopAfterIteration(500) |
             StopWhenGradientNormLess(1.0e-8),
@@ -204,8 +200,9 @@ function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentS
         # restart solver; set dir to -grad
         copyto!(M, cgs.δ, cgs.X)
         cgs.δ .*= -1
-        update_storage!(cgs.coefficient.storage, amp, cgs)
         cgs.β = 0.0
     end
+    # store the direction actually used, so the next β sees δ_k and not δ_{k-1}
+    update_storage!(cgs.coefficient, amp, cgs)
     return cgs
 end

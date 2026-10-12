@@ -3,7 +3,7 @@
 *.jl.mem
 /docs/build/
 /docs/site/
-Tutorials/.ipynb_checkpoints
+tutorials/.ipynb_checkpoints
 .vscode
 Manifest.toml
 *.DS_Store
@@ -25,3 +25,4 @@ docs/styles/Google
 tutorials/LocalPreferences.toml
 temp
 docs/node_modules
+test/LocalPreferences.toml

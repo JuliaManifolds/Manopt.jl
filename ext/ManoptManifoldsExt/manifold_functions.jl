@@ -1,19 +1,33 @@
-function Manopt.add_vector!(M::Hyperrectangle, X, p, c::AbstractVector, basis::AbstractBasis{ℝ})
+function Manopt.add_vector!(M::Hyperrectangle, X, p, c::AbstractVector, basis::DefaultOrthonormalBasis{ℝ})
     S = representation_size(M)
     X .+= reshape(c, S)
     return X
 end
 
+# For pure array power manifold vectors, we use the setting of matrices
+
+function Manopt._maybe_wrap_jacobian_function(Jf, p, ::FunctionVectorialType{ArrayPowerRepresentation}, e::AllocatingEvaluation)
+    return Manopt.maybe_wrap_function(Jf, p, e; result = :Matrix)
+end
+function Manopt._maybe_wrap_vector_Hessian_function(Hf, p, ::FunctionVectorialType{ArrayPowerRepresentation}, e::AllocatingEvaluation)
+    return Manopt.maybe_wrap_function(Hf, p, e; result = :Matrix)
+end
 
 """
-    default_point_distance(::DefaultManifold, p)
+    default_point_distance(::Euclidean, p)
 
 Following [HagerZhang:2006:2](@cite), the expected distance to the optimal solution from `p`
-on `DefaultManifold` is the `Inf` norm of `p`.
+on `Euclidean` is the `Inf` norm of `p`.
 """
 Manopt.default_point_distance(::Euclidean, p) = norm(p, Inf)
 
-Manopt.default_vector_norm(::Euclidean, p, X) = norm(p, Inf)
+"""
+    default_vector_norm(::Euclidean, p, X)
+
+Following [HagerZhang:2006:2](@cite), the norm of a tangent vector `X` at `p`
+used within the Hager-Zhang initial guess on `Euclidean` is the `Inf` norm of `X`.
+"""
+Manopt.default_vector_norm(::Euclidean, p, X) = norm(X, Inf)
 
 """
     get_bounds_index(::Hyperrectangle)
@@ -23,7 +37,7 @@ lower (or upper) bounds.
 """
 Manopt.get_bounds_index(M::Hyperrectangle) = eachindex(M.lb)
 """
-    get_stepsize_bound(M::Hyperrectangle, x, d, i)
+    get_stepsize_bound(M::Hyperrectangle, p, d, i)
 
 Get the upper bound on moving in direction `d` from point `p` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M`,
 for the bound index `i`. There are three cases:
@@ -70,11 +84,12 @@ max_stepsize(M::FixedRankMatrices) = manifold_dimension(M)
 """
     max_stepsize(::SymmetricPositiveDefinite, p)
 
-Return the maximum stepsize on the [`SymmetricPositiveDefinite`](@extref) manifold.
+Return the maximum stepsize on the [`SymmetricPositiveDefinite`](@extref Manifolds.SymmetricPositiveDefinite) manifold.
 The injectivity radius of `SymmetricPositiveDefinite` is infinite, but we return the
 logarithm of the maximum floating-point number to avoid numerical issues.
 """
 max_stepsize(::SymmetricPositiveDefinite, p) = log(floatmax(eltype(p)))
+max_stepsize(::SymmetricPositiveDefinite) = log(floatmax())
 
 """
     max_stepsize(M::Hyperrectangle, p)
@@ -102,7 +117,7 @@ function max_stepsize(M::Hyperrectangle)
     end
     return ms
 end
-function max_stepsize(M::ProbabilitySimplex)
+function max_stepsize(::ProbabilitySimplex)
     return 1.0
 end
 
@@ -121,9 +136,13 @@ function mid_point(M::Circle, p, q, x)
     if distance(M, p, q) ≈ π
         X = 0.5 * log(M, p, q)
         Y = log(M, p, x)
-        return exp(M, p, (sign(X) == sign(Y) ? 1 : -1) * X)
+        return exp(M, p, (sign(X[]) == sign(Y[]) ? 1 : -1) * X)
     end
     return mid_point(M, p, q)
+end
+function mid_point!(M::Circle, y, p, q, x)
+    y .= mid_point(M, p, q, x)
+    return y
 end
 
 function mid_point(M::Sphere, p, q, x)
@@ -144,76 +163,6 @@ function mid_point!(M::Sphere, y, p, q, x)
     return y
 end
 
-@doc """
-    reflect(M, f, x; kwargs...)
-    reflect!(M, q, f, x; kwargs...)
-
-reflect the point `x` from the manifold `M` at the point `f(x)` of the
-function ``f: $(Manopt._math(:Manifold)) → $(Manopt._math(:Manifold))``, given by
-
-````math
-$(Manopt._tex(:operatorname, "refl"))_f(x) = $(Manopt._tex(:operatorname, "refl"))_{f(x)}(x),
-````
-
-Compute the result in `q`.
-
-see also [`reflect`](@ref reflect(M::AbstractManifold, p, x))`(M,p,x)`, to which the keywords are also passed to.
-"""
-reflect(M::AbstractManifold, pr::Function, x; kwargs...) = reflect(M, pr(x), x; kwargs...)
-function reflect!(M::AbstractManifold, q, pr::Function, x; kwargs...)
-    return reflect!(M, q, pr(x), x; kwargs...)
-end
-
-@doc """
-    reflect(M, p, x, kwargs...)
-    reflect!(M, q, p, x, kwargs...)
-
-Reflect the point `x` from the manifold `M` at point `p`, given by
-
-```math
-$(Manopt._tex(:reflect))
-```
-
-where ``$(Manopt._tex(:retr))`` and ``$(Manopt._tex(:invretr))`` denote a retraction and an inverse
-retraction, respectively.
-This can also be done in place of `q`.
-
-## Keyword Arguments
-
-$(Manopt._kwargs([:retraction_method, :inverse_retraction_method]))
-
-and for the `reflect!` additionally
-
-$(Manopt._kwargs(:X))
-  as temporary memory to compute the inverse retraction in place.
-  otherwise this is the memory that would be allocated anyways.
-"""
-function reflect(
-        M::AbstractManifold,
-        p,
-        x;
-        retraction_method = default_retraction_method(M, typeof(p)),
-        inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
-        X = nothing,
-    )
-    return retract(
-        M, p, -inverse_retract(M, p, x, inverse_retraction_method), retraction_method
-    )
-end
-function reflect!(
-        M::AbstractManifold,
-        q,
-        p,
-        x;
-        retraction_method = default_retraction_method(M, typeof(p)),
-        inverse_retraction_method = default_inverse_retraction_method(M),
-        X = zero_vector(M, p),
-    )
-    inverse_retract!(M, X, p, x, inverse_retraction_method)
-    X .*= -1
-    return retract!(M, q, p, X, retraction_method)
-end
-
 
 """
     Manopt.set_zero_at_index!(M::Hyperrectangle, d, i)
@@ -221,13 +170,15 @@ end
 Set element of tangent vector `d` on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle)
 at index `i` to 0.
 """
-function Manopt.set_zero_at_index!(M::Hyperrectangle, d, i)
+function Manopt.set_zero_at_index!(::Hyperrectangle, d, i)
     d[i] = 0
     return d
 end
 
 """
     Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, d, t_current::Real)
+
+Limit the per-component stepsize in `d_out` to the bound imposed by the box constraints.
 
 For each element `i` in the tangent vector `d_out`, if the stepsize bound in direction `d`
 for that element is less than `t_current`, set the element of `d_out` to the distance from

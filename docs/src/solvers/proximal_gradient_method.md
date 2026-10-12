@@ -1,5 +1,9 @@
 # Proximal gradient method
 
+```@meta
+CurrentModule = Manopt
+```
+
 ```@docs
 proximal_gradient_method
 proximal_gradient_method!
@@ -15,20 +19,14 @@ Manopt.ProximalGradientMethodAcceleration
 ProximalGradientMethodState
 ```
 
-## Helping functions
+## Helpers
 
 ```@docs
 ProximalGradientNonsmoothSubgradient
 ProximalGradientNonsmoothCost
 ```
 
-## Stopping criteria
-
-```@docs
-StopWhenGradientMappingNormLess
-```
-
-## [Stepsize](@id Sec-ProxGrad-Stepsize)
+## [Step size](@id Sec-ProxGrad-Stepsize)
 
 ```@docs
 ProximalGradientMethodBacktracking
