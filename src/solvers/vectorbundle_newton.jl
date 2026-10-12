@@ -103,9 +103,11 @@ by a predictor-corrector-loop using an affine covariant quantity ``θ`` to measu
 * `θ`:             quantity that measures local convergence of Newton's method
 * `θ_des`:         desired θ
 * `θ_acc`:         acceptable θ
+* `messages::NamedTuple`: a named tuple to store possible [`StepsizeMessage`](@ref) about the stepsize search.
 * `last_stepsize`: last computed stepsize (this is an auxiliary variable used within the algorithm)
 * `outer_norm`:    if `M` is a manifold with components, this is used to specify the norm,
   that is used to combine the component-wise norms of the Newton directions into one norm.
+* `stop_when_stepsize_less`: smallest stepsize when to stop, the first one below this bound is taken
 
 # Example
 
@@ -134,27 +136,33 @@ Initializes all fields, where none of them is mandatory. The `last_stepsize` is 
 Since the computation of the convergence monitor ``θ`` requires simplified Newton directions a method for computing them has to be provided.
 This should be implemented as a method of the Newton equation functor that takes `(M, VB, p, p_trial)` as parameters and returns a representation of the (transported) ``F(p_{$(_tex(:rm, "trial"))})``.
 """
-mutable struct AffineCovariantStepsize{R <: Real, N <: Union{Real, Missing}} <: Stepsize
+mutable struct AffineCovariantStepsize{R <: Real, N <: Union{Real, Missing}, MSGS} <: Stepsize
     α::R
     θ::R
     θ_des::R
     θ_acc::R
     last_stepsize::R
+    messages::MSGS
     outer_norm::N
+    stop_when_stepsize_less::R
 end
 function AffineCovariantStepsize(
         ::AbstractManifold = DefaultManifold(2);
-        α::Real = 1.0, θ::Real = 1.3, θ_des::Real = 0.5, θ_acc::Real = 1.1 * θ_des, outer_norm::N = missing
+        α::Real = 1.0, θ::Real = 1.3, θ_des::Real = 0.5, θ_acc::Real = 1.1 * θ_des, outer_norm::N = missing,
+        stop_when_stepsize_less::Real = 0.0,
     ) where {N <: Union{Real, Missing}}
-    R = promote_type(typeof(α), typeof(θ), typeof(θ_des), typeof(θ_acc))
-    return AffineCovariantStepsize{R, N}(
-        convert(R, α), convert(R, θ), convert(R, θ_des), convert(R, θ_acc), convert(R, 1.0), outer_norm
+    R = promote_type(typeof(α), typeof(θ), typeof(θ_des), typeof(θ_acc), typeof(stop_when_stepsize_less))
+    msgs = (; stepsize_less = StepsizeMessage{R, R}())
+    return AffineCovariantStepsize{R, N, typeof(msgs)}(
+        convert(R, α), convert(R, θ), convert(R, θ_des), convert(R, θ_acc), convert(R, 1.0), msgs, outer_norm, convert(R, stop_when_stepsize_less)
     )
 end
 function Base.show(io::IO, acs::AffineCovariantStepsize)
     print(io, "AffineCovariantStepsize(; α = ", acs.α, ", θ = ", acs.θ, ", θ_des = ", acs.θ_des)
     print(io, ", θ_acc = ", acs.θ_acc)
+    print(io, ", messages = ", acs.messages)
     !(ismissing(acs.outer_norm)) && print(io, ", outer_norm = ", acs.outer_norm)
+    print(io, ", stop_when_stepsize_less = ", acs.stop_when_stepsize_less)
     return print(io, ")")
 end
 function status_summary(acs::AffineCovariantStepsize; context = :default)
@@ -188,6 +196,7 @@ end
 function (acs::AffineCovariantStepsize)(
         amp::AbstractManoptProblem, ams::VectorBundleNewtonState, ::Any, args...; kwargs...
     )
+    reset_messages!(acs.messages)
     α_new = acs.α
     θ_new = acs.θ
     M = get_manifold(amp)
@@ -210,6 +219,11 @@ function (acs::AffineCovariantStepsize)(
 
         (θ_new <= acs.θ_acc) && break
         α_new = min(1.0, ((α_new * acs.θ_des) / θ_new))
+
+        if α_new < acs.stop_when_stepsize_less
+            set_message!(acs.messages, :stepsize_less, at = i, bound = acs.stop_when_stepsize_less, value = α_new)
+            break
+        end
     end
     NE.b .= b
     acs.last_stepsize = α_new
