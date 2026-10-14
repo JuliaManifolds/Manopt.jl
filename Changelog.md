@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* the `JET.jl` test runs in its own environment `test/jet`; `Pkg.test` runs it there as well, and on CI its own job runs it once.
+* the `JET.jl` test now runs on a separate environment and CI. When running `]test Manopt` locally, the test is still included.
 
 ## [0.6.9] October 4, 2026
 
