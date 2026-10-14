@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Speed up! Using gradF! · Manopt.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="Manopt.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Manopt.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../about/">About</a></li><li><span class="tocitem">How to...</span><ul><li><a class="tocitem" href="../Optimize!/">Get Started: Optimize!</a></li><li><a class="tocitem" href="../AutomaticDifferentiation/">Use AD in Manopt</a></li><li><a class="tocitem" href="../HowToRecord/">Record Values</a></li><li><a class="tocitem" href="../ConstrainedOptimization/">Do constrained Optimization</a></li><li><a class="tocitem" href="../GeodesicRegression/">Do Geodesic Regression</a></li><li><a class="tocitem" href="../Bezier/">Use Bézier Curves</a></li><li><a class="tocitem" href="../SecondOrderDifference/">Compute a Second Order Difference</a></li><li><a class="tocitem" href="../StochasticGradientDescent/">Do Stochastic Gradient Descent</a></li><li class="is-active"><a class="tocitem" href>Speed up! Using <code>gradF!</code></a><ul class="internal"><li><a class="tocitem" href="#Setup"><span>Setup</span></a></li><li><a class="tocitem" href="#Classical-Definition"><span>Classical Definition</span></a></li><li><a class="tocitem" href="#In-place-Computation-of-the-Gradient"><span>In-place Computation of the Gradient</span></a></li></ul></li><li><a class="tocitem" href="../JacobiFields/">Illustrate Jacobi Fields</a></li></ul></li><li><span class="tocitem">Solvers</span><ul><li><a class="tocitem" href="../../solvers/">Introduction</a></li><li><a class="tocitem" href="../../solvers/alternating_gradient_descent/">Alternating Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/augmented_Lagrangian_method/">Augmented Lagrangian Method</a></li><li><a class="tocitem" href="../../solvers/ChambollePock/">Chambolle-Pock</a></li><li><a class="tocitem" href="../../solvers/conjugate_gradient_descent/">Conjugate gradient descent</a></li><li><a class="tocitem" href="../../solvers/cyclic_proximal_point/">Cyclic Proximal Point</a></li><li><a class="tocitem" href="../../solvers/DouglasRachford/">Douglas–Rachford</a></li><li><a class="tocitem" href="../../solvers/exact_penalty_method/">Exact Penalty Method</a></li><li><a class="tocitem" href="../../solvers/FrankWolfe/">Frank-Wolfe</a></li><li><a class="tocitem" href="../../solvers/gradient_descent/">Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/LevenbergMarquardt/">Levenberg–Marquardt</a></li><li><a class="tocitem" href="../../solvers/NelderMead/">Nelder–Mead</a></li><li><a class="tocitem" href="../../solvers/particle_swarm/">Particle Swarm Optimization</a></li><li><a class="tocitem" href="../../solvers/primal_dual_semismooth_Newton/">Primal-dual Riemannian semismooth Newton</a></li><li><a class="tocitem" href="../../solvers/quasi_Newton/">Quasi-Newton</a></li><li><a class="tocitem" href="../../solvers/stochastic_gradient_descent/">Stochastic Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/subgradient/">Subgradient method</a></li><li><a class="tocitem" href="../../solvers/truncated_conjugate_gradient_descent/">Steihaug-Toint TCG Method</a></li><li><a class="tocitem" href="../../solvers/trust_regions/">Trust-Regions Solver</a></li></ul></li><li><span class="tocitem">Plans</span><ul><li><a class="tocitem" href="../../plans/">Specify a Solver</a></li><li><a class="tocitem" href="../../plans/problem/">Problem</a></li><li><a class="tocitem" href="../../plans/objective/">Objective</a></li><li><a class="tocitem" href="../../plans/state/">Solver State</a></li><li><a class="tocitem" href="../../plans/stepsize/">Stepsize</a></li><li><a class="tocitem" href="../../plans/stopping_criteria/">Stopping Criteria</a></li><li><a class="tocitem" href="../../plans/debug/">Debug Output</a></li><li><a class="tocitem" href="../../plans/record/">Recording values</a></li></ul></li><li><span class="tocitem">Functions</span><ul><li><a class="tocitem" href="../../functions/">Introduction</a></li><li><a class="tocitem" href="../../functions/bezier/">Bézier curves</a></li><li><a class="tocitem" href="../../functions/costs/">Cost functions</a></li><li><a class="tocitem" href="../../functions/differentials/">Differentials</a></li><li><a class="tocitem" href="../../functions/adjointdifferentials/">Adjoint Differentials</a></li><li><a class="tocitem" href="../../functions/gradients/">Gradients</a></li><li><a class="tocitem" href="../../functions/proximal_maps/">Proximal Maps</a></li><li><a class="tocitem" href="../../functions/manifold/">Specific Manifold Functions</a></li></ul></li><li><span class="tocitem">Helpers</span><ul><li><a class="tocitem" href="../../helpers/checks/">Checks</a></li><li><a class="tocitem" href="../../helpers/data/">Data</a></li><li><a class="tocitem" href="../../helpers/errorMeasures/">Error Measures</a></li><li><a class="tocitem" href="../../helpers/exports/">Exports</a></li></ul></li><li><a class="tocitem" href="../../contributing/">Contributing to Manopt.jl</a></li><li><a class="tocitem" href="../../notation/">Notation</a></li><li><a class="tocitem" href="../../list/">Function Index</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">How to...</a></li><li class="is-active"><a href>Speed up! Using <code>gradF!</code></a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Speed up! Using <code>gradF!</code></a></li></ul></nav><div class="docs-right"><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><style>
+    table {
+        display: table !important;
+        margin: 2rem auto !important;
+        border-top: 2pt solid rgba(0,0,0,0.2);
+        border-bottom: 2pt solid rgba(0,0,0,0.2);
+    }
+
+    pre, div {
+        margin-top: 1.4rem !important;
+        margin-bottom: 1.4rem !important;
+    }
+
+    .code-output {
+        padding: 0.7rem 0.5rem !important;
+    }
+
+    .admonition-body {
+        padding: 0em 1.25em !important;
+    }
+</style>
+
+<!-- PlutoStaticHTML.Begin -->
+<!--
+    # This information is used for caching.
+    [PlutoStaticHTML.State]
+    input_sha = "07afdc7cf4e1689adf93ba21cc038119e927b718bc56e755def2c91315540ba4"
+    julia_version = "1.8.4"
+-->
+
+<div class="markdown"><h1>Illustration of how to Use Mutating Gradient Functions</h1><p>When it comes to time critital operations, a main ingredient in Julia is given by mutating functions, i.e. those that compute in place without additional memory allocations. In the following, we illustrate how to do this with <code>Manopt.jl</code>.</p><p>Let's start with the same function as in <a href="https://manoptjl.org/stable/tutorials/MeanAndMedian.html">Get Started: Optimize!</a> and compute the mean of some points, only that here we use the sphere <span class="tex">$\mathbb S^{30}$</span> and <code>n=800</code> points.</p><p>From the aforementioned example, the implementation looks like</p></div>
+
+<h2 id="Setup"><a class="docs-heading-anchor" href="#Setup">Setup</a><a id="Setup-1"></a><a class="docs-heading-anchor-permalink" href="#Setup" title="Permalink"></a></h2><div class="markdown">
+<p>If you open this notebook in Pluto locally it switches between two modes. If the tutorial is within the <code>Manopt.jl</code> repository, this notebook tries to use the local package in development mode. Otherwise, the file uses the Pluto pacakge management version.</p></div>
+
+
+
+
+
+
+
+
+<div class="markdown"><p>Since the loading is a little complicated, we show, which versions of packages were installed in the following.</p></div>
+
+<pre class='language-julia'><code class='language-julia'>with_terminal() do
+    Pkg.status()
+end</code></pre>
+<pre id="plutouiterminal">�[32m�[1mStatus�[22m�[39m `/private/var/folders/_v/wg192lpd3mb1lp55zz7drpcw0000gn/T/jl_kzpWvD/Project.toml`
+ �[90m [6e4b80f9] �[39mBenchmarkTools v1.3.2
+ �[90m [1cead3c2] �[39mManifolds v0.8.42
+ �[90m [0fc0a36d] �[39mManopt v0.4.0 `~/Repositories/Julia/Manopt.jl`
+ �[90m [7f904dfe] �[39mPlutoUI v0.7.49
+ �[90m [44cfe95a] �[39mPkg v1.8.0
+ �[90m [9a3f8284] �[39mRandom
+</pre>
+
+<pre class='language-julia'><code class='language-julia'>begin
+    Random.seed!(42)
+    m = 30
+    M = Sphere(m)
+    n = 800
+    σ = π / 8
+    x = zeros(Float64, m + 1)
+    x[2] = 1.0
+    data = [exp(M, x, σ * rand(M; vector_at=x)) for i in 1:n]
+end;</code></pre>
+
+
+<h2 id="Classical-Definition"><a class="docs-heading-anchor" href="#Classical-Definition">Classical Definition</a><a id="Classical-Definition-1"></a><a class="docs-heading-anchor-permalink" href="#Classical-Definition" title="Permalink"></a></h2><div class="markdown">
+<p>The variant from the previous tutorial defines a cost <span class="tex">$F(x)$</span> and its gradient <span class="tex">$gradF(x)$</span></p></div>
+
+<pre class='language-julia'><code class='language-julia'>F(M, x) = sum(1 / (2 * n) * distance.(Ref(M), Ref(x), data) .^ 2)</code></pre>
+<pre class="code-output documenter-example-output" id="var-F">F (generic function with 1 method)</pre>
+
+<pre class='language-julia'><code class='language-julia'>gradF(M, x) = sum(1 / n * grad_distance.(Ref(M), data, Ref(x)))</code></pre>
+<pre class="code-output documenter-example-output" id="var-gradF">gradF (generic function with 1 method)</pre>
+
+
+<div class="markdown"><p>We further set the stopping criterion to be a little more strict. Then we obtain</p></div>
+
+<pre class='language-julia'><code class='language-julia'>begin
+    sc = StopWhenGradientNormLess(1e-10)
+    x0 = zeros(Float64, m + 1); x0[1] = 1/sqrt(2); x0[2] = 1/sqrt(2)
+    m1 = gradient_descent(M, F, gradF, x0; stopping_criterion=sc)
+end</code></pre>
+<pre class="code-output documenter-example-output" id="var-x0">31-element Vector{Float64}:
+  0.0033485640684974894
+ -0.9989177042558477
+  0.012603956513369109
+  3.724197504132531e-5
+  0.0034768865059239184
+  0.007393312780305253
+  0.0015131386444782369
+  ⋮
+  0.0033263346566243146
+ -0.004530004392593586
+  0.0030077996887298286
+ -0.01561032047036917
+ -0.0016794415657848806
+ -0.0025375720668704706</pre>
+
+<pre class='language-julia'><code class='language-julia'>@benchmark gradient_descent($M, $F, $gradF, $x0; stopping_criterion=$sc)</code></pre>
+<pre class="code-output documenter-example-output" id="var-hash144613">BenchmarkTools.Trial: 81 samples with 1 evaluation.
+ Range (min … max):  58.225 ms … 68.131 ms  ┊ GC (min … max): 11.41% … 17.00%
+ Time  (median):     62.946 ms              ┊ GC (median):    16.09%
+ Time  (mean ± σ):   62.413 ms ±  2.231 ms  ┊ GC (mean ± σ):  14.32% ±  2.45%
+
+       ▂  ▂     ▅    ▂                  ▂▅▅▂▂▂ ▅▂█
+  ▅▁▁▅▁█▁███▅▅▅▅██▅▅███▁▅▁▅█▅▁▁▅▁▁▁██▅▁▅██████▅███▅▅▁▁▁▁▁▁▁▅▅ ▁
+  58.2 ms         Histogram: frequency by time        66.4 ms &lt;
+
+ Memory estimate: 193.85 MiB, allocs estimate: 653778.</pre>
+
+<h2 id="In-place-Computation-of-the-Gradient"><a class="docs-heading-anchor" href="#In-place-Computation-of-the-Gradient">In-place Computation of the Gradient</a><a id="In-place-Computation-of-the-Gradient-1"></a><a class="docs-heading-anchor-permalink" href="#In-place-Computation-of-the-Gradient" title="Permalink"></a></h2><div class="markdown">
+<p>We can reduce the memory allocations by implementing the gradient as a <a href="https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects">functor</a>. The motivation is twofold: on one hand, we want to avoid variables from the global scope, for example the manifold <code>M</code> or the <code>data</code>, being used within the function. Considering to do the same for more complicated cost functions might also be worth it.</p><p>Here, we store the data (as reference) and one temporary memory in order to avoid reallocation of memory per <code>grad_distance</code> computation. We have</p></div>
+
+<pre class='language-julia'><code class='language-julia'>begin
+    struct grad!{TD,TTMP}
+        data::TD
+        tmp::TTMP
+    end
+    function (gradf!::grad!)(M, X, x)
+        fill!(X, 0)
+        for di in gradf!.data
+            grad_distance!(M, gradf!.tmp, di, x)
+            X .+= gradf!.tmp
+        end
+        X ./= length(gradf!.data)
+        return X
+    end
+end</code></pre>
+
+
+
+<div class="markdown"><p>Then we just have to initialize the gradient and perform our final benchmark. Note that we also have to interpolate all variables passed to the benchmark with a <code>$</code>.</p></div>
+
+<pre class='language-julia'><code class='language-julia'>begin
+    gradF2! = grad!(data, similar(data[1]))
+    m2 = deepcopy(x0)
+    gradient_descent!(
+        M, F, gradF2!, m2; evaluation=InplaceEvaluation(), stopping_criterion=sc
+    )
+end</code></pre>
+<pre class="code-output documenter-example-output" id="var-m2">31-element Vector{Float64}:
+  0.00334856408243381
+ -0.9989177042557205
+  0.012603956512397922
+  3.7241973292108026e-5
+  0.0034768865018420234
+  0.007393312782144477
+  0.0015131386426487721
+  ⋮
+  0.003326334656361401
+ -0.0045300043965643315
+  0.003007799686052061
+ -0.015610320474421206
+ -0.0016794415638888209
+ -0.002537572065615552</pre>
+
+<pre class='language-julia'><code class='language-julia'>@benchmark gradient_descent!(
+        $M, $F, $gradF2!, m2; evaluation=$(InplaceEvaluation()), stopping_criterion=$sc
+    ) setup = (m2 = deepcopy($x0))</code></pre>
+<pre class="code-output documenter-example-output" id="var-hash139609">BenchmarkTools.Trial: 154 samples with 1 evaluation.
+ Range (min … max):  30.548 ms … 39.550 ms  ┊ GC (min … max): 0.00% … 17.98%
+ Time  (median):     32.561 ms              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   32.651 ms ±  1.446 ms  ┊ GC (mean ± σ):  0.96% ±  3.71%
+
+              ▁▁█▃
+  ▃▃▂▂▂▃▄▂▆▅▄▄█████▇▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▂▂▁▃ ▂
+  30.5 ms         Histogram: frequency by time        38.8 ms &lt;
+
+ Memory estimate: 3.88 MiB, allocs estimate: 6286.</pre>
+
+
+<div class="markdown"><p>Note that the results <code>m1</code>and <code>m2</code> are of course the same.</p></div>
+
+<pre class='language-julia'><code class='language-julia'>distance(M, m1, m2)</code></pre>
+<pre class="code-output documenter-example-output" id="var-hash146788">0.0</pre>
+
+<!-- PlutoStaticHTML.End --></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../StochasticGradientDescent/">« Do Stochastic Gradient Descent</a><a class="docs-footer-nextpage" href="../JacobiFields/">Illustrate Jacobi Fields »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Monday 16 January 2023 06:13">Monday 16 January 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
