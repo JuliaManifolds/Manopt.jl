@@ -1,4 +1,4 @@
-using Manifolds, ManifoldsBase, Manopt, Test
+using Manifolds, ManifoldsBase, Manopt, Pkg, Test
 
 @testset "Manopt.jl" begin
     @test Manopt.Rn_default() === :Manifolds
@@ -82,6 +82,16 @@ using Manifolds, ManifoldsBase, Manopt, Test
         include("solvers/test_vectorbundle_newton.jl")
     end
     include("test_aqua.jl")
-    include("test_jet.jl")
     include("test_deprecated.jl")
+    #
+    #
+    # On CI, JET runs on its own job for simplicity
+    # When running the tests locally the following still activates the env and runs JET.
+    if get(ENV, "CI", "false") != "true"
+        @testset "JET.jl in its own environment" begin
+            Pkg.activate(joinpath(@__DIR__, "jet"))
+            Pkg.instantiate()
+            include("jet/runtests.jl")
+        end
+    end
 end

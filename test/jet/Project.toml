@@ -1,0 +1,25 @@
+[deps]
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637"
+LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
+Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
+Manopt = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
+QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+Manopt = {path = "../.."}
+
+[compat]
+JET = "0.9, 0.10, 0.11, 0.12"
+LRUCache = "1.4"
+LineSearches = "7.2.0"
+Manifolds = "0.11.2"
+Manopt = "0.6"
+QuadraticModels = "0.9"
+RecursiveArrayTools = "2, 3, 4"
+RipQP = "0.6.4, 0.7"
+Test = "1.10"
+julia = "1.10"
