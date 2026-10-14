@@ -6,6 +6,12 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.10] unreleased
+
+### Changed
+
+* the `JET.jl` test now runs on a separate environment and CI. When running `]test Manopt` locally, the test is still included.
+
 ## [0.6.9] October 4, 2026
 
 ### Added
