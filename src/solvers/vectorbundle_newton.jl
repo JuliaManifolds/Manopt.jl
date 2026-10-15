@@ -129,7 +129,7 @@ The `outer_norm` has no effect on manifolds that do not consist of components.
 
     AffineCovariantStepsize(
         M::AbstractManifold=DefaultManifold(2);
-        α=1.0, θ=1.3, θ_des=0.5, θ_acc=1.1*θ_des, outer_norm::Union{Missing,Real}=missing, stop_when_stepsize_less=0.0, stop_when_newton_direction_norm_less=1e-6
+        α=1.0, θ=1.3, θ_des=0.5, θ_acc=1.1*θ_des, outer_norm::Union{Missing,Real}=missing, stop_when_stepsize_less=1e-6, stop_when_newton_direction_norm_less=1e-6
     )
 
 Initializes all fields, where none of them is mandatory. The `last_stepsize` is set to ``1.0``.
@@ -151,7 +151,7 @@ end
 
 function AffineCovariantStepsize(
         ::AbstractManifold = DefaultManifold(2);
-        α::Real = 1.0, θ::Real = 1.0, θ_des::Real = 0.5, θ_acc::Real = 1.1 * θ_des, outer_norm::N = missing, stop_when_stepsize_less::Real = 0.0, stop_when_newton_direction_norm_less::Real=1e-6,
+        α::Real = 1.0, θ::Real = 1.0, θ_des::Real = 0.5, θ_acc::Real = 1.1 * θ_des, outer_norm::N = missing, stop_when_stepsize_less::Real = 1e-6, stop_when_newton_direction_norm_less::Real=1e-6,
     ) where {N <: Union{Real, Missing}}
     R = promote_type(typeof(α), typeof(θ), typeof(θ_des), typeof(θ_acc))
     msgs = (; stepsize_less = StepsizeMessage{R, R}())
