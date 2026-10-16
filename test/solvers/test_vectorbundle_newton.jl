@@ -209,7 +209,7 @@ using LinearAlgebra: eigvals
         @test get_initial_stepsize(acs) == 1.0 # the default `α`
         @test get_last_stepsize(acs) > 0.0
         @test startswith(repr(acs), "AffineCovariantStepsize(; ")
-        #@test default_stepsize(M, VectorBundleNewtonState) isa Manopt.ConstantStepsize doesn't work for some reason
+        @test default_stepsize(M, VectorBundleNewtonState)(M) isa Manopt.ConstantStepsize
         st_repr = repr(st)
         @test occursin("retraction_method =", st_repr)
         @test occursin("stopping_criterion = ", st_repr)
