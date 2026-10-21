@@ -79,7 +79,7 @@ using LinearAlgebra: eigvals
         @test vbns === y3
 
         y4 = Manopt.vectorbundle_newton(
-            M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system, stopping_criterion=StopWhenDirectionNormLess(1e-8), alg_kwargs...
+            M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system, stopping_criterion=StopWhenDirectionNormLess(1e-8), retraction_method = ProjectionRetraction()
         )
 
         @test any(isapprox(f(M, y4), λ; atol = 2.0 * 1.0e-2) for λ in eigvals(matrix))
@@ -92,6 +92,11 @@ using LinearAlgebra: eigvals
         @test startswith(vbp_s, "A vector bundle problem representing a vector bundle Newton equation objective")
         @test contains(vbp_s, "## Manifold")
         @test startswith(repr(vbp), "VectorBundleManoptProblem(")
+
+        stop = StopWhenDirectionNormLess(1e-8)
+        @test startswith(repr(stop), "StopWhenDirectionNormLess")
+        @test length(get_reason(stop)) == 0
+        @test Manopt.indicates_convergence(stop)
     end
 
     @testset "Affine covariant stepsize" begin
@@ -215,5 +220,11 @@ using LinearAlgebra: eigvals
         @test occursin("retraction_method =", st_repr)
         @test occursin("stopping_criterion = ", st_repr)
         @test occursin(" | ", st_repr) # that :short is actually used
+
+        #st3_str = Manopt.status_summary(st3; context = :default)
+        stop_st3 = st3.stop
+        @test startswith(repr(stop_st3), "StopWhenAny([StopAfterIteration(1000), StopWhenStepsizeLess(1.0e-6), StopWhenNewtonDirectionNormLess(1.0e-6)])")
+        @test length(get_reason(stop_st3)) > 0
+        @test !Manopt.indicates_convergence(stop_st3)
     end
 end
