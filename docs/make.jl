@@ -125,7 +125,7 @@ function add_links(line::String, url::String = "https://github.com/JuliaManifold
 end
 
 generated_path = joinpath(@__DIR__, "src")
-base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
+base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/main/"
 isdir(generated_path) || mkdir(generated_path)
 for (md_file, doc_file) in
     [("CONTRIBUTING.md", "contributing.md"), ("Changelog.md", "changelog.md")]

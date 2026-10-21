@@ -21,8 +21,8 @@ With `benchpkg` from `AirspeedVelocity.jl`, where `dirty` is the working copy an
 `--filter` selects by a part of the `group/name` key:
 
 ```
-benchpkg Manopt --rev=master,dirty --bench-on=dirty
-benchpkgtable Manopt --rev=master,dirty --ratio
+benchpkg Manopt --rev=main,dirty --bench-on=dirty
+benchpkgtable Manopt --rev=main,dirty --ratio
 ```
 
 ## Adding a benchmark
