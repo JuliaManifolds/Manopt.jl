@@ -6,6 +6,14 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.10] unreleased
+
+### Added
+
+* two new stopping criteria `StopWhenDirectionNormLess` and `StopWhenNewtonDirectionNormLess`
+  for the `vectorbundle_newton` solver
+* a `stop_when_stepsize_less` fallback for the `AffineCovariantStepsize` for the `vectorbundle_newton` solver
+
 ## [0.6.9] October 4, 2026
 
 ### Added
