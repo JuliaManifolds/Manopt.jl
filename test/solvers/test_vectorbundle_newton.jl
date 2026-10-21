@@ -78,10 +78,10 @@ using LinearAlgebra: eigvals
         # the in-place variant returns the point it worked in place of
         @test vbns === y3
 
-        y4 = Manopt.vectorbundle_newton(
-            M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system, stopping_criterion=StopWhenDirectionNormLess(1e-8), retraction_method = ProjectionRetraction()
+        st4 = Manopt.vectorbundle_newton(
+            M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system, stopping_criterion=StopWhenDirectionNormLess(1e-8), retraction_method = ProjectionRetraction(), return_state = true
         )
-
+        y4 = get_iterate(st4)
         @test any(isapprox(f(M, y4), λ; atol = 2.0 * 1.0e-2) for λ in eigvals(matrix))
 
         # test access on the VB Problem
@@ -97,6 +97,9 @@ using LinearAlgebra: eigvals
         @test startswith(repr(stop), "StopWhenDirectionNormLess")
         @test length(get_reason(stop)) == 0
         @test Manopt.indicates_convergence(stop)
+
+        stop_st4 = st4.stop
+        @test length(get_reason(stop_st4)) > 0
 
         summary = Manopt.status_summary(stop)
         @test contains(summary, "A stopping criterion to stop when the norm of the Newton direction is less than 1.0e-8")
@@ -232,5 +235,8 @@ using LinearAlgebra: eigvals
         @test !Manopt.indicates_convergence(stop_st3)
         summary = Manopt.status_summary(st3.stop)
         @test contains(summary, "Stop when _one_ of the following is fulfilled:")
+
+        stop = StopWhenNewtonDirectionNormLess(1.0e-8)
+        @test length(get_reason(stop)) == 0
     end
 end
