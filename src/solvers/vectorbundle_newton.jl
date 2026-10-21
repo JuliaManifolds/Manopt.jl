@@ -316,7 +316,6 @@ A stopping criterion tailored for the AffineCovariantStepsize to stop when the n
 * `threshold`:     threshold
 * `last_step`:     norm of the last step
 """
-
 mutable struct StopWhenNewtonDirectionNormLess{F} <: StoppingCriterion
     threshold::F
     last_step::F
