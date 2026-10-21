@@ -78,8 +78,8 @@ using LinearAlgebra: eigvals
         # the in-place variant returns the point it worked in place of
         @test vbns === y3
 
-        st4 = Manopt.vectorbundle_newton(
-            M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system, stopping_criterion=StopWhenDirectionNormLess(1e-8), retraction_method = ProjectionRetraction(), return_state = true
+        y4 = Manopt.vectorbundle_newton(
+            M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system, stopping_criterion = StopWhenDirectionNormLess(1.0e-8), retraction_method = ProjectionRetraction(), return_state = true
         )
         y4 = get_iterate(st4)
         @test any(isapprox(f(M, y4), λ; atol = 2.0 * 1.0e-2) for λ in eigvals(matrix))
@@ -93,7 +93,7 @@ using LinearAlgebra: eigvals
         @test contains(vbp_s, "## Manifold")
         @test startswith(repr(vbp), "VectorBundleManoptProblem(")
 
-        stop = StopWhenDirectionNormLess(1e-8)
+        stop = StopWhenDirectionNormLess(1.0e-8)
         @test startswith(repr(stop), "StopWhenDirectionNormLess")
         @test length(get_reason(stop)) == 0
         @test Manopt.indicates_convergence(stop)
@@ -202,7 +202,7 @@ using LinearAlgebra: eigvals
         st4 = Manopt.vectorbundle_newton(
             M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system,
             retraction_method = ProjectionRetraction(),
-            stepsize = AffineCovariantStepsize(M, θ_des = 0.25, stop_when_stepsize_less=2.0),
+            stepsize = AffineCovariantStepsize(M, θ_des = 0.25, stop_when_stepsize_less = 2.0),
             return_state = true,
         )
         @test get_last_stepsize(st4.stepsize) == 1.0
