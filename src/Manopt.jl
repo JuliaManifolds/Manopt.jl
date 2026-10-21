@@ -494,7 +494,7 @@ export StopAfter, StopAfterIteration,
     StopWhenCovarianceIllConditioned,
     StopWhenCurvatureIsNegative,
     StopWhenCriterionWithIterationCondition,
-    StopWhenDirectionNormLess, StopWhenNewtonDirectionNormLess
+    StopWhenDirectionNormLess, StopWhenNewtonDirectionNormLess,
     StopWhenEntryChangeLess,
     StopWhenEvolutionStagnates,
     StopWhenGradientChangeLess, StopWhenGradientMappingNormLess, StopWhenGradientNormLess,

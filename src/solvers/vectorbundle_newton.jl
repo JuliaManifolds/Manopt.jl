@@ -249,7 +249,7 @@ function get_last_stepsize(step::AffineCovariantStepsize, ::Any...)
     return step.last_stepsize
 end
 
-default_stepsize(M::AbstractManifold, ::Type{VectorBundleNewtonState}) = ConstantLength(1.0)
+default_stepsize(M::AbstractManifold, ::Type{VectorBundleNewtonState}) = ConstantStepsize(M, 1.0)
 
 function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :default)
     (context === :short) && return repr(vbns)
