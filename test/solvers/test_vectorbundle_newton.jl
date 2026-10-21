@@ -97,6 +97,9 @@ using LinearAlgebra: eigvals
         @test startswith(repr(stop), "StopWhenDirectionNormLess")
         @test length(get_reason(stop)) == 0
         @test Manopt.indicates_convergence(stop)
+
+        summary = Manopt.status_summary(stop)
+        @test contains(summary, "A stopping criterion to stop when the norm of the Newton direction is less than 1.0e-8")
     end
 
     @testset "Affine covariant stepsize" begin
@@ -221,10 +224,13 @@ using LinearAlgebra: eigvals
         @test occursin("stopping_criterion = ", st_repr)
         @test occursin(" | ", st_repr) # that :short is actually used
 
-        #st3_str = Manopt.status_summary(st3; context = :default)
+        st3_str = Manopt.status_summary(st3; context = :default)
+        @test occursin("Vector bundle Newton method", st3_str)
         stop_st3 = st3.stop
         @test startswith(repr(stop_st3), "StopWhenAny([StopAfterIteration(1000), StopWhenStepsizeLess(1.0e-6), StopWhenNewtonDirectionNormLess(1.0e-6)])")
         @test length(get_reason(stop_st3)) > 0
         @test !Manopt.indicates_convergence(stop_st3)
+        summary = Manopt.status_summary(st3.stop)
+        @test contains(summary, "Stop when _one_ of the following is fulfilled:")
     end
 end

@@ -315,6 +315,14 @@ A stopping criterion tailored for the AffineCovariantStepsize to stop when the n
 
 * `threshold`:     threshold
 * `last_step`:     norm of the last step
+
+# Constructor
+
+    StopWhenNewtonDirectionNormLess(
+        threshold; last_step=zero(threshold), at_iteration=-1
+    )
+
+Initializes all fields. Only the `threshold` is mandatory. 
 """
 mutable struct StopWhenNewtonDirectionNormLess{F} <: StoppingCriterion
     threshold::F
@@ -383,6 +391,15 @@ $(_tex(:norm, "X"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{i=1}^n $(_tex(
 
 where the sum turns into a maximum for the case ``r=∞``.
 The `outer_norm` has no effect on manifolds that do not consist of components.
+
+# Constructor
+
+    StopWhenDirectionNormLess(
+        threshold; last_step=zero(threshold), at_iteration=-1, outer_norm=missing
+    )
+
+Initializes all fields. Only the `threshold` is mandatory. 
+
 """
 mutable struct StopWhenDirectionNormLess{F<: Real,  N <: Union{Real, Missing}} <: StoppingCriterion
     threshold::F
