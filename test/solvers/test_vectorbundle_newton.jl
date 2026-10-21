@@ -78,7 +78,7 @@ using LinearAlgebra: eigvals
         # the in-place variant returns the point it worked in place of
         @test vbns === y3
 
-        y4 = Manopt.vectorbundle_newton(
+        st4 = Manopt.vectorbundle_newton(
             M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system, stopping_criterion = StopWhenDirectionNormLess(1.0e-8), retraction_method = ProjectionRetraction(), return_state = true
         )
         y4 = get_iterate(st4)
