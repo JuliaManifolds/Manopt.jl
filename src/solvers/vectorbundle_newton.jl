@@ -221,11 +221,11 @@ function (acs::AffineCovariantStepsize)(
 
         add_arg = (has_components(M) && !ismissing(acs.outer_norm)) ? (outer_norm = acs.outer_norm,) : ()
         nom = norm(M, ams.p, simplified_newton, add_arg...)
-        denom = norm(M, ams.p, Xα, add_arg...) 
+        denom = norm(M, ams.p, Xα, add_arg...)
 
         θ_new = nom / denom
         α_new = min(1.0, ((acs.last_stepsize * acs.θ_des) / θ_new))
-        
+
         if θ_new > acs.θ_acc
             acs.last_stepsize = α_new
         end
@@ -482,7 +482,8 @@ $(_args(:p))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`VectorBundleNewtonState`](@ref)`)"))
-* `stop_when_newton_direction_norm_less=1e-6`: threshold for stopping criterion
+* `stop_when_newton_direction_norm_less=1e-6`: threshold for the [`StopWhenNewtonDirectionNormLess`](@ref) inside the default `stopping_criterion`.
+  This parameter has no effect, when either using a stepsize different from [`AffineCovariantStepsize`](@ref) or when setting the stopping criterion manually.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
 $(_kwargs(:sub_problem; default = "nothing")) That is, you have to provide a method for solving the Newton equation.
   Currently only the closed form solution is implemented, that is, this is a functor that maps either
@@ -516,7 +517,7 @@ function vectorbundle_newton!(
         stop_when_newton_direction_norm_less=1e-6,
         stopping_criterion::SC = if stepsize isa AffineCovariantStepsize
              StopAfterIteration(1000) | StopWhenStepsizeLess(stepsize.stop_when_stepsize_less) | StopWhenNewtonDirectionNormLess(stop_when_newton_direction_norm_less)
-        else 
+        else
             StopAfterIteration(1000)
         end,
         sub_problem::Pr = nothing,
