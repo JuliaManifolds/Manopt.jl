@@ -46,7 +46,7 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
             stopping_criterion = StopAfterIteration(200), return_state = true, debug = [],
         )
         p_star2 = get_solver_result(pbms2)
-        @test get_subgradient(pbms2) == -∂f(M, p_star2)
+        @test isapprox(M, p_star2, p)
         @test f(M, p_star2) <= f(M, p0)
         set_iterate!(pbms2, M, p)
         @test get_iterate(pbms2) == p

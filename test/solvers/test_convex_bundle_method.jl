@@ -22,7 +22,7 @@ using Manopt: estimate_sectional_curvature
     @testset "Estimate Sectional Curvature" begin
         curv = estimate_sectional_curvature(M, p)
         @test isfinite(curv)
-        curvature_cbms = ConvexBundleMethodState(M; p = p0)
+        curvature_cbms = ConvexBundleMethodState(M; p = p0, diameter = diameter)
         @test ω ≤ curvature_cbms.k_min
         @test Ω ≥ curvature_cbms.k_max
         @test startswith(repr(curvature_cbms), "ConvexBundleMethodState(")
@@ -107,6 +107,7 @@ using Manopt: estimate_sectional_curvature
             @test f(M, p_star2) < f(M, p0)
             set_iterate!(bms2, M, p)
             @test get_iterate(bms2) == p
+            zero_vector!(M, bms2.g, p) # reset to a tangent vector, though a simple one
             io = IOBuffer()
             ds = DebugStepsize(; io = io)
             # reset stepsize
