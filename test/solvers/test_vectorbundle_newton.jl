@@ -191,10 +191,11 @@ using LinearAlgebra: eigvals
         st4 = Manopt.vectorbundle_newton(
             M, TangentBundle(M), NE, y0; sub_problem = solve_augmented_system,
             retraction_method = ProjectionRetraction(),
-            stepsize = AffineCovariantStepsize(M, θ_des = 0.25, stop_when_stepsize_less=0.0),
+            stepsize = AffineCovariantStepsize(M, θ_des = 0.25, stop_when_stepsize_less=2.0),
             return_state = true,
         )
-        @test(get_last_stepsize(st4.stepsize) == 1.0) # message test?
+        @test get_last_stepsize(st4.stepsize) == 1.0 
+        @test st4.stepsize.messages[:stepsize_less].at_iteration > -1
 
         st_str = Manopt.status_summary(st; context = :default)
         @test occursin("Vector bundle Newton method", st_str)
