@@ -199,7 +199,7 @@ using LinearAlgebra: eigvals
             stepsize = AffineCovariantStepsize(M, θ_des = 0.25, stop_when_stepsize_less=2.0),
             return_state = true,
         )
-        @test get_last_stepsize(st4.stepsize) == 1.0 
+        @test get_last_stepsize(st4.stepsize) == 1.0
         @test st4.stepsize.messages[:stepsize_less].at_iteration > -1
 
         st_str = Manopt.status_summary(st; context = :default)
@@ -215,7 +215,7 @@ using LinearAlgebra: eigvals
         @test get_initial_stepsize(acs) == 1.0 # the default `α`
         @test get_last_stepsize(acs) > 0.0
         @test startswith(repr(acs), "AffineCovariantStepsize(; ")
-        @test default_stepsize(M, VectorBundleNewtonState)(M) isa Manopt.ConstantStepsize
+        @test default_stepsize(M, VectorBundleNewtonState) isa Manopt.ConstantStepsize
         st_repr = repr(st)
         @test occursin("retraction_method =", st_repr)
         @test occursin("stopping_criterion = ", st_repr)
