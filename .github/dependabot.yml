@@ -24,6 +24,7 @@ updates:
       - "/tutorials"
       - "/test"
       - "/benchmark"
+      - "/test/jet"
     schedule:
       interval: "daily"
     groups:

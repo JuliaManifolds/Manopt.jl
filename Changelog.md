@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for the `vectorbundle_newton` solver
 * a `stop_when_stepsize_less` fallback for the `AffineCovariantStepsize` for the `vectorbundle_newton` solver
 
+### Changed
+
+* the default branch of the repository is now called `main`; development versions are installed with `Manopt#main`.
+* the `JET.jl` test now runs on a separate environment and CI. When running `]test Manopt` locally, the test is still included.
+
 ## [0.6.9] October 4, 2026
 
 ### Added
