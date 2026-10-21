@@ -149,7 +149,7 @@ end
 
 function AffineCovariantStepsize(
         ::AbstractManifold = DefaultManifold(2);
-        α::Real = 1.0, θ::Real = 1.0, θ_des::Real = 0.5, θ_acc::Real = 1.1 * θ_des, outer_norm::N = missing, stop_when_stepsize_less::Real = 1e-6,
+        α::Real = 1.0, θ::Real = 1.0, θ_des::Real = 0.5, θ_acc::Real = 1.1 * θ_des, outer_norm::N = missing, stop_when_stepsize_less::Real = 1.0e-6,
     ) where {N <: Union{Real, Missing}}
     R = promote_type(typeof(α), typeof(θ), typeof(θ_des), typeof(θ_acc))
     msgs = (; stepsize_less = StepsizeMessage{R, R}())
@@ -209,7 +209,7 @@ function (acs::AffineCovariantStepsize)(
     b = copy(NE.b)
     i = 0
     while θ_new > acs.θ_acc
-        i = i+1
+        i = i + 1
         Xα = acs.last_stepsize * ams.X
         retract!(M, ams.p_trial, ams.p, Xα, ams.retraction_method)
 
@@ -231,9 +231,9 @@ function (acs::AffineCovariantStepsize)(
         end
 
         if α_new < acs.stop_when_stepsize_less
-           set_message!(acs.messages, :stepsize_less, at = i, bound = acs.stop_when_stepsize_less, value = α_new)
-           acs.last_stepsize = α_new
-           break
+            set_message!(acs.messages, :stepsize_less, at = i, bound = acs.stop_when_stepsize_less, value = α_new)
+            acs.last_stepsize = α_new
+            break
         end
 
     end
@@ -334,7 +334,7 @@ mutable struct StopWhenNewtonDirectionNormLess{F} <: StoppingCriterion
 end
 
 function (c::StopWhenNewtonDirectionNormLess)(
-        p::VectorBundleManoptProblem, s::VectorBundleNewtonState{ P, T, Pr, St, C, TStop, <: AffineCovariantStepsize}, k::Int
+        p::VectorBundleManoptProblem, s::VectorBundleNewtonState{P, T, Pr, St, C, TStop, <:AffineCovariantStepsize}, k::Int
     ) where {P, T, Pr, St, C, TStop}
     M = get_manifold(p)
     if k == 0 # reset on init
@@ -401,7 +401,7 @@ The `outer_norm` has no effect on manifolds that do not consist of components.
 Initializes all fields. Only the `threshold` is mandatory. 
 
 """
-mutable struct StopWhenDirectionNormLess{F<: Real,  N <: Union{Real, Missing}} <: StoppingCriterion
+mutable struct StopWhenDirectionNormLess{F <: Real, N <: Union{Real, Missing}} <: StoppingCriterion
     threshold::F
     last_step::F
     at_iteration::Int
@@ -530,9 +530,9 @@ function vectorbundle_newton!(
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
             M, VectorBundleNewtonState
         ),
-        stop_when_newton_direction_norm_less=1e-6,
+        stop_when_newton_direction_norm_less = 1.0e-6,
         stopping_criterion::SC = if stepsize isa AffineCovariantStepsize
-             StopAfterIteration(1000) | StopWhenStepsizeLess(stepsize.stop_when_stepsize_less) | StopWhenNewtonDirectionNormLess(stop_when_newton_direction_norm_less)
+            StopAfterIteration(1000) | StopWhenStepsizeLess(stepsize.stop_when_stepsize_less) | StopWhenNewtonDirectionNormLess(stop_when_newton_direction_norm_less)
         else
             StopAfterIteration(1000)
         end,
