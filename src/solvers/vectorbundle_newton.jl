@@ -311,6 +311,7 @@ end
     StopWhenNewtonDirectionNormLess <: StoppingCriterion
 
 A stopping criterion tailored for the AffineCovariantStepsize to stop when the norm of the Newton direction is less than a certain threshold and the convergence monitor `θ` is less than 0.25.
+
 # Fields
 
 * `threshold`:     threshold
@@ -371,6 +372,7 @@ end
     StopWhenDirectionNormLess <: StoppingCriterion
 
 A stopping criterion to stop when the norm of the Newton direction is less than a certain threshold.
+
 # Fields
 
 * `threshold`:     threshold
