@@ -308,7 +308,7 @@ end
 
 
 @doc """
-StopWhenNewtonDirectionNormLess <: StoppingCriterion
+    StopWhenNewtonDirectionNormLess <: StoppingCriterion
 
 A stopping criterion tailored for the AffineCovariantStepsize to stop when the norm of the Newton direction is less than a certain threshold and the convergence monitor `θ` is less than 0.25.
 # Fields
@@ -322,7 +322,7 @@ A stopping criterion tailored for the AffineCovariantStepsize to stop when the n
         threshold; last_step=zero(threshold), at_iteration=-1
     )
 
-Initializes all fields. Only the `threshold` is mandatory. 
+Initializes all fields. Only the `threshold` is mandatory.
 """
 mutable struct StopWhenNewtonDirectionNormLess{F} <: StoppingCriterion
     threshold::F
@@ -368,7 +368,7 @@ function Base.show(io::IO, c::StopWhenNewtonDirectionNormLess)
 end
 
 @doc """
-StopWhenDirectionNormLess <: StoppingCriterion
+    StopWhenDirectionNormLess <: StoppingCriterion
 
 A stopping criterion to stop when the norm of the Newton direction is less than a certain threshold.
 # Fields
@@ -398,7 +398,7 @@ The `outer_norm` has no effect on manifolds that do not consist of components.
         threshold; last_step=zero(threshold), at_iteration=-1, outer_norm=missing
     )
 
-Initializes all fields. Only the `threshold` is mandatory. 
+Initializes all fields. Only the `threshold` is mandatory.
 
 """
 mutable struct StopWhenDirectionNormLess{F <: Real, N <: Union{Real, Missing}} <: StoppingCriterion
