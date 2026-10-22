@@ -65,6 +65,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         @test startswith(repr(arcs), "AdaptiveRegularizationState(")
         p1 = rand(M)
         X1 = rand(M; vector_at = p1)
+        X1 ./= norm(M, p1, X1) # unit length, as the Lanczos vectors it fakes below
         set_iterate!(arcs, M, p1)
         @test arcs.p == p1
         set_gradient!(arcs, M, p1, X1)

@@ -22,6 +22,13 @@ Manopt.get_manifold(::VectorBundleManoptProblem)
 VectorBundleNewtonState
 ```
 
+## Specific stopping criteria
+
+```@docs
+StopWhenDirectionNormLess
+StopWhenNewtonDirectionNormLess
+```
+
 ## [Step size](@id Sec-VectorBundleNewton-Stepsize)
 
 ```@docs

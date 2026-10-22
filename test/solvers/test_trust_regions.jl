@@ -147,6 +147,12 @@ include("trust_region_model.jl")
         )
         @test !contains(repr(s4), "HX = ")
         @test !Manopt.get_state(s4).sub_state.randomize
+        # a random start vector (norm about 1e-3) outside a small trust region is scaled back inside
+        p5 = trust_regions(
+            M, f, rgrad, rhess, p;
+            max_trust_region_radius = 8.0, trust_region_radius = 1.0e-5, σ = 1.0e-3,
+        )
+        @test f(M, p5) ≈ f(M, p1)
 
         p3 = trust_regions(
             M, f, rgrad, p; max_trust_region_radius = 8.0,

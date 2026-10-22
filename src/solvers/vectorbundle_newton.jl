@@ -104,8 +104,10 @@ by a predictor-corrector-loop using an affine covariant quantity ``θ`` to measu
 * `θ_des`:         desired θ
 * `θ_acc`:         acceptable θ
 * `last_stepsize`: last computed stepsize (this is an auxiliary variable used within the algorithm)
+* `messages::NamedTuple`: a named tuple to store possible [`StepsizeMessage`](@ref) about the stepsize search.
 * `outer_norm`:    if `M` is a manifold with components, this is used to specify the norm,
   that is used to combine the component-wise norms of the Newton directions into one norm.
+* `stop_when_stepsize_less`:        stepsize threshold for failure
 
 # Example
 
@@ -126,7 +128,7 @@ The `outer_norm` has no effect on manifolds that do not consist of components.
 
     AffineCovariantStepsize(
         M::AbstractManifold=DefaultManifold(2);
-        α=1.0, θ=1.3, θ_des=0.5, θ_acc=1.1*θ_des, outer_norm::Union{Missing,Real}=missing
+        α=1.0, θ=1.3, θ_des=0.5, θ_acc=1.1*θ_des, outer_norm::Union{Missing,Real}=missing, stop_when_stepsize_less=1e-6
     )
 
 Initializes all fields, where none of them is mandatory. The `last_stepsize` is set to ``1.0``.
@@ -134,29 +136,38 @@ Initializes all fields, where none of them is mandatory. The `last_stepsize` is 
 Since the computation of the convergence monitor ``θ`` requires simplified Newton directions a method for computing them has to be provided.
 This should be implemented as a method of the Newton equation functor that takes `(M, VB, p, p_trial)` as parameters and returns a representation of the (transported) ``F(p_{$(_tex(:rm, "trial"))})``.
 """
-mutable struct AffineCovariantStepsize{R <: Real, N <: Union{Real, Missing}} <: Stepsize
+mutable struct AffineCovariantStepsize{R <: Real, N <: Union{Real, Missing}, MSGS} <: Stepsize
     α::R
     θ::R
     θ_des::R
     θ_acc::R
     last_stepsize::R
+    messages::MSGS
     outer_norm::N
+    stop_when_stepsize_less::R
 end
+
 function AffineCovariantStepsize(
         ::AbstractManifold = DefaultManifold(2);
-        α::Real = 1.0, θ::Real = 1.3, θ_des::Real = 0.5, θ_acc::Real = 1.1 * θ_des, outer_norm::N = missing
+        α::Real = 1.0, θ::Real = 1.0, θ_des::Real = 0.5, θ_acc::Real = 1.1 * θ_des, outer_norm::N = missing, stop_when_stepsize_less::Real = 1.0e-6,
     ) where {N <: Union{Real, Missing}}
     R = promote_type(typeof(α), typeof(θ), typeof(θ_des), typeof(θ_acc))
-    return AffineCovariantStepsize{R, N}(
-        convert(R, α), convert(R, θ), convert(R, θ_des), convert(R, θ_acc), convert(R, 1.0), outer_norm
+    msgs = (; stepsize_less = StepsizeMessage{R, R}())
+    return AffineCovariantStepsize{R, N, typeof(msgs)}(
+        convert(R, α), convert(R, θ), convert(R, θ_des), convert(R, θ_acc), convert(R, 1.0), msgs, outer_norm, convert(R, stop_when_stepsize_less)
     )
 end
+
 function Base.show(io::IO, acs::AffineCovariantStepsize)
     print(io, "AffineCovariantStepsize(; α = ", acs.α, ", θ = ", acs.θ, ", θ_des = ", acs.θ_des)
     print(io, ", θ_acc = ", acs.θ_acc)
+    print(io, ", messages = ", acs.messages)
     !(ismissing(acs.outer_norm)) && print(io, ", outer_norm = ", acs.outer_norm)
+    print(io, ", stop_when_stepsize_less = ", acs.stop_when_stepsize_less)
     return print(io, ")")
 end
+
+
 function status_summary(acs::AffineCovariantStepsize; context = :default)
     (context === :short) && return repr(acs)
     (context === :inline) && return "An affine covariant step size (last step size: $(acs.last_stepsize))"
@@ -169,7 +180,7 @@ function status_summary(acs::AffineCovariantStepsize; context = :default)
     * damping factor α: $(_MANOPT_INDENT)$(acs.α)
     * θ:                $(_MANOPT_INDENT)$(acs.θ)
     * desired θ:        $(_MANOPT_INDENT)$(acs.θ_des)
-    * acceptable θ:     $(_MANOPT_INDENT)$(acs.θ_acc)$(on)
+    * acceptable θ:     $(_MANOPT_INDENT)$(acs.θ_acc)
     """
 end
 function _solve_newton_sub_problem(
@@ -188,13 +199,18 @@ end
 function (acs::AffineCovariantStepsize)(
         amp::AbstractManoptProblem, ams::VectorBundleNewtonState, ::Any, args...; kwargs...
     )
-    α_new = acs.α
-    θ_new = acs.θ
+    reset_messages!(acs.messages)
+    acs.last_stepsize = acs.α
+    α_new = acs.last_stepsize
+    θ_new = 1.1
+    b = copy(amp.newton_equation.b)
     M = get_manifold(amp)
     NE = get_newton_equation(amp)
     b = copy(NE.b)
-    while θ_new > acs.θ_acc && α_new > 1.0e-10
-        Xα = α_new * ams.X
+    i = 0
+    while θ_new > acs.θ_acc
+        i = i + 1
+        Xα = acs.last_stepsize * ams.X
         retract!(M, ams.p_trial, ams.p, Xα, ams.retraction_method)
 
         rhs_next = NE(M, get_vectorbundle(amp), ams.p, ams.p_trial)
@@ -205,23 +221,35 @@ function (acs::AffineCovariantStepsize)(
 
         add_arg = (has_components(M) && !ismissing(acs.outer_norm)) ? (outer_norm = acs.outer_norm,) : ()
         nom = norm(M, ams.p, simplified_newton, add_arg...)
-        denom = norm(M, ams.p, ams.X, add_arg...)
-        θ_new = nom / denom
+        denom = norm(M, ams.p, Xα, add_arg...)
 
-        (θ_new <= acs.θ_acc) && break
-        α_new = min(1.0, ((α_new * acs.θ_des) / θ_new))
+        θ_new = nom / denom
+        α_new = min(1.0, ((acs.last_stepsize * acs.θ_des) / θ_new))
+
+        if θ_new > acs.θ_acc
+            acs.last_stepsize = α_new
+        end
+
+        if α_new < acs.stop_when_stepsize_less
+            set_message!(acs.messages, :stepsize_less, at = i, bound = acs.stop_when_stepsize_less, value = α_new)
+            acs.last_stepsize = α_new
+            break
+        end
+
     end
     NE.b .= b
-    acs.last_stepsize = α_new
+    acs.α = α_new
+    acs.θ = θ_new
     return acs.last_stepsize
 end
+
 get_initial_stepsize(s::AffineCovariantStepsize) = s.α
 
 function get_last_stepsize(step::AffineCovariantStepsize, ::Any...)
     return step.last_stepsize
 end
 
-default_stepsize(M::AbstractManifold, ::Type{VectorBundleNewtonState}) = ConstantStepsize(M)
+default_stepsize(M::AbstractManifold, ::Type{VectorBundleNewtonState}) = ConstantStepsize(M, 1.0)
 
 function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :default)
     (context === :short) && return repr(vbns)
@@ -241,7 +269,6 @@ function status_summary(vbns::VectorBundleNewtonState; context::Symbol = :defaul
     The algorithm converged: $(_converged_str(vbns))"""
     return s
 end
-
 
 @doc """
     VectorBundleManoptProblem{M<:AbstractManifold,TV<:AbstractManifold,O} <: AbstractManoptProblem{M}
@@ -278,6 +305,149 @@ function status_summary(vbmp::VectorBundleManoptProblem; context::Symbol = :defa
     $(_in_str(repr(vbmp.newton_equation); indent = 1))
     """
 end
+
+
+@doc """
+    StopWhenNewtonDirectionNormLess <: StoppingCriterion
+
+A stopping criterion tailored for the AffineCovariantStepsize to stop when the norm of the Newton direction is less than a certain threshold and the convergence monitor `θ` is less than 0.25.
+
+# Fields
+
+* `threshold`:     threshold
+* `last_step`:     norm of the last step
+
+# Constructor
+
+    StopWhenNewtonDirectionNormLess(
+        threshold; last_step=zero(threshold), at_iteration=-1
+    )
+
+Initializes all fields. Only the `threshold` is mandatory.
+"""
+mutable struct StopWhenNewtonDirectionNormLess{F} <: StoppingCriterion
+    threshold::F
+    last_step::F
+    at_iteration::Int
+    function StopWhenNewtonDirectionNormLess(ε::F) where {F <: Real}
+        return new{F}(ε, zero(ε), -1)
+    end
+end
+
+function (c::StopWhenNewtonDirectionNormLess)(
+        p::VectorBundleManoptProblem, s::VectorBundleNewtonState{P, T, Pr, St, C, TStop, <:AffineCovariantStepsize}, k::Int
+    ) where {P, T, Pr, St, C, TStop}
+    M = get_manifold(p)
+    if k == 0 # reset on init
+        c.at_iteration = -1
+        c.last_step = Inf
+    end
+    add_arg = (has_components(M) && !ismissing(s.stepsize.outer_norm)) ? (outer_norm = s.stepsize.outer_norm,) : ()
+    c.last_step = norm(M, s.p, s.X, add_arg...)
+    if c.last_step < c.threshold && s.stepsize.θ < 0.25 && s.stepsize.last_stepsize == 1.0 && k > 0
+        c.at_iteration = k
+        return true
+    end
+    return false
+end
+
+indicates_convergence(c::StopWhenNewtonDirectionNormLess) = true
+function get_reason(c::StopWhenNewtonDirectionNormLess)
+    if (c.last_step < c.threshold) && (c.at_iteration >= 0)
+        return "After iteration ($(c.at_iteration)) the step length of the Newton direction is ($(c.last_step)) and thus less than the threshold ($(c.threshold), and the convergence monitor of the affine covariant damping strategy is less than 0.25).\n"
+    end
+    return ""
+end
+function status_summary(c::StopWhenNewtonDirectionNormLess; context::Symbol = :default)
+    (context == :short) && return repr(c)
+    has_stopped = (c.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    return (_is_inline(context) ? "|X| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the norm of the Newton direction is less than $(c.threshold)\n$(_MANOPT_INDENT) and the convergence monitor of the affine covariant damping strategy is less then 0.25.") * "$s"
+end
+function Base.show(io::IO, c::StopWhenNewtonDirectionNormLess)
+    return print(io, "StopWhenNewtonDirectionNormLess($(c.threshold))")
+end
+
+@doc """
+    StopWhenDirectionNormLess <: StoppingCriterion
+
+A stopping criterion to stop when the norm of the Newton direction is less than a certain threshold.
+
+# Fields
+
+* `threshold`:     threshold
+* `last_step`:     norm of the last step
+* `outer_norm`:  if `M` is a manifold with components, this is used to specify the norm,
+  that is used to combine the component-wise norms of the Newton directions into one norm.
+
+# Example
+
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:Manifold)) = $(_math(:Manifold; M = "N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:Manifold))`` is a vector of length ``n`` of points ``p_i ∈ $(_math(:Manifold; M = "N"))``.
+Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector ``X = (X_1,…,X_n) ∈ $(_math(:TangentSpace; p = "p"))``
+is given by
+
+```math
+$(_tex(:norm, "X"; index = "p")) = $(_tex(:Bigl))( $(_tex(:sum))_{i=1}^n $(_tex(:norm, "X_i"; index = "p_i"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1", "r"))},
+```
+
+where the sum turns into a maximum for the case ``r=∞``.
+The `outer_norm` has no effect on manifolds that do not consist of components.
+
+# Constructor
+
+    StopWhenDirectionNormLess(
+        threshold; last_step=zero(threshold), at_iteration=-1, outer_norm=missing
+    )
+
+Initializes all fields. Only the `threshold` is mandatory.
+
+"""
+mutable struct StopWhenDirectionNormLess{F <: Real, N <: Union{Real, Missing}} <: StoppingCriterion
+    threshold::F
+    last_step::F
+    at_iteration::Int
+    outer_norm::N
+end
+
+function StopWhenDirectionNormLess(ε::F; outer_norm::N = missing) where {F, N}
+    return StopWhenDirectionNormLess{F, N}(ε, zero(ε), -1, outer_norm)
+end
+
+function (c::StopWhenDirectionNormLess)(
+        p::VectorBundleManoptProblem, s::VectorBundleNewtonState, k::Int
+    )
+    M = get_manifold(p)
+    if k == 0 # reset on init
+        c.at_iteration = -1
+        c.last_step = Inf
+    end
+    add_arg = (has_components(M) && !ismissing(c.outer_norm)) ? (outer_norm = c.outer_norm,) : ()
+    c.last_step = norm(M, s.p, s.X, add_arg...)
+    if c.last_step < c.threshold && k > 0
+        c.at_iteration = k
+        return true
+    end
+    return false
+end
+
+indicates_convergence(c::StopWhenDirectionNormLess) = true
+function get_reason(c::StopWhenDirectionNormLess)
+    if (c.last_step < c.threshold) && (c.at_iteration >= 0)
+        return "After iteration ($(c.at_iteration)) the step length of the Newton direction is ($(c.last_step)) and thus less than the threshold ($(c.threshold).\n)"
+    end
+    return ""
+end
+function status_summary(c::StopWhenDirectionNormLess; context::Symbol = :default)
+    (context == :short) && return repr(c)
+    has_stopped = (c.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    return (_is_inline(context) ? "|X| < $(c.threshold):$(_MANOPT_INDENT)" : "A stopping criterion to stop when the norm of the Newton direction is less than $(c.threshold)\n$(_MANOPT_INDENT).") * "$s"
+end
+function Base.show(io::IO, c::StopWhenDirectionNormLess)
+    return print(io, "StopWhenDirectionNormLess($(c.threshold))")
+end
+
 
 @doc """
     get_vectorbundle(vbp::VectorBundleManoptProblem)
@@ -330,6 +500,8 @@ $(_args(:p))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`VectorBundleNewtonState`](@ref)`)"))
+* `stop_when_newton_direction_norm_less=1e-6`: threshold for the [`StopWhenNewtonDirectionNormLess`](@ref) inside the default `stopping_criterion`.
+  This parameter has no effect, when either using a stepsize different from [`AffineCovariantStepsize`](@ref) or when setting the stopping criterion manually.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
 $(_kwargs(:sub_problem; default = "nothing")) That is, you have to provide a method for solving the Newton equation.
   Currently only the closed form solution is implemented, that is, this is a functor that maps either
@@ -357,10 +529,15 @@ function vectorbundle_newton!(
         M::AbstractManifold, E::AbstractManifold, NE::O, p::P;
         callbacks = Dict{Symbol, Function}(),
         retraction_method::RM = default_retraction_method(M, typeof(p)),
-        stopping_criterion::SC = StopAfterIteration(1000),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
             M, VectorBundleNewtonState
         ),
+        stop_when_newton_direction_norm_less = 1.0e-6,
+        stopping_criterion::SC = if stepsize isa AffineCovariantStepsize
+            StopAfterIteration(1000) | StopWhenStepsizeLess(stepsize.stop_when_stepsize_less) | StopWhenNewtonDirectionNormLess(stop_when_newton_direction_norm_less)
+        else
+            StopAfterIteration(1000)
+        end,
         sub_problem::Pr = nothing,
         sub_state::Op = AllocatingEvaluation(),
         X::T = zero_vector(M, p),
@@ -407,6 +584,12 @@ function step_solver!(
     #compute a stepsize
     step = s.stepsize(mp, s, k)
     callback(:Stepsize, mp, s, k)
+
+    # if step < s.stop_when_stepsize_less
+    #    set_message!(s.messages, :stepsize_less, at = i, bound = s.stop_when_stepsize_less, value = step)
+    #    break
+    #end
+
     # retract
     ManifoldsBase.retract_fused!(M, s.p, s.p, s.X, step, s.retraction_method)
     copyto!(M, s.p_trial, s.p) # needed for affine covariant damping (can be ignored if this stepsize computation is not used)

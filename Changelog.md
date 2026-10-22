@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.10] unreleased
 
+### Added
+
+* two new stopping criteria `StopWhenDirectionNormLess` and `StopWhenNewtonDirectionNormLess`
+  for the `vectorbundle_newton` solver
+* a `stop_when_stepsize_less` fallback for the `AffineCovariantStepsize` for the `vectorbundle_newton` solver
+
 ### Changed
 
 * the default branch of the repository is now called `main`; development versions are installed with `Manopt#main`.
