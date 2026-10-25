@@ -10,14 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+We changed the following default keyword values
+
+* In the `ArmijoLinesearch`
+  * `contraction_factor = 0.8` (was `0.95`)
+  * `sufficient_decrease = 1.0e-4` (was `0.1`, now unified with other occurences)
+* `WolfePowellLinesearchStepsize`
+  * `sufficient_curvature = 0.9` (was `0.999`)
+* `WolfePowellBinaryLinesearchStepsize`
+  * `sufficient_curvature = 0.9` (was `0.999`)
 
 ### Removed
 
 The following breaking changes all stem from deprecated features.
 
 * `DebugCallback` is removed, use the `callbacks = ` keyword of a state instead
-* `DebugFeasibility` no longer accepts `atol = `, since an constrained objective now handles tolerances itself.
+* `DebugSolverState` no longer accepts a function as second argument, since that was a shortcut to create a `DebugCallback`
 * `decorate_state!` processed `callback` to a `DebugCallback`. This is discontinued in favour of the `callbacks` keyword
+* `DebugFeasibility` no longer accepts `atol = `, since an constrained objective now handles tolerances itself.
 * the `QuasiNewtonState` no longer accepts the `initial_vector = ` keyword. Use `X = ` instead.
 * the alias `AbstractManifoldGradientObjective` for the `AbstractManifoldFirstOrderObjective` has been removed
 * the `ProjectedGradientMethodState`, `MeshAdaptiveDirectSearchState`, and `CoordinatesNormalSystemState` no longer accept an initial point as second position argument. Use the keyword `p = `.

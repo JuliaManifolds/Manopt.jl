@@ -69,11 +69,6 @@ function DebugSolverState(
     ) where {S <: AbstractManoptSolverState}
     return DebugSolverState{S}(st, DebugFactory(format))
 end
-function DebugSolverState( # a function: callback
-        st::S, callback::Function,
-    ) where {S <: AbstractManoptSolverState}
-    return DebugSolverState{S}(st, DebugFactory([callback]))
-end
 
 """
     set_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)

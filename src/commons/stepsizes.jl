@@ -279,8 +279,8 @@ default retraction on `M`.
 * `candidate_point=allocate_result(M, rand)`
 * `initial_stepsize=number_type(1.0)`
 $(_kwargs(:retraction_method))
-* `contraction_factor=number_type(0.95)`
-* `sufficient_decrease=number_type(0.1)`
+* `contraction_factor=number_type(0.8)`
+* `sufficient_decrease=number_type(1.0e-4)`
 * `last_stepsize=initial_stepsize`
 * `initial_guess=`[`ArmijoInitialGuess`](@ref)`()`
 $(_kwargs(:number_type; p = "candidate_point"))
@@ -324,11 +324,11 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
             additional_decrease_condition::DF = (M, p) -> true, additional_increase_condition::IF = (M, p) -> true,
             candidate_point::P = allocate_result(M, rand),
             number_type::Type = real(float(number_eltype(candidate_point))),
-            contraction_factor::Real = number_type(0.95), initial_stepsize::Real = number_type(1.0), last_stepsize::Real = initial_stepsize,
+            contraction_factor::Real = number_type(0.8), initial_stepsize::Real = number_type(1.0), last_stepsize::Real = initial_stepsize,
             initial_guess::IGF = ArmijoInitialGuess(), retraction_method::TRM = default_retraction_method(M, typeof(candidate_point)),
             stop_when_stepsize_less::Real = number_type(0.0), stop_when_stepsize_exceeds::Real = number_type(max_stepsize(M)),
             stop_increasing_at_step::Integer = 100, stop_decreasing_at_step::Integer = 1000,
-            sufficient_decrease::Real = number_type(0.1),
+            sufficient_decrease::Real = number_type(1.0e-4),
         ) where {TRM <: AbstractRetractionMethod, P, IGF, DF, IF}
         R = promote_type(
             typeof(contraction_factor), typeof(initial_stepsize), typeof(last_stepsize),
@@ -469,7 +469,7 @@ Overall, a step size is sought that provides _enough decrease_, see
   specify an additional criterion that has to be met to accept a step size in the (initial) increase loop
 * `candidate_point=allocate_result(M, rand)`:
   specify a point to be used as memory for the candidate points.
-* `contraction_factor=number_type(0.95)`: how to update ``s`` in the decrease step
+* `contraction_factor=number_type(0.8)`: how to update ``s`` in the decrease step
 * `initial_stepsize=number_type(1.0)`: specify an initial step size
 * `initial_guess=`[`ArmijoInitialGuess`](@ref)`()`: Compute the initial step size of
   a line search based on this function. See [`AbstractInitialLinesearchGuess`](@ref) for details.
@@ -479,7 +479,7 @@ $(_kwargs(:retraction_method))
 * `stop_when_stepsize_exceeds=max_stepsize(M)`: a safeguard to not choose a too long step size when initially increasing
 * `stop_increasing_at_step=100`: stop the initial increasing loop after this amount of steps. Set to `0` to never increase in the beginning
 * `stop_decreasing_at_step=1000`: maximal number of Armijo decreases / tests to perform
-* `sufficient_decrease=number_type(0.1)`: the sufficient decrease parameter ``τ``
+* `sufficient_decrease=number_type(1.0e-4)`: the sufficient decrease parameter ``τ``
 
 For the stop safe guards you can pass `:Messages` to a `debug=` to see `@info` messages when these happen.
 
@@ -1834,7 +1834,7 @@ $(_kwargs(:retraction_method))
 * `strategy=:direct`
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
 * `stepsize_reduction=0.5`
-* `sufficient_decrease=1e-4`
+* `sufficient_decrease=1.0e-4`
 * `stop_when_stepsize_less=0.0`
 * `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M)`
 * `stop_increasing_at_step=100`
@@ -2066,7 +2066,7 @@ $(_kwargs(:retraction_method))
 * `strategy=:direct`: defines if the new step size is computed using the `:direct`, `:inverse` or `:alternating` strategy
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`: increase efficiency by using a [`StoreStateAction`](@ref) for `:Iterate` and `:Gradient`.
 * `stepsize_reduction=0.5`:  step size reduction factor contained in the interval ``(0,1)``
-* `sufficient_decrease=1e-4`: sufficient decrease parameter contained in the interval ``(0,1)``
+* `sufficient_decrease=1.0e-4`: sufficient decrease parameter contained in the interval ``(0,1)``
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
 * `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M)`: largest stepsize when to stop to avoid leaving the injectivity radius
 * `stop_increasing_at_step=100`:  last step to increase the stepsize (phase 1),
@@ -2190,7 +2190,7 @@ $(_fields(:vector_transport_method))
 ## Keyword arguments
 
 * `sufficient_decrease=number_type(1e-4)`
-* `sufficient_curvature=number_type(0.999)`
+* `sufficient_curvature=number_type(0.9)`
 * `initial_guess=`[`ConstantInitialGuess`](@ref)`(number_type(1.0))`: the first trial step, clamped to `max_stepsize`
 $(_kwargs(:p)) to store an interim result
 $(_kwargs(:X)) as type of memory allocated for the candidate direction
@@ -2240,7 +2240,7 @@ mutable struct WolfePowellLinesearchStepsize{
             max_stepsize::Real = number_type(max_stepsize(M)),
             retraction_method::TRM = default_retraction_method(M),
             sufficient_decrease::Real = number_type(1.0e-4),
-            sufficient_curvature::Real = number_type(0.999),
+            sufficient_curvature::Real = number_type(0.9),
             initial_guess = ConstantInitialGuess(number_type(1.0)),
             vector_transport_method::VTM = default_vector_transport_method(M),
             stop_when_stepsize_less::Real = number_type(0.0),
@@ -2421,7 +2421,7 @@ This is adopted from [NocedalWright:2006; Section 3.1](@cite)
 # Keyword arguments
 
 * `sufficient_decrease=number_type(1e-4)`
-* `sufficient_curvature=number_type(0.999)`
+* `sufficient_curvature=number_type(0.9)`
 * `initial_guess=`[`ConstantInitialGuess`](@ref)`(number_type(1.0))`: the first trial step, clamped to `max_stepsize`
 $(_kwargs(:p)) as temporary storage for candidates
 $(_kwargs(:X)) as type of memory allocated for the candidate direction
@@ -2460,7 +2460,7 @@ $(_fields(:vector_transport_method))
 ## Keyword arguments
 
 * `sufficient_decrease=1e-4`
-* `sufficient_curvature=0.999`
+* `sufficient_curvature=0.9`
 * `initial_guess=`[`ConstantInitialGuess`](@ref)`(1.0)`: the first trial step, clamped to the maximal step
 $(_kwargs(:retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
@@ -2481,7 +2481,7 @@ mutable struct WolfePowellBinaryLinesearchStepsize{
     function WolfePowellBinaryLinesearchStepsize(
             M::AbstractManifold;
             sufficient_decrease::Real = 10.0^(-4),
-            sufficient_curvature::Real = 0.999,
+            sufficient_curvature::Real = 0.9,
             retraction_method::RTM = default_retraction_method(M),
             vector_transport_method::VTM = default_vector_transport_method(M),
             stop_when_stepsize_less::Real = 0.0,
@@ -2602,7 +2602,7 @@ $(_doc_WPBL_algorithm)
 # Keyword arguments
 
 * `sufficient_decrease=1e-4`
-* `sufficient_curvature=0.999`
+* `sufficient_curvature=0.9`
 * `initial_guess=`[`ConstantInitialGuess`](@ref)`(1.0)`: the first trial step, clamped to the maximal step
 $(_kwargs(:retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)

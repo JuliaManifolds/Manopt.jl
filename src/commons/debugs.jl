@@ -1708,7 +1708,6 @@ Generate a [`DebugGroup`](@ref) of [`DebugAction`](@ref)s. The following rules a
 2. Any `(Symbol, String)` generates similar actions as in 1., but the string is used for `format=`,
    see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,Any}))
 3. Any `String` is passed to [`DebugActionFactory`](@ref)
-4. Any `Function` generates a [`DebugCallback`](@ref).
 5. Any [`DebugAction`](@ref) is included as is.
 
 If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of these is built.
