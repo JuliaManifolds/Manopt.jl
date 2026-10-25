@@ -14,7 +14,6 @@ We changed the following default keyword values
 
 * In the `ArmijoLinesearch`
   * `contraction_factor = 0.8` (was `0.95`)
-  * `sufficient_decrease = 1.0e-4` (was `0.1`, now unified with other occurences)
 * `WolfePowellLinesearchStepsize`
   * `sufficient_curvature = 0.9` (was `0.999`)
 * `WolfePowellBinaryLinesearchStepsize`

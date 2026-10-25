@@ -90,7 +90,6 @@ function decorate_state!(
         s::S;
         debug::Union{
             Missing, # none
-            Function, # a function to indicate a (non-simple) callback
             DebugAction, # single one -> to :Iteration
             Array{DebugAction, 1}, # a group -> to :Iteration
             Dict{Symbol, <:DebugAction}, # the most elaborate, a dictionary

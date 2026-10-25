@@ -280,7 +280,7 @@ default retraction on `M`.
 * `initial_stepsize=number_type(1.0)`
 $(_kwargs(:retraction_method))
 * `contraction_factor=number_type(0.8)`
-* `sufficient_decrease=number_type(1.0e-4)`
+* `sufficient_decrease=number_type(1.0e-1)`
 * `last_stepsize=initial_stepsize`
 * `initial_guess=`[`ArmijoInitialGuess`](@ref)`()`
 $(_kwargs(:number_type; p = "candidate_point"))
@@ -328,7 +328,7 @@ mutable struct ArmijoLinesearchStepsize{TRM <: AbstractRetractionMethod, P, I, F
             initial_guess::IGF = ArmijoInitialGuess(), retraction_method::TRM = default_retraction_method(M, typeof(candidate_point)),
             stop_when_stepsize_less::Real = number_type(0.0), stop_when_stepsize_exceeds::Real = number_type(max_stepsize(M)),
             stop_increasing_at_step::Integer = 100, stop_decreasing_at_step::Integer = 1000,
-            sufficient_decrease::Real = number_type(1.0e-4),
+            sufficient_decrease::Real = number_type(1.0e-1),
         ) where {TRM <: AbstractRetractionMethod, P, IGF, DF, IF}
         R = promote_type(
             typeof(contraction_factor), typeof(initial_stepsize), typeof(last_stepsize),
