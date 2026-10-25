@@ -63,10 +63,6 @@ function decorate_state! end
 _add_debug_callback(::Missing, cb::DebugAction) = cb
 _add_debug_callback(debug::Array, cb::DebugAction) = [debug..., cb]
 _add_debug_callback(debug::Union{Function, DebugAction}, cb::DebugAction) = [debug, cb]
-function _add_debug_callback(debug::Dict, ::DebugAction)
-    @warn "Adding callback to decorator too complicated; Callback ignored. Please add it to your Dictionary at :Iteration as a `DebugCallback` manually"
-    return debug
-end
 
 @doc """
     decorate_state!(s::AbstractManoptSolverState; kwargs...)
@@ -79,8 +75,7 @@ The optional arguments provide necessary details on the decorators.
 
 * `debug=missing`: a set of symbols
   representing [`DebugAction`](@ref)s, `Strings` used as dividers and a sub-sampling
-  integer. These are passed as a [`DebugGroup`](@ref) within `:Iteration` to the
-  [`DebugSolverState`](@ref) decorator dictionary. A function is added as a (non-simple) callback within a [`DebugCallback`](@ref).
+  integer. These are passed as a [`DebugGroup`](@ref) within `:Iteration` to the [`DebugSolverState`](@ref) decorator dictionary.
   Only exception is `:Stop` that is passed to `:Stop`.
 * `record=missing`: specify recordings
   by using `Symbol`s or [`RecordAction`](@ref)s directly.

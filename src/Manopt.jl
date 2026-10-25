@@ -519,7 +519,7 @@ export get_active_stopping_criteria,
 #
 # Debugs
 export DebugSolverState, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
-export DebugCallback, DebugChange, DebugGradientChange
+export DebugChange, DebugGradientChange
 export DebugIterate, DebugIteration, DebugDivider, DebugTime
 export DebugFeasibility
 export DebugCost, DebugStoppingCriterion

@@ -1,44 +1,4 @@
 @doc """
-    DebugCallback <: DebugAction
-
-Debug for a simple callback function, mainly for compatibility to other solvers and if
-a user already has a callback function or functor available
-
-The expected format of the callback is that of a function with signature `(problem, state, k) -> nothing`.
-A simple callback of the signature `() -> nothing` can be specified by `simple=true`. In this case the callback is wrapped in a function of the generic form above.
-
-!!! note
-    This is for now an internal struct, since its name might still change before
-    it is made public. The functionality with the factory (`callback=f`) will still work,
-    but this debug action might still change its name in the future.
-
-# Constructor
-
-    DebugCallback(callback; simple=false)
-"""
-struct DebugCallback{CB} <: DebugAction
-    callback::CB
-    function DebugCallback(callback; simple::Bool = false)
-        _cb = simple ? (problem, state, k) -> callback() : callback
-        return new{typeof(_cb)}(_cb)
-    end
-end
-function (d::DebugCallback)(
-        problem::AbstractManoptProblem, state::AbstractManoptSolverState, k
-    )
-    d.callback(problem, state, k)
-    return nothing
-end
-function show(io::IO, dc::DebugCallback{CB}) where {CB}
-    return print(io, "DebugCallback($(dc.callback))")
-end
-function status_summary(dc::DebugCallback; context::Symbol = :default)
-    (context === :short) && return "$(dc.callback)"
-    # inline and default
-    return "A DebugAction with a callback that calls $(dc.callback)"
-end
-
-@doc """
     DebugChange(M=DefaultManifold(); kwargs...)
 
 debug for the amount of change of the iterate (stored in `get_iterate` of the [`AbstractManoptSolverState`](@ref))
@@ -1750,7 +1710,6 @@ create a [`DebugAction`](@ref) where
 * a `Symbol` creates a [`DebugEntry`](@ref) of that symbol, with the exceptions
   listed in [`DebugActionFactory`](@ref DebugActionFactory(::Symbol)).
 * a `Tuple{Symbol,Any}` creates a [`DebugEntry`](@ref) of that symbol, where the second entry specifies the format.
-* a `<:Function` creates a [`DebugCallback`](@ref) with the function as callback.
 """
 function DebugActionFactory end
 
