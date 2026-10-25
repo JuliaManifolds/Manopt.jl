@@ -495,8 +495,7 @@ mutable struct DebugFeasibility <: DebugAction
     format::Vector{Union{String, Symbol}}
     io::IO
     at_init::Bool
-    function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout, atol = NaN, at_init::Bool = true)
-        isnan(atol) || (@warn "Providing atol= directly to DebugFeasibility is deprecated. Use the keyword for the ConstrainedObjective instead. The value provided here ($(atol)) is ignored")
+    function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout, at_init::Bool = true)
         return new(format, io, at_init)
     end
 end
@@ -1758,16 +1757,6 @@ function DebugActionFactory end
 
 DebugActionFactory(d::String) = DebugDivider(d)
 DebugActionFactory(a::A) where {A <: DebugAction} = a
-# Deprecated
-function DebugActionFactory(f::F) where {F <: Function}
-    @warn """
-        the `DebugCallback` struct is deprecated. Passing functions to `debug = `
-        will no longer work in the next release. Use
-        `callbacks = [:Step => [...]]` to add your callback to the (end of)
-        an iteration step
-    """
-    return DebugCallback(f)
-end
 """
     DebugActionFactory(s::Symbol)
 

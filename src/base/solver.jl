@@ -77,7 +77,6 @@ Decorate the [`AbstractManoptSolverState`](@ref) `s` with specific decorators.
 
 The optional arguments provide necessary details on the decorators.
 
-* `callback=missing`: (deprecated) add an arbitrary (simple) callback function `cb()` to be called every iteration.
 * `debug=missing`: a set of symbols
   representing [`DebugAction`](@ref)s, `Strings` used as dividers and a sub-sampling
   integer. These are passed as a [`DebugGroup`](@ref) within `:Iteration` to the
@@ -115,20 +114,10 @@ function decorate_state!(
             Dict{Symbol, <:RecordAction}, # a dictionary for precise settings
             Array{<:Any, 1}, # a formatted string with symbols or AbstractStateActions
         } = missing,
-        callback = missing, # a (simple) callback function – deprecated
         return_state = false,
         kwargs..., # ignore all others
     ) where {S <: AbstractManoptSolverState}
     deco_s = s
-    # Add callback to debug parameter
-    if !ismissing(callback) # we got a simple callback
-        @warn """
-            the `callback =` keyword/decorator step is deprecated, use
-            `callbacks = [:Step => (problem, state, k) -> ...]` to add your callback to the (end of)
-            an iteration step
-        """
-        debug = _add_debug_callback(debug, DebugCallback(callback; simple = true))
-    end
     if !ismissing(debug) && !(debug isa AbstractArray && length(debug) == 0)
         deco_s = DebugSolverState(s, debug)
     end
@@ -138,8 +127,6 @@ function decorate_state!(
     deco_s = (return_state) ? ReturnSolverState(deco_s) : deco_s
     return deco_s
 end
-
-deprecated_keywords(::typeof(decorate_state!)) = Set([:callback])
 
 function decorate_objective! end
 @doc """

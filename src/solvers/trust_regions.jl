@@ -437,8 +437,7 @@ function trust_regions!(
         trust_region_radius::Real = max_trust_region_radius / 8,
         randomize::Bool = false,
         project!::Proj = (copyto!),
-        ρ_prime::Real = 0.1, # Deprecated, remove on next breaking change (use `acceptance_rate`)
-        acceptance_rate::Real = ρ_prime,
+        acceptance_rate::Real = 0.1,
         ρ_regularization::Real = 1.0e3,
         θ::Real = 1.0,
         κ::Real = 0.1,
@@ -532,7 +531,6 @@ function trust_regions!(
     return get_solver_return(get_objective(dmp), dtrs)
 end
 calls_with_kwargs(::typeof(trust_regions!)) = (decorate_objective!, decorate_state!)
-deprecated_keywords(::typeof(trust_regions!)) = Set([:ρ_prime])
 
 function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     M = get_manifold(mp)

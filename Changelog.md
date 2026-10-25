@@ -6,6 +6,23 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0]
+
+### Changed
+
+
+### Removed
+
+The following breaking changes all stem from deprecated features.
+
+* `DebugCallback` is removed, use the `callbacks = ` keyword of a state instead
+* `DebugFeasibility` no longer accepts `atol = `, since an constrained objective now handles tolerances itself.
+* `decorate_state!` processed `callback` to a `DebugCallback`. This is discontinued in favour of the `callbacks` keyword
+* the `QuasiNewtonState` no longer accepts the `initial_vector = ` keyword. Use `X = ` instead.
+* the alias `AbstractManifoldGradientObjective` for the `AbstractManifoldFirstOrderObjective` has been removed
+* the `ProjectedGradientMethodState`, `MeshAdaptiveDirectSearchState`, and `CoordinatesNormalSystemState` no longer accept an initial point as second position argument. Use the keyword `p = `.
+* `trust_regions` no longer accepts the keyword `ρ_prime = `. Use its new name `acceptance_rate = ` instead.
+
 ## [0.6.10] October 22, 2026
 
 ### Added

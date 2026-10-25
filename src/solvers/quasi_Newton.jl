@@ -75,8 +75,7 @@ mutable struct QuasiNewtonState{
             M::AbstractManifold;
             callbacks::C = Dict{Symbol, Function}(),
             p::P = rand(M),
-            initial_vector::T = zero_vector(M, p), # deprecated
-            X::T = initial_vector,
+            X::T = zero_vector(M, p),
             vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
             preconditioner::Union{QuasiNewtonPreconditioner, Missing} = missing,
             initial_scale::Union{<:Real, Nothing} = ismissing(preconditioner) ? 1.0 : nothing,
