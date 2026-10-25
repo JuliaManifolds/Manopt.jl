@@ -59,11 +59,6 @@ get_solver_return(s::ReturnSolverState) = s.state
 
 function decorate_state! end
 
-# Merge the (deprecated) `callback=` keyword into whatever was passed as `debug=`.
-_add_debug_callback(::Missing, cb::DebugAction) = cb
-_add_debug_callback(debug::Array, cb::DebugAction) = [debug..., cb]
-_add_debug_callback(debug::Union{Function, DebugAction}, cb::DebugAction) = [debug, cb]
-
 @doc """
     decorate_state!(s::AbstractManoptSolverState; kwargs...)
 
