@@ -1035,7 +1035,7 @@ $(_fields(:p; name = "candidate_point"))
 $(_fields(:initial_guess))
 * `last_stepsize::R`
 $(_fields(:retraction_method))
-* `stepsize_increase::R`:  step size increase factor ``>1``
+* `expansion_factor::R`:  step size increase factor ``>1``
 * `max_iterations::I`: maximum number of iterations
 * `sufficient_curvature::R`: target reduction of the curvature ``(0,1)``
 * `min_bracket_width::R`: minimal size of the bracket ``[a,b]``
@@ -1056,7 +1056,7 @@ $(_kwargs(:p; name = "candidate_point", default = "allocate_result(M, rand)")) a
 * `initial_stepsize=1.0`: the step size to start the search with
 * `initial_guess=(problem, state, k, last_stepsize, η) -> last_stepsize`: a function to provide the first trial step
 $(_kwargs(:retraction_method))
-* `stepsize_increase=1.5`:  step size increase factor ``>1``
+* `expansion_factor=1.5`:  step size increase factor ``>1``
 * `max_iterations=100`: maximum number of iterations
 * `sufficient_curvature=0.2`: target reduction of the curvature ``(0,1)``
 * `min_bracket_width=1e-4`: minimal size of the bracket ``[a,b]``
@@ -1080,7 +1080,7 @@ mutable struct CubicBracketingLinesearchStepsize{
     initial_guess::IG
     last_stepsize::R
     retraction_method::TRM
-    stepsize_increase::R
+    expansion_factor::R
     max_iterations::I
     sufficient_curvature::R
     min_bracket_width::R
@@ -1095,7 +1095,7 @@ mutable struct CubicBracketingLinesearchStepsize{
             initial_stepsize::Real = 1.0,
             initial_guess::IG = (problem, state, k, last_stepsize, η) -> last_stepsize,
             retraction_method::TRM = default_retraction_method(M, typeof(candidate_point)),
-            stepsize_increase::Real = 1.5,
+            expansion_factor::Real = 1.5,
             max_iterations::I = 100,
             sufficient_curvature::Real = 0.2,
             min_bracket_width::Real = 1.0e-4,
@@ -1104,13 +1104,13 @@ mutable struct CubicBracketingLinesearchStepsize{
             max_stepsize::Real = max_stepsize(M),
         ) where {I <: Integer, TRM, VTM, P, T, IG}
         # “Unify” the type of these bounds, since they share a type parameter
-        R = float(promote_type(typeof.((initial_stepsize, stepsize_increase, sufficient_curvature, min_bracket_width, max_stepsize))...))
-        initial_stepsize, stepsize_increase, sufficient_curvature, min_bracket_width, max_stepsize =
-            convert.(Ref(R), (initial_stepsize, stepsize_increase, sufficient_curvature, min_bracket_width, max_stepsize))
+        R = float(promote_type(typeof.((initial_stepsize, expansion_factor, sufficient_curvature, min_bracket_width, max_stepsize))...))
+        initial_stepsize, expansion_factor, sufficient_curvature, min_bracket_width, max_stepsize =
+            convert.(Ref(R), (initial_stepsize, expansion_factor, sufficient_curvature, min_bracket_width, max_stepsize))
         p = maybe_wrap_variable(candidate_point)
         X = maybe_wrap_variable(candidate_direction)
         Y = maybe_wrap_variable(temporary_tangent)
-        return new{R, I, TRM, VTM, typeof(p), typeof(X), IG}(X, p, Y, initial_stepsize, initial_guess, initial_stepsize, retraction_method, stepsize_increase, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsize)
+        return new{R, I, TRM, VTM, typeof(p), typeof(X), IG}(X, p, Y, initial_stepsize, initial_guess, initial_stepsize, retraction_method, expansion_factor, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsize)
     end
 end
 function CubicBracketingLinesearchStepsize(M::AbstractManifold, p; kwargs...)
@@ -1314,7 +1314,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
             break
         end
         (t == max_step) && return t
-        t *= cbls.stepsize_increase
+        t *= cbls.expansion_factor
         t = min(t, max_step)
         c_old = c
         c = get_univariate_triple!(mp, cbls, p, η, t)
@@ -1365,7 +1365,7 @@ end
 function Base.show(io::IO, cbls::CubicBracketingLinesearchStepsize)
     return print(
         io,
-        "CubicBracketingLinesearch(; initial_stepsize = $(cbls.initial_stepsize),  initial_guess = $(cbls.initial_guess),  stepsize_increase = $(cbls.stepsize_increase),  sufficient_curvature = $(cbls.sufficient_curvature),  min_bracket_width = $(cbls.min_bracket_width),  hybrid = $(cbls.hybrid),  retraction_method = $(cbls.retraction_method),  vector_transport_method = $(cbls.vector_transport_method),  max_stepsize = $(cbls.max_stepsize))",
+        "CubicBracketingLinesearch(; initial_stepsize = $(cbls.initial_stepsize),  initial_guess = $(cbls.initial_guess),  expansion_factor = $(cbls.expansion_factor),  sufficient_curvature = $(cbls.sufficient_curvature),  min_bracket_width = $(cbls.min_bracket_width),  hybrid = $(cbls.hybrid),  retraction_method = $(cbls.retraction_method),  vector_transport_method = $(cbls.vector_transport_method),  max_stepsize = $(cbls.max_stepsize))",
     )
 end
 function status_summary(cbls::CubicBracketingLinesearchStepsize; context = :default)
@@ -1385,7 +1385,7 @@ function status_summary(cbls::CubicBracketingLinesearchStepsize; context = :defa
     * maximal stepsize:          $(_MANOPT_INDENT)$(cbls.max_stepsize)
     * sufficient curvature:      $(_MANOPT_INDENT)$(cbls.sufficient_curvature)
     * retraction method:         $(_MANOPT_INDENT)$(cbls.retraction_method)
-    * stepsize increase:         $(_MANOPT_INDENT)$(cbls.stepsize_increase)
+    * expansion factor:          $(_MANOPT_INDENT)$(cbls.expansion_factor)
     * vector transport method:   $(_MANOPT_INDENT)$(cbls.vector_transport_method)
     """
 end
@@ -1397,7 +1397,7 @@ end
 A functor representing the curvature minimizing cubic bracketing scheme introduced
 in [Hager:1989](@cite). Firstly, a bracket ``[a,b]`` is generated by multiplying
 ``t_0`` chosen as `last_stepsize` (or in case of the first iteration `initial_stepsize`) repeatedly with
-the `stepsize_increase > 1` until the bracket conditions
+the `expansion_factor > 1` until the bracket conditions
 
 ```math
     ϕ'(a)(b-a) < 0  \\quad \\text{and} \\quad ϕ(a) ≤ ϕ(b).
@@ -1424,7 +1424,7 @@ induced by `sufficient_curvature`, or the bracket ``[a,b]`` is smaller than `min
 * `initial_stepsize=1.0`: the step size to start the search with
 * `initial_guess=(problem, state, k, last_stepsize, η) -> last_stepsize`: a function to provide the first trial step
 $(_kwargs(:retraction_method))
-* `stepsize_increase=1.5`:  step size increase factor ``>1``
+* `expansion_factor=1.5`:  step size increase factor ``>1``
 * `max_iterations=100`: maximum number of iterations
 * `sufficient_curvature=0.2`: target reduction of the curvature ``(0,1)``
 * `min_bracket_width=1e-4`: minimal size of the bracket ``[a,b]``
@@ -1806,7 +1806,7 @@ $(_fields(:initial_guess))
 * `old_costs`:                  the last cost values; its length is the memory size, that is the
   number of iterations after which the cost value needs to be lower than the current one
 $(_fields(:retraction_method))
-* `stepsize_reduction`:         step size reduction factor contained in the interval ``(0,1)``
+* `contraction_factor`:         step size reduction factor contained in the interval ``(0,1)``
 * `stop_decreasing_at_step`:    last step size to decrease the stepsize (phase 2)
 * `stop_increasing_at_step`:    last step to increase the stepsize (phase 1)
 * `stop_when_stepsize_exceeds`: largest stepsize when to stop
@@ -1833,7 +1833,7 @@ $(_kwargs(:inverse_retraction_method)) used by the Barzilai–Borwein rule to co
 $(_kwargs(:retraction_method))
 * `strategy=:direct`
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
-* `stepsize_reduction=0.5`
+* `contraction_factor=0.5`
 * `sufficient_decrease=1.0e-4`
 * `stop_when_stepsize_less=0.0`
 * `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M)`
@@ -1852,7 +1852,7 @@ mutable struct NonmonotoneLinesearchStepsize{
     messages::MSGS
     old_costs::T
     retraction_method::TRM
-    stepsize_reduction::R
+    contraction_factor::R
     stop_decreasing_at_step::I
     stop_increasing_at_step::I
     stop_when_stepsize_exceeds::R
@@ -1868,7 +1868,7 @@ mutable struct NonmonotoneLinesearchStepsize{
             inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
             memory_size::Integer = 10,
             retraction_method::TRM = default_retraction_method(M),
-            stepsize_reduction::Real = 0.5,
+            contraction_factor::Real = 0.5,
             stop_when_stepsize_less::Real = 0.0,
             stop_when_stepsize_exceeds::Real = float(real(max_stepsize(M))),
             stop_increasing_at_step::Integer = 100,
@@ -1891,7 +1891,7 @@ mutable struct NonmonotoneLinesearchStepsize{
             p = p,
             initial_guess = initial_guess, memory_size = memory_size,
             retraction_method = retraction_method,
-            stepsize_reduction = stepsize_reduction,
+            contraction_factor = contraction_factor,
             stop_when_stepsize_less = stop_when_stepsize_less,
             stop_when_stepsize_exceeds = stop_when_stepsize_exceeds,
             stop_increasing_at_step = stop_increasing_at_step,
@@ -1905,7 +1905,7 @@ mutable struct NonmonotoneLinesearchStepsize{
             initial_guess::IG = (problem, state, k, last_stepsize, η) -> last_stepsize,
             memory_size::Integer = 10,
             retraction_method::TRM = default_retraction_method(M),
-            stepsize_reduction::Real = 0.5,
+            contraction_factor::Real = 0.5,
             stop_when_stepsize_less::Real = 0.0, stop_when_stepsize_exceeds::Real = float(real(max_stepsize(M))),
             stop_increasing_at_step::Integer = 100, stop_decreasing_at_step::Integer = 1000,
             sufficient_decrease::Real = 1.0e-4,
@@ -1915,15 +1915,15 @@ mutable struct NonmonotoneLinesearchStepsize{
         end
         R = float(
             promote_type(
-                typeof(stepsize_reduction), typeof(stop_when_stepsize_less),
+                typeof(contraction_factor), typeof(stop_when_stepsize_less),
                 typeof(stop_when_stepsize_exceeds), typeof(sufficient_decrease),
             )
         )
         I = promote_type(typeof(stop_increasing_at_step), typeof(stop_decreasing_at_step))
-        stepsize_reduction, stop_when_stepsize_less, stop_when_stepsize_exceeds, sufficient_decrease =
+        contraction_factor, stop_when_stepsize_less, stop_when_stepsize_exceeds, sufficient_decrease =
             convert.(
             Ref(R),
-            (stepsize_reduction, stop_when_stepsize_less, stop_when_stepsize_exceeds, sufficient_decrease),
+            (contraction_factor, stop_when_stepsize_less, stop_when_stepsize_exceeds, sufficient_decrease),
         )
         stop_increasing_at_step, stop_decreasing_at_step =
             convert.(Ref(I), (stop_increasing_at_step, stop_decreasing_at_step))
@@ -1939,7 +1939,7 @@ mutable struct NonmonotoneLinesearchStepsize{
         return new{typeof(p_), typeof(old_costs), R, I, TRM, typeof(msgs), IG, BBS}(
             stepsize, p_, initial_guess, one(R), msgs, old_costs,
             retraction_method,
-            stepsize_reduction,
+            contraction_factor,
             stop_decreasing_at_step, stop_increasing_at_step, stop_when_stepsize_exceeds, stop_when_stepsize_less,
             sufficient_decrease,
         )
@@ -1979,7 +1979,7 @@ function (a::NonmonotoneLinesearchStepsize)(
         swse = (a.stop_when_stepsize_exceeds / l)
     end
     a.last_stepsize = linesearch_backtrack!(
-        M, a.candidate_point, f, p, αBB, a.sufficient_decrease, a.stepsize_reduction, η;
+        M, a.candidate_point, f, p, αBB, a.sufficient_decrease, a.contraction_factor, η;
         lf0 = maximum(view(a.old_costs, 1:min(k, memory_size))),
         gradient = X,
         retraction_method = a.retraction_method,
@@ -2003,7 +2003,7 @@ function Base.show(io::IO, nls::NonmonotoneLinesearchStepsize)
     print(io, "last_stepsize = ", nls.last_stepsize, ", ")
     print(io, "memory_size = ", length(nls.old_costs), ", ")
     print(io, "retraction_method = ", nls.retraction_method, ", ")
-    print(io, "stepsize_reduction = ", nls.stepsize_reduction, ", ")
+    print(io, "contraction_factor = ", nls.contraction_factor, ", ")
     print(io, "stop_decreasing_at_step = ", nls.stop_decreasing_at_step, ", ")
     print(io, "stop_increasing_at_step = ", nls.stop_increasing_at_step, ", ")
     print(io, "stop_when_stepsize_exceeds = ", nls.stop_when_stepsize_exceeds, ", ")
@@ -2065,7 +2065,7 @@ $(_kwargs(:inverse_retraction_method)) used by the Barzilai–Borwein rule to co
 $(_kwargs(:retraction_method))
 * `strategy=:direct`: defines if the new step size is computed using the `:direct`, `:inverse` or `:alternating` strategy
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`: increase efficiency by using a [`StoreStateAction`](@ref) for `:Iterate` and `:Gradient`.
-* `stepsize_reduction=0.5`:  step size reduction factor contained in the interval ``(0,1)``
+* `contraction_factor=0.5`:  step size reduction factor contained in the interval ``(0,1)``
 * `sufficient_decrease=1.0e-4`: sufficient decrease parameter contained in the interval ``(0,1)``
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
 * `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M)`: largest stepsize when to stop to avoid leaving the injectivity radius

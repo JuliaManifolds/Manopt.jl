@@ -49,7 +49,7 @@ using ManifoldDiff: grad_distance
         @test p == p2
         step = NonmonotoneLinesearch(;
             p = p,
-            stepsize_reduction = 0.99,
+            contraction_factor = 0.99,
             sufficient_decrease = 0.1,
             memory_size = 2,
             bb_min_stepsize = 1.0e-7,
@@ -65,7 +65,7 @@ using ManifoldDiff: grad_distance
         )
         @test isapprox(M, p, p3; atol = 1.0e-13)
         step2 = NonmonotoneLinesearch(;
-            stepsize_reduction = 0.99,
+            contraction_factor = 0.99,
             sufficient_decrease = 0.1,
             memory_size = 2,
             bb_min_stepsize = 1.0e-7,
@@ -81,7 +81,7 @@ using ManifoldDiff: grad_distance
         )
         @test isapprox(M, p, p4; atol = 1.0e-13)
         step3 = NonmonotoneLinesearch(;
-            stepsize_reduction = 0.99,
+            contraction_factor = 0.99,
             sufficient_decrease = 0.1,
             memory_size = 2,
             bb_min_stepsize = 1.0e-7,

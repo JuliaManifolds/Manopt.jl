@@ -29,6 +29,8 @@ We changed the following default keyword values
 
 The following keyword renames are breaking changes
 
+* `NonmonotoneLinesearchStepsize`: `stepsize_reduction` is now `contraction_factor`
+* `CubicBracketingLinesearchStepsize`: `stepsize_increase` is now `expansion_factor`
 * `WolfePowellLinesearchStepsize`: `max_stepsize` is now `stop_when_stepsize_exceeds`, defaulting to `max_stepsize(M)` or `1e9` when that is infinite;
   the fixed cap `1e9` of its increase phase is merged into it
 
