@@ -3345,7 +3345,8 @@ end
     HagerZhangLinesearch(; kwargs...)
     HagerZhangLinesearch(M::AbstractManifold; kwargs...)
 
-A functor representing the line search introduced in [HagerZhang:2006:2](@cite).
+A functor representing the line search introduced in [HagerZhang:2005](@cite)
+together with the bracketing and initial-guess procedures of [HagerZhang:2006:2](@cite).
 
 It finds a step size satisfying the (standard or approximate) Wolfe conditions by bracketing
 and then narrowing the bracket with secant and bisection steps.
