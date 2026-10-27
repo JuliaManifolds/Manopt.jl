@@ -479,7 +479,7 @@ $(_kwargs(:retraction_method))
 * `stop_when_stepsize_exceeds=max_stepsize(M)`: a safeguard to not choose a too long step size when initially increasing
 * `stop_increasing_at_step=100`: stop the initial increasing loop after this amount of steps. Set to `0` to never increase in the beginning
 * `stop_decreasing_at_step=1000`: maximal number of Armijo decreases / tests to perform
-* `sufficient_decrease=number_type(1.0e-4)`: the sufficient decrease parameter ``τ``
+* `sufficient_decrease=number_type(1.0e-1)`: the sufficient decrease parameter ``τ``
 
 For the stop safe guards you can pass `:Messages` to a `debug=` to see `@info` messages when these happen.
 

@@ -18,6 +18,8 @@ We changed the following default keyword values
   * `sufficient_curvature = 0.9` (was `0.999`)
 * `WolfePowellBinaryLinesearchStepsize`
   * `sufficient_curvature = 0.9` (was `0.999`)
+* `gradient_sampling` and `GradientSamplingState`
+  * the default step size is `ArmijoLinesearchStepsize(M; contraction_factor = 0.5)`, the factor of the paper it implements
 
 ### Removed
 

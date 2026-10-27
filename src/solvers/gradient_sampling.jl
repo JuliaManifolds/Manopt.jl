@@ -204,10 +204,17 @@ function GradientSamplingState(
         vector_transport_method = vector_transport_method, X = X, Y = copy(M, p, X),
     )
 end
+"""
+    default_stepsize(M::AbstractManifold, ::Type{GradientSamplingState}; retraction_method=default_retraction_method(M))
+
+Define the default step size computed for the [`GradientSamplingState`](@ref),
+which is [`ArmijoLinesearchStepsize`](@ref)`(M; contraction_factor = 0.5, retraction_method = retraction_method)`,
+with the backtracking factor used in [HosseiniUschmajew:2017](@cite).
+"""
 function default_stepsize(
         M::AbstractManifold, ::Type{GradientSamplingState}; retraction_method = default_retraction_method(M),
     )
-    return ArmijoLinesearchStepsize(M; retraction_method = retraction_method)
+    return ArmijoLinesearchStepsize(M; contraction_factor = 0.5, retraction_method = retraction_method)
 end
 #
 #

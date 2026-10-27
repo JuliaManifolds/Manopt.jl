@@ -13,6 +13,7 @@ gradient_sampling!
 
 ```@docs
 GradientSamplingState
+Manopt.default_stepsize(::AbstractManifold, ::Type{GradientSamplingState})
 ```
 
 
