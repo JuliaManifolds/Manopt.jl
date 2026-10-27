@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0]
 
+### Added
+
+* `WolfePowellLinesearchStepsize` accepts the keywords `contraction_factor` and `expansion_factor`, the latter defaulting to `1 / contraction_factor`,
+  for the factors of its search phases
+
 ### Changed
 
 We changed the following default keyword values
@@ -16,10 +21,16 @@ We changed the following default keyword values
   * `contraction_factor = 0.8` (was `0.95`)
 * `WolfePowellLinesearchStepsize`
   * `sufficient_curvature = 0.9` (was `0.999`)
+  * `stop_when_stepsize_less = 1e-9` (was `0.0`), the floor of its decrease phase, now also the smallest bracket width of its bisection
 * `WolfePowellBinaryLinesearchStepsize`
   * `sufficient_curvature = 0.9` (was `0.999`)
 * `gradient_sampling` and `GradientSamplingState`
   * the default step size is `ArmijoLinesearchStepsize(M; contraction_factor = 0.5)`, the factor of the paper it implements
+
+The following keyword renames are breaking changes
+
+* `WolfePowellLinesearchStepsize`: `max_stepsize` is now `stop_when_stepsize_exceeds`, defaulting to `max_stepsize(M)` or `1e9` when that is infinite;
+  the fixed cap `1e9` of its increase phase is merged into it
 
 ### Removed
 
