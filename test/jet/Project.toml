@@ -13,7 +13,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Manopt = {path = "../.."}
 
 [compat]
-JET = "0.9, 0.10, 0.11, 0.12"
+JET = "0.9, 0.10, 0.11, 0.12, 0.13"
 LRUCache = "1.4"
 LineSearches = "7.2.0"
 Manifolds = "0.11.2"
