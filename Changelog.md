@@ -28,12 +28,18 @@ We changed the following default keyword values
   * the default step size is `ArmijoLinesearchStepsize(M; contraction_factor = 0.5)`, the factor of the paper it implements
 * `HagerZhangInitialGuess`
   * `ψ1 = 0.1` (was `0.01`), since this was a typo.
+* `HagerZhangLinesearchStepsize`
+  * `max_function_evaluations = 50` (was `20`)
 
 The following keyword renames are breaking changes
 
 * `NonmonotoneLinesearchStepsize`: `stepsize_reduction` is now unified to  `contraction_factor`
 * `CubicBracketingLinesearchStepsize`: `stepsize_increase` is now unified to `expansion_factor`
 * `WolfePowellLinesearchStepsize`: `max_stepsize` is now unified to `stop_when_stepsize_exceeds`, defaulting to `max_stepsize(M)` or `1e9` when that is infinite
+
+### Fixed
+
+* the secant step of the `HagerZhangLinesearchStepsize` bisects when the two slopes are equal, instead of returning `NaN`
 
 ### Removed
 

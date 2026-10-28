@@ -921,11 +921,11 @@ end
             hzls_s2 = Manopt.HagerZhangLinesearchStepsize(
                 M; initial_guess = Manopt.ConstantInitialGuess(1.0)
             )
-            # We expect the S2 log
             α = hzls_s2(dmp, gs, 1, η)
-            # the step and the number of evaluations this branch produces
-            @test α ≈ 2.7387570112179483e-6
-            @test hzls_s2.last_evaluation_index == 20
+            # S2: the fourth trial point is the secant through the points at 1 and 0.2
+            @test hzls_s2.triples[4].t ≈ Manopt.secant(hzls_s2.triples[2], hzls_s2.triples[3])
+            # beyond 0.2 the function is flat, no Wolfe condition holds and the search uses all its evaluations
+            @test hzls_s2.last_evaluation_index == length(hzls_s2.triples)
         end
 
         @testset "S3 trigger test" begin

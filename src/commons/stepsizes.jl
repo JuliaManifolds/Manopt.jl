@@ -1221,12 +1221,15 @@ Returns the extremum of the quadratic polynomial ``p`` with
 
 The result is algebraically equivalent to `(a.t * b.df - b.t * a.df) / (b.df - a.df)`
 but the used formula is more numerically stable.
+For two equal slopes, where no such extremum exists, the midpoint of `a.t` and `b.t` is returned.
 
 # Input
 * `a::UnivariateTriple{R}`: triple of bracket value `a`
 * `b::UnivariateTriple{R}`: triple of bracket value `b`
 """
 function secant(a::UnivariateTriple{R}, b::UnivariateTriple{R}) where {R}
+    # for two equal slopes the secant is undefined, bisect instead as CG_DESCENT does
+    a.df == b.df && return (a.t + b.t) / 2
     return (a.t + b.t) / 2 + (b.t - a.t) * (a.df + b.df) / (2 * (a.df - b.df))
 end
 
@@ -2869,7 +2872,7 @@ mutable struct HagerZhangLinesearchStepsize{
             candidate_direction = zero_vector(M, candidate_point),
             max_bracket_iterations::Int = 10,
             start_enforcing_wolfe_conditions_at_bracketing_iteration::Int = initial_guess isa ConstantInitialGuess ? 2 : 1,
-            max_function_evaluations::Int = 20,
+            max_function_evaluations::Int = 50,
             wolfe_condition_mode::Symbol = :adaptive,
             allow_early_maxstep_termination::Bool = true,
             ϵ::Real = 1.0e-6,
@@ -3399,7 +3402,7 @@ $(_kwargs(:vector_transport_method))
   bracketing iteration number at which Wolfe conditions are started to be enforced;
   setting to 1 may cause no bracketing to occur when the initial guess satisfies the Wolfe
   conditions.
-* `max_function_evaluations::Int = 20`: maximum number of function evaluations per linesearch
+* `max_function_evaluations::Int = 50`: maximum number of function evaluations per linesearch
 * `allow_early_maxstep_termination::Bool = true`: whether to allow early termination when
   the maximum stepsize is reached with negative slope and an improvement over the initial point.
 * `wolfe_condition_mode::Symbol = :adaptive`: one of `:standard`, `:approximate`, or `:adaptive`.
