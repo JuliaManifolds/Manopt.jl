@@ -21,18 +21,19 @@ We changed the following default keyword values
   * `contraction_factor = 0.8` (was `0.95`)
 * `WolfePowellLinesearchStepsize`
   * `sufficient_curvature = 0.9` (was `0.999`)
-  * `stop_when_stepsize_less = 1e-9` (was `0.0`), the floor of its decrease phase, now also the smallest bracket width of its bisection
+  * `stop_when_stepsize_less = 1e-9` (was `0.0`)
 * `WolfePowellBinaryLinesearchStepsize`
   * `sufficient_curvature = 0.9` (was `0.999`)
 * `gradient_sampling` and `GradientSamplingState`
   * the default step size is `ArmijoLinesearchStepsize(M; contraction_factor = 0.5)`, the factor of the paper it implements
+* `HagerZhangInitialGuess`
+  * `ψ1 = 0.1` (was `0.01`), since this was a typo.
 
 The following keyword renames are breaking changes
 
-* `NonmonotoneLinesearchStepsize`: `stepsize_reduction` is now `contraction_factor`
-* `CubicBracketingLinesearchStepsize`: `stepsize_increase` is now `expansion_factor`
-* `WolfePowellLinesearchStepsize`: `max_stepsize` is now `stop_when_stepsize_exceeds`, defaulting to `max_stepsize(M)` or `1e9` when that is infinite;
-  the fixed cap `1e9` of its increase phase is merged into it
+* `NonmonotoneLinesearchStepsize`: `stepsize_reduction` is now unified to  `contraction_factor`
+* `CubicBracketingLinesearchStepsize`: `stepsize_increase` is now unified to `expansion_factor`
+* `WolfePowellLinesearchStepsize`: `max_stepsize` is now unified to `stop_when_stepsize_exceeds`, defaulting to `max_stepsize(M)` or `1e9` when that is infinite
 
 ### Removed
 

@@ -2679,7 +2679,7 @@ introducing customizable norms for points and tangent vectors and a maximum step
 
 ## Keyword arguments
 
-* `ψ0=0.01`, `ψ1=0.01`, `ψ2=2.0`
+* `ψ0=0.01`, `ψ1=0.1`, `ψ2=2.0`
 * `constant_guess=NaN`
 * `quadstep=true`
 * `point_distance=`[`default_point_distance`](@ref)
@@ -2702,7 +2702,7 @@ end
 HagerZhangInitialGuess() = HagerZhangInitialGuess{Float64}()
 function HagerZhangInitialGuess{TF}(;
         ψ0::TF = 0.01,
-        ψ1::TF = 0.01,
+        ψ1::TF = 0.1,
         ψ2::TF = 2.0,
         constant_guess::TF = NaN,
         quadstep::Bool = true,
