@@ -190,10 +190,13 @@ end
     default_stepsize(M::AbstractManifold, ::Type{StochasticGradientDescentState})
 
 Define the default step size computed for the [`StochasticGradientDescentState`](@ref),
-which is [`ConstantStepsize`](@ref)`(M)`.
+which is [`DecreasingStepsize`](@ref)`(M; length = min(injectivity_radius(M) / 2, 1.0))`.
+The ``k``th iteration then multiplies the stochastic gradient with ``$(_tex(:frac, "c", "k"))``,
+where ``c = $(_tex(:min))$(_tex(:set, "$(_tex(:frac, "ι_{$(_math(:Manifold))}", "2")), 1"))``
+and ``ι_{$(_math(:Manifold))}`` denotes the injectivity radius of ``$(_math(:Manifold))``.
 """
 function default_stepsize(M::AbstractManifold, ::Type{StochasticGradientDescentState})
-    return ConstantStepsize(M)
+    return DecreasingStepsize(M; length = min(injectivity_radius(M) / 2, 1.0))
 end
 
 _doc_SGD = """

@@ -35,7 +35,7 @@ $(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), memory_size; vector_transport_method=vector_transport_method, initial_scale=initial_scale)`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 * `initial_scale=1.0`: a relative initial scale. By default deactivated when using a preconditioner.
-* `memory_size=20`: a shortcut to set the memory in the default direction update
+* `memory_size=10`: a shortcut to set the memory in the default direction update
 * `nondescent_direction_behavior=:reinitialize_direction_update`: how to handle a direction that is not a descent direction, see [`quasi_Newton`](@ref)
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `preconditioner::Union{`[`QuasiNewtonPreconditioner`](@ref)`, Missing} = missing` specify a preconditioner or deactivate by passing `missing`.
@@ -79,7 +79,7 @@ mutable struct QuasiNewtonState{
             vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
             preconditioner::Union{QuasiNewtonPreconditioner, Missing} = missing,
             initial_scale::Union{<:Real, Nothing} = ismissing(preconditioner) ? 1.0 : nothing,
-            memory_size::Int = 20,
+            memory_size::Int = 10,
             direction_update::D = QuasiNewtonLimitedMemoryDirectionUpdate(
                 M, p, InverseBFGS(), memory_size;
                 vector_transport_method = vector_transport_method, initial_scale = initial_scale,
@@ -233,7 +233,7 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
    See also `initial_scale`.
 * `initial_scale=1.0`: the scale `s` in $(_doc_QN_init_scaling) of the initial Hessian approximation,
   see also `initial_operator`. Set to `nothing` by default when using a `preconditioner`.
-* `memory_size::Int=min(manifold_dimension(M), 20)`: limited memory, number of ``s_k, y_k`` to store.
+* `memory_size::Int=min(manifold_dimension(M), 10)`: limited memory, number of ``s_k, y_k`` to store.
    Set to a negative value to use a full memory (matrix) representation
 * `nondescent_direction_behavior=:reinitialize_direction_update`:
   specify how non-descent direction is handled. This can be
@@ -309,7 +309,7 @@ function quasi_Newton!(
         ),
         basis::AbstractBasis = default_basis(M, typeof(p)),
         direction_update::AbstractQuasiNewtonUpdateRule = InverseBFGS(),
-        memory_size::Int = min(manifold_dimension(M), 20),
+        memory_size::Int = min(manifold_dimension(M), 10),
         (project!) = (copyto!),
         initial_operator::AbstractMatrix = (
             if memory_size >= 0

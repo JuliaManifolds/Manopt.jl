@@ -94,8 +94,17 @@ function set_iterate!(sgs::SubGradientMethodState, M, p)
     copyto!(M, sgs.p, p)
     return sgs
 end
+"""
+    default_stepsize(M::AbstractManifold, ::Type{SubGradientMethodState})
+
+Define the default step size computed for the [`SubGradientMethodState`](@ref),
+which is [`DecreasingStepsize`](@ref)`(M; length = min(injectivity_radius(M) / 2, 1.0), type = :absolute)`.
+The ``k``th iteration then moves the length ``$(_tex(:frac, "c", "k"))`` along the normalized subgradient,
+where ``c = $(_tex(:min))$(_tex(:set, "$(_tex(:frac, "ι_{$(_math(:Manifold))}", "2")), 1"))``
+and ``ι_{$(_math(:Manifold))}`` denotes the injectivity radius of ``$(_math(:Manifold))``.
+"""
 function default_stepsize(M::AbstractManifold, ::Type{SubGradientMethodState})
-    return ConstantStepsize(M)
+    return DecreasingStepsize(M; length = min(injectivity_radius(M) / 2, 1.0), type = :absolute)
 end
 
 _doc_SGM = """

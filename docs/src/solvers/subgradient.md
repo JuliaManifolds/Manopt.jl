@@ -13,6 +13,7 @@ subgradient_method!
 
 ```@docs
 SubGradientMethodState
+Manopt.default_stepsize(::AbstractManifold, ::Type{SubGradientMethodState})
 ```
 
 For [`DebugAction`](@ref)s and [`RecordAction`](@ref)s to record the (sub)gradient,

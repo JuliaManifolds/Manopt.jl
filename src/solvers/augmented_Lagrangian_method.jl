@@ -54,7 +54,7 @@ the following keyword arguments are available to initialize the corresponding fi
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `ϵ=1e-3`
 * `ϵ_min=1e-6`
-* `ϵ_exponent=1/100`: a shortcut for the scaling factor ``θ_ϵ``
+* `ϵ_exponent=1/30`: a shortcut for the scaling factor ``θ_ϵ``
 * `λ=ones(n)`: `n` is the number of equality constraints in the [`ConstrainedManifoldObjective`](@ref) `co`.
 * `λ_max=20.0`
 * `λ_min=- λ_max`
@@ -109,7 +109,7 @@ mutable struct AugmentedLagrangianMethodState{
             ρ::Real = 1.0,
             τ::Real = 0.8,
             θ_ρ::Real = 0.3,
-            ϵ_exponent = 1 / 100,
+            ϵ_exponent = 1 / 30,
             θ_ϵ::Real = (ϵ_min / ϵ)^(ϵ_exponent),
             stopping_criterion::SC = StopAfterIteration(300) |
                 (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(M, 1.0e-10)) | StopWhenStepsizeLess(1.0e-10),
@@ -304,7 +304,7 @@ $(_kwargs(:evaluation))
 $(_kwargs(:callbacks; add_properties = [:process_note]))
 * `ϵ=1e-3`:           the accuracy tolerance
 * `ϵ_min=1e-6`:       the lower bound for the accuracy tolerance
-* `ϵ_exponent=1/100`: exponent of the ϵ update factor;
+* `ϵ_exponent=1/30`: exponent of the ϵ update factor;
   also 1/number of iterations until maximal accuracy is needed to end algorithm naturally
 
 * `gradient_range=nothing`: specify how both gradients of the constraints are represented
@@ -412,7 +412,7 @@ function augmented_Lagrangian_method!(
         M::AbstractManifold, cmo::O, p;
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         callbacks = Dict{Symbol, Function}(),
-        ϵ::Real = 1.0e-3, ϵ_min::Real = 1.0e-6, ϵ_exponent::Real = 1 / 100,
+        ϵ::Real = 1.0e-3, ϵ_min::Real = 1.0e-6, ϵ_exponent::Real = 1 / 30,
         θ_ϵ::Real = (ϵ_min / ϵ)^(ϵ_exponent),
         μ::Vector = ones(length(get_inequality_constraint(M, cmo, p, :))),
         μ_max::Real = 20.0,

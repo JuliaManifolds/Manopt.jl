@@ -34,6 +34,16 @@ We changed the following default keyword values
   * `min_stepsize = 1e-30` and `bb_min_stepsize = 1e-30` (were `1e-3`)
 * `conjugate_gradient_descent` and `ConjugateGradientDescentState`
   * `coefficient = HybridCoefficient(HestenesStiefelCoefficient(), DaiYuanCoefficient())` (was `ConjugateDescentCoefficient()`)
+* `quasi_Newton` and `QuasiNewtonState`
+  * `memory_size = 10` (was `20`)
+* `subgradient_method`
+  * the default step size is `DecreasingStepsize(M; length = min(injectivity_radius(M) / 2, 1.0), type = :absolute)` (was `ConstantStepsize(M)`)
+* `stochastic_gradient_descent`
+  * the default step size is `DecreasingStepsize(M; length = min(injectivity_radius(M) / 2, 1.0))` (was `ConstantStepsize(M)`)
+* `augmented_Lagrangian_method`
+  * `ϵ_exponent = 1/30` (was `1/100`), the value of the paper it implements
+* `exact_penalty_method`
+  * `ϵ_exponent = 1/30` and `u_exponent = 1/30` (were `1/100`), which are the values from the original paper
 
 The following keyword renames are breaking changes
 

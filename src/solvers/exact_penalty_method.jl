@@ -38,13 +38,13 @@ function for the current penalty parameter `ρ` and smoothing parameter `u`, sta
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `u=1e-1`
-* `u_exponent=1 / 100`:  a shortcut for the scaling factor ``θ_u``.
+* `u_exponent=1 / 30`:  a shortcut for the scaling factor ``θ_u``.
 * `u_min=1e-6`
 * `θ_u=(u_min / u)^(u_exponent)`
 * `θ_ρ=0.3`
 * `ρ=1.0`
 * `ϵ=1e-3`
-* `ϵ_exponent=1 / 100`: a shortcut for the scaling factor ``θ_ϵ``
+* `ϵ_exponent=1 / 30`: a shortcut for the scaling factor ``θ_ϵ``
 * `ϵ_min=1e-6`
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`[`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(M, 1.0e-10) )"))
 * `θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent)`
@@ -75,9 +75,9 @@ mutable struct ExactPenaltyMethodState{
             M::AbstractManifold, sub_problem::Pr, sub_state::St;
             callbacks::C = Dict{Symbol, Function}(),
             p::P = rand(M),
-            u::Real = 1.0e-1, u_exponent::Real = 1 / 100, u_min::Real = 1.0e-6,
+            u::Real = 1.0e-1, u_exponent::Real = 1 / 30, u_min::Real = 1.0e-6,
             θ_u::Real = (u_min / u)^(u_exponent), θ_ρ::Real = 0.3, ρ::Real = 1.0,
-            ϵ::Real = 1.0e-3, ϵ_exponent::Real = 1 / 100, ϵ_min::Real = 1.0e-6,
+            ϵ::Real = 1.0e-3, ϵ_exponent::Real = 1 / 30, ϵ_min::Real = 1.0e-6,
             stopping_criterion::SC = StopAfterIteration(300) | (StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(M, 1.0e-10)),
             θ_ϵ::Real = (ϵ_min / ϵ)^(ϵ_exponent),
         ) where {
@@ -264,11 +264,11 @@ $(_kwargs(:sub_state; default = "`[`QuasiNewtonState`](@ref)` "))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`: a stopping criterion for the sub solver
   $(_note(:KeywordUsedIn, "sub_state"))
 * `u=1e-1`: the smoothing parameter and threshold for violation of the constraints
-* `u_exponent=1/100`: exponent of the u update factor;
+* `u_exponent=1/30`: exponent of the u update factor;
 * `u_min=1e-6`: the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `ρ=1.0`: the penalty parameter
 * `ϵ=1e-3`: the accuracy tolerance
-* `ϵ_exponent=1/100`: exponent of the ϵ update factor;
+* `ϵ_exponent=1/30`: exponent of the ϵ update factor;
 * `ϵ_min=1e-6`: the lower bound for the accuracy tolerance
 * `θ_ρ=0.3`: the scaling factor of the penalty parameter
 * `θ_u=(u_min / u)^(u_exponent)`: the scaling factor of the smoothing parameter
@@ -360,11 +360,11 @@ function exact_penalty_method!(
         callbacks = Dict{Symbol, Function}(),
         ϵ::Real = 1.0e-3,
         ϵ_min::Real = 1.0e-6,
-        ϵ_exponent = 1 / 100,
+        ϵ_exponent = 1 / 30,
         θ_ϵ = (ϵ_min / ϵ)^(ϵ_exponent),
         u::Real = 1.0e-1,
         u_min::Real = 1.0e-6,
-        u_exponent = 1 / 100,
+        u_exponent = 1 / 30,
         ρ::Real = 1.0,
         objective_type = :Riemannian,
         θ_ρ::Real = 0.3,
