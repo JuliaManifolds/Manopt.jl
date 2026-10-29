@@ -473,6 +473,7 @@ end
     default_stepsize(M::AbstractManifold, ::Type{<:ProximalGradientMethodState})
 
 Returns the default proximal stepsize, which is a nonconvex backtracking strategy.
+It starts the backtracking from `initial_stepsize = 1.5`.
 """
 function default_stepsize(M::AbstractManifold, ::Type{<:ProximalGradientMethodState})
     return ProximalGradientMethodBacktrackingStepsize(
