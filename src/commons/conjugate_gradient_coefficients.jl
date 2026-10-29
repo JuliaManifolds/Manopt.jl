@@ -107,7 +107,7 @@ The following fields from above are keyword arguments
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:X; name = "initial_gradient"))
 $(_kwargs(:p; add_properties = [:as_Initial]))
-* `coefficient=`[`ConjugateDescentCoefficient`](@ref)`()`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).
+* `coefficient=`[`HybridCoefficient`](@ref)`(`[`HestenesStiefelCoefficient`](@ref)`(), `[`DaiYuanCoefficient`](@ref)`())`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).
 * `restart_condition=`[`RestartOnNonDescent`](@ref)`()`: specify a [restart condition](@ref AbstractRestartCondition). It defaults to [`RestartOnNonDescent`](@ref).
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)"))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
@@ -155,7 +155,9 @@ function ConjugateGradientDescentState(
         M::AbstractManifold;
         callbacks::C = Dict{Symbol, Function}(),
         p::P = rand(M),
-        coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = ConjugateDescentCoefficient(),
+        coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = HybridCoefficient(
+            HestenesStiefelCoefficient(), DaiYuanCoefficient()
+        ),
         restart_condition::TRC = RestartOnNonDescent(),
         retraction_method::TRetr = default_retraction_method(M, typeof(p)),
         stepsize::TStep = _produce_type(

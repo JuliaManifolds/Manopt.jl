@@ -60,7 +60,7 @@ Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldFirstOrderObjective`](@ref) `gradient_objective` directly.
 
 Available update rules are [`SteepestDescentCoefficient`](@ref), which yields a [`gradient_descent`](@ref),
-[`ConjugateDescentCoefficient`](@ref) (the default), [`DaiYuanCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
+[`ConjugateDescentCoefficient`](@ref), [`DaiYuanCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
 [`HagerZhangCoefficient`](@ref), [`HestenesStiefelCoefficient`](@ref),
 [`LiuStoreyCoefficient`](@ref), and [`PolakRibiereCoefficient`](@ref).
 A [`HybridCoefficient`](@ref) combines several of these into one coefficient,
@@ -77,7 +77,7 @@ $(_args([:M, :f, :grad_f, :p]))
 # Keyword arguments
 
 $(_kwargs(:callbacks; add_properties = [:process_note]))
-* `coefficient::DirectionUpdateRule=`[`ConjugateDescentCoefficient`](@ref)`()`:
+* `coefficient::DirectionUpdateRule=`[`HybridCoefficient`](@ref)`(`[`HestenesStiefelCoefficient`](@ref)`(), `[`DaiYuanCoefficient`](@ref)`())`:
   rule to compute the descent direction update coefficient ``β_k``, as a functor, where
   the resulting function maps are `(amp, cgs, k) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iteration.
@@ -141,7 +141,9 @@ end
 function conjugate_gradient_descent!(
         M::AbstractManifold, mgo::O, p;
         callbacks = Dict{Symbol, Function}(),
-        coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = ConjugateDescentCoefficient(),
+        coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = HybridCoefficient(
+            HestenesStiefelCoefficient(), DaiYuanCoefficient()
+        ),
         restart_condition::AbstractRestartCondition = RestartOnNonDescent(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(

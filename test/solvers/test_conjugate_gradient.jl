@@ -376,23 +376,23 @@ using ManifoldDiff: grad_distance
             M; initial_stepsize = 1.0, initial_guess = Manopt.ConstantInitialGuess(1.0)
         )
 
+        # the restart conditions only trigger with the conjugate descent coefficient here
         p1 = conjugate_gradient_descent(
-            M,
-            obj,
-            p0;
-            restart_condition = NeverRestart(),
-            stopping_criterion,
-            stepsize = get_stepsize(),
+            M, obj, p0;
+            coefficient = ConjugateDescentCoefficient(), restart_condition = NeverRestart(),
+            stopping_criterion, stepsize = get_stepsize(),
         )
 
         p2 = conjugate_gradient_descent(
             M, obj, p0;
+            coefficient = ConjugateDescentCoefficient(),
             restart_condition = RestartOnNonDescent(),
             stopping_criterion, stepsize = get_stepsize(),
         )
 
         p3 = conjugate_gradient_descent(
             M, obj, p0;
+            coefficient = ConjugateDescentCoefficient(),
             restart_condition = RestartOnNonSufficientDescent(0.5),
             stopping_criterion,
             stepsize = get_stepsize(),

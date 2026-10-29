@@ -32,6 +32,8 @@ We changed the following default keyword values
   * `max_function_evaluations = 50` (was `20`)
 * `BarzilaiBorweinStepsize` and `NonmonotoneLinesearchStepsize`
   * `min_stepsize = 1e-30` and `bb_min_stepsize = 1e-30` (were `1e-3`)
+* `conjugate_gradient_descent` and `ConjugateGradientDescentState`
+  * `coefficient = HybridCoefficient(HestenesStiefelCoefficient(), DaiYuanCoefficient())` (was `ConjugateDescentCoefficient()`)
 
 The following keyword renames are breaking changes
 
