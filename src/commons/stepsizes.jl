@@ -705,7 +705,7 @@ $(_fields(:vector_transport_method))
 ## Keyword arguments
 
 $(_kwargs(:inverse_retraction_method))
-* `min_stepsize=1e-3`
+* `min_stepsize=1e-30`
 * `max_stepsize=0.9 * max_stepsize(M)` (or `1.0` if that is infinite)
 $(_kwargs(:p))
 * `strategy=:direct`
@@ -729,7 +729,7 @@ mutable struct BarzilaiBorweinStepsize{
     function BarzilaiBorweinStepsize(
             M::AbstractManifold;
             p::P = rand(M), X::T = zero_vector(M, p),
-            min_stepsize::Real = 1.0e-3,
+            min_stepsize::Real = 1.0e-30,
             max_stepsize::Real = isinf(max_stepsize(M)) ? 1.0 : 0.9 * max_stepsize(M),
             inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
             storage::StoreStateAction = StoreStateAction(
@@ -924,7 +924,7 @@ the inner product ``⟨s_{k}, y_{k}⟩_{p_k} = 0``, so that the maximal step siz
 ## Keyword arguments
 
 $(_kwargs(:inverse_retraction_method))
-* `min_stepsize=1e-3`
+* `min_stepsize=1e-30`
 * `max_stepsize=0.9 * max_stepsize(M)` (or `1.0` if that is infinite)
 $(_kwargs(:p))
 * `strategy=:direct`
@@ -1830,7 +1830,7 @@ transport it uses are stored within the `bb_stepsize`.
 * `initial_guess = (problem, state, k, last_stepsize, η) -> last_stepsize`
    function to provide an initial guess for the stepsize
 * `memory_size=10`
-* `bb_min_stepsize=1e-3`
+* `bb_min_stepsize=1e-30`
 * `bb_max_stepsize=isinf(max_stepsize(M)) ? 1.0 : 0.9 * max_stepsize(M)`
 $(_kwargs(:inverse_retraction_method)) used by the Barzilai–Borwein rule to compute ``s_k``
 $(_kwargs(:retraction_method))
@@ -1864,7 +1864,7 @@ mutable struct NonmonotoneLinesearchStepsize{
     # This constructor is semi-legacy, since it passes down a lot of parameters to BB now
     function NonmonotoneLinesearchStepsize(
             M::AbstractManifold;
-            bb_min_stepsize::Real = 1.0e-3,
+            bb_min_stepsize::Real = 1.0e-30,
             bb_max_stepsize::Real = isinf(max_stepsize(M)) ? 1.0 : 0.9 * max_stepsize(M),
             p::P = allocate_result(M, rand),
             initial_guess::IG = (problem, state, k, last_stepsize, η) -> last_stepsize,
@@ -2062,7 +2062,7 @@ $(_kwargs(:p)) to store an interim result
 * `initial_guess = (problem, state, k, last_stepsize, η) -> last_stepsize`:
   a function to provide an initial guess for the step size
 * `memory_size=10`: number of iterations after which the cost value needs to be lower than the current one
-* `bb_min_stepsize=1e-3`: lower bound for the Barzilai-Borwein step size, greater than zero
+* `bb_min_stepsize=1e-30`: lower bound for the Barzilai-Borwein step size, greater than zero
 * `bb_max_stepsize=isinf(max_stepsize(M)) ? 1.0 : 0.9 * max_stepsize(M)`: upper bound for the Barzilai-Borwein step size, greater than `bb_min_stepsize`
 $(_kwargs(:inverse_retraction_method)) used by the Barzilai–Borwein rule to compute ``s_k``
 $(_kwargs(:retraction_method))

@@ -30,6 +30,8 @@ We changed the following default keyword values
   * `ψ1 = 0.1` (was `0.01`), since this was a typo.
 * `HagerZhangLinesearchStepsize`
   * `max_function_evaluations = 50` (was `20`)
+* `BarzilaiBorweinStepsize` and `NonmonotoneLinesearchStepsize`
+  * `min_stepsize = 1e-30` and `bb_min_stepsize = 1e-30` (were `1e-3`)
 
 The following keyword renames are breaking changes
 
