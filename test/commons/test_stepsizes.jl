@@ -312,8 +312,12 @@ end
         @test eltype(bb32.y) === Float32
         gds = GradientDescentState(M; p = p, stepsize = bb)
         # Check both modes to use BB
-        # (1) vector transport when providing a last stepsize – no history -> max
-        @test bb(dmp, gds, 1; last_stepsize = 1.0) == bb.max_stepsize
+        # (1) vector transport when providing a last stepsize – no history -> a step of length 1
+        @test bb(dmp, gds, 1; last_stepsize = 1.0) == 1 / norm(M, p, X)
+        # the length of the first step is a keyword
+        bb_two = Manopt.BarzilaiBorweinStepsize(M; p = p, initial_stepsize = 2.0)
+        @test bb_two(dmp, GradientDescentState(M; p = p, stepsize = bb_two), 1) == 2 / norm(M, p, X)
+        @test_throws DomainError Manopt.BarzilaiBorweinStepsize(M; p = p, initial_stepsize = 0.0)
         # (1) vector transport when providing a last stepsize - we did not actually move - still max
         @test bb(dmp, gds, 1) == bb.max_stepsize
         @test get_last_stepsize(bb) == bb.max_stepsize
@@ -349,8 +353,8 @@ end
             ]
             bbs = Manopt.BarzilaiBorweinStepsize(Ms)
             gdss = GradientDescentState(Ms; p = q, stepsize = bbs)
-            @test bbs(dmps, gdss, 1) == bbs.max_stepsize
-            @test get_last_stepsize(bbs) == bbs.max_stepsize
+            @test bbs(dmps, gdss, 1) == 1 / norm(Ms, q, grad_fbb(Ms, q))
+            @test get_last_stepsize(bbs) == 1 / norm(Ms, q, grad_fbb(Ms, q))
         end
         # with a constant gradient ⟨s,y⟩ vanishes, so the `:inverse` and `:alternating`
         # strategies fall back to the maximal step size
@@ -371,7 +375,7 @@ end
         @test Manopt.has_storage(bb2.storage, Manopt.PointStorageKey(:Iterate))
         Manopt.initialize_stepsize!(bb2)
         @test !Manopt.has_storage(bb2.storage, Manopt.PointStorageKey(:Iterate))
-        @test bb2(dmp, gds2, 1) == bb2.max_stepsize
+        @test bb2(dmp, gds2, 1) == 1 / norm(M, p, X)
         # the nonmonotone line search resets both its Barzilai–Borwein step size and its last step
         nls = NonmonotoneLinesearch()(M)
         nls.last_stepsize = 0.5

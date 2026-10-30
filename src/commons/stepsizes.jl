@@ -694,6 +694,7 @@ for details
 $(_fields(:inverse_retraction_method))
 * `min_stepsize`:          lower bound ``α_{$(_tex(:text, "min"))}`` for the Barzilai-Borwein step size, greater than zero
 * `max_stepsize`:          upper bound ``α_{$(_tex(:text, "max"))}`` for the Barzilai-Borwein step size, greater than ``α_{$(_tex(:text, "min"))}``.
+* `initial_stepsize`:      the length ``l_0`` of the first step
 * `strategy`:                 defines if the new step size is computed using the `:direct`, `:inverse` or `:alternating` strategy
 * `storage`:                  (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
 $(_fields(:vector_transport_method))
@@ -707,6 +708,7 @@ $(_fields(:vector_transport_method))
 $(_kwargs(:inverse_retraction_method))
 * `min_stepsize=1e-30`
 * `max_stepsize=0.9 * max_stepsize(M)` (or `1.0` if that is infinite)
+* `initial_stepsize=1.0`: the length of the first step, taken along the normalized gradient and clamped to the bounds
 $(_kwargs(:p))
 * `strategy=:direct`
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
@@ -720,6 +722,7 @@ mutable struct BarzilaiBorweinStepsize{
     inverse_retraction_method::IRM
     min_stepsize::R
     max_stepsize::R
+    initial_stepsize::R
     s::T
     storage::TSSA
     strategy::Symbol
@@ -731,6 +734,7 @@ mutable struct BarzilaiBorweinStepsize{
             p::P = rand(M), X::T = zero_vector(M, p),
             min_stepsize::Real = 1.0e-30,
             max_stepsize::Real = isinf(max_stepsize(M)) ? 1.0 : 0.9 * max_stepsize(M),
+            initial_stepsize::Real = 1.0,
             inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),
             storage::StoreStateAction = StoreStateAction(
                 M; store_fields = [:Iterate, :Gradient]
@@ -759,13 +763,18 @@ mutable struct BarzilaiBorweinStepsize{
                 ),
             )
         end
-        # “Unify” the type of the two bounds, since they share a type parameter
-        R = float(promote_type(typeof(min_stepsize), typeof(max_stepsize)))
-        min_stepsize, max_stepsize = convert.(Ref(R), (min_stepsize, max_stepsize))
+        if initial_stepsize <= 0.0
+            throw(
+                DomainError(initial_stepsize, "The length of the first Barzilai–Borwein step has to be positive."),
+            )
+        end
+        # “Unify” the type of the bounds and the first step, since they share a type parameter
+        R = float(promote_type(typeof(min_stepsize), typeof(max_stepsize), typeof(initial_stepsize)))
+        min_stepsize, max_stepsize, initial_stepsize = convert.(Ref(R), (min_stepsize, max_stepsize, initial_stepsize))
         X_ = maybe_wrap_variable(X)
         p_ = maybe_wrap_variable(p)
         return new{typeof(X_), R, IRM, VTM, typeof(storage)}(
-            inverse_retraction_method, min_stepsize, max_stepsize,
+            inverse_retraction_method, min_stepsize, max_stepsize, initial_stepsize,
             ManifoldsBase.copy(M, p_, X_), storage, strategy, vector_transport_method, X_, max_stepsize,
         )
     end
@@ -782,9 +791,9 @@ function (bb::BarzilaiBorweinStepsize)(
     X = isnothing(gradient) ? get_gradient(mp, p) : gradient
     if !has_storage(bb.storage, PointStorageKey(:Iterate)) || !has_storage(bb.storage, VectorStorageKey(:Gradient))
         # first time call: there is no previous iterate or gradient yet, so store the current
-        # ones for the next call and return the maximal step size
+        # ones for the next call and take a step of length initial_stepsize, clamped to the bounds
         update_storage!(bb.storage, mp, s)
-        bb.last_stepsize = bb.max_stepsize
+        bb.last_stepsize = clamp(bb.initial_stepsize / norm(M, p, X), bb.min_stepsize, bb.max_stepsize)
         return bb.last_stepsize
     end
     #fetch
@@ -849,6 +858,7 @@ function Base.show(io::IO, bbs::BarzilaiBorweinStepsize)
     print(io, "inverse_retraction_method = ", bbs.inverse_retraction_method, ", ")
     print(io, "min_stepsize = ", bbs.min_stepsize, ", ")
     print(io, "max_stepsize = ", bbs.max_stepsize, ", ")
+    print(io, "initial_stepsize = ", bbs.initial_stepsize, ", ")
     print(io, "storage = ", bbs.storage, ", ")
     print(io, "strategy = :", bbs.strategy, ", ")
     print(io, "vector_transport_method = ", bbs.vector_transport_method)
@@ -863,6 +873,7 @@ function status_summary(bbs::BarzilaiBorweinStepsize; context::Symbol = :default
     ## Parameters
     * min stepsize:              $(_MANOPT_INDENT)$(bbs.min_stepsize)
     * max stepsize:              $(_MANOPT_INDENT)$(bbs.max_stepsize)
+    * initial stepsize:          $(_MANOPT_INDENT)$(bbs.initial_stepsize)
     * strategy:                  $(_MANOPT_INDENT):$(bbs.strategy)
     * inverse retraction method: $(_MANOPT_INDENT)$(bbs.inverse_retraction_method)
     * vector transport method:   $(_MANOPT_INDENT)$(bbs.vector_transport_method)
@@ -919,13 +930,16 @@ for the `:direct` strategy, or
 for the `:inverse` strategy. The `:alternating` strategy uses the direct for odd, the inverse for even iterations `k`.
 
 In the initial step, that is, for the case that there are no prior iterate and gradient,
-the inner product ``⟨s_{k}, y_{k}⟩_{p_k} = 0``, so that the maximal step size ``α_{$(_tex(:text, "max"))}`` will be returned for this case.
+the step size is ``$(_tex(:frac, "l_0", _tex(:norm, "X")))`` clamped to ``[α_{$(_tex(:text, "min"))}, α_{$(_tex(:text, "max"))}]``,
+a step of length ``l_0``, the `initial_stepsize`, along the normalized gradient. With the default ``l_0 = 1`` this is the first
+step of the spectral projected gradient method [BirginMartinezRaydan:2014](@cite) with the Riemannian norm in place of the maximum norm.
 
 ## Keyword arguments
 
 $(_kwargs(:inverse_retraction_method))
 * `min_stepsize=1e-30`
 * `max_stepsize=0.9 * max_stepsize(M)` (or `1.0` if that is infinite)
+* `initial_stepsize=1.0`: the length of the first step, taken along the normalized gradient and clamped to the bounds
 $(_kwargs(:p))
 * `strategy=:direct`
 * `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`
@@ -1831,7 +1845,8 @@ transport it uses are stored within the `bb_stepsize`.
    function to provide an initial guess for the stepsize
 * `memory_size=10`
 * `bb_min_stepsize=1e-30`
-* `bb_max_stepsize=isinf(max_stepsize(M)) ? 1.0 : 0.9 * max_stepsize(M)`
+* `bb_max_stepsize=isinf(max_stepsize(M)) ? 1e3 : 0.9 * max_stepsize(M)`
+* `bb_initial_stepsize=1.0`
 $(_kwargs(:inverse_retraction_method)) used by the Barzilai–Borwein rule to compute ``s_k``
 $(_kwargs(:retraction_method))
 * `strategy=:direct`
@@ -1865,7 +1880,8 @@ mutable struct NonmonotoneLinesearchStepsize{
     function NonmonotoneLinesearchStepsize(
             M::AbstractManifold;
             bb_min_stepsize::Real = 1.0e-30,
-            bb_max_stepsize::Real = isinf(max_stepsize(M)) ? 1.0 : 0.9 * max_stepsize(M),
+            bb_max_stepsize::Real = isinf(max_stepsize(M)) ? 1.0e3 : 0.9 * max_stepsize(M),
+            bb_initial_stepsize::Real = 1.0,
             p::P = allocate_result(M, rand),
             initial_guess::IG = (problem, state, k, last_stepsize, η) -> last_stepsize,
             inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
@@ -1885,7 +1901,7 @@ mutable struct NonmonotoneLinesearchStepsize{
         ) where {TRM, P, IG}
         bb = BarzilaiBorweinStepsize(
             M; p = p, min_stepsize = bb_min_stepsize, max_stepsize = bb_max_stepsize,
-            inverse_retraction_method = inverse_retraction_method,
+            initial_stepsize = bb_initial_stepsize, inverse_retraction_method = inverse_retraction_method,
             vector_transport_method = vector_transport_method,
             storage = storage, strategy = strategy
         )
@@ -2063,7 +2079,8 @@ $(_kwargs(:p)) to store an interim result
   a function to provide an initial guess for the step size
 * `memory_size=10`: number of iterations after which the cost value needs to be lower than the current one
 * `bb_min_stepsize=1e-30`: lower bound for the Barzilai-Borwein step size, greater than zero
-* `bb_max_stepsize=isinf(max_stepsize(M)) ? 1.0 : 0.9 * max_stepsize(M)`: upper bound for the Barzilai-Borwein step size, greater than `bb_min_stepsize`
+* `bb_max_stepsize=isinf(max_stepsize(M)) ? 1e3 : 0.9 * max_stepsize(M)`: upper bound for the Barzilai-Borwein step size, greater than `bb_min_stepsize`
+* `bb_initial_stepsize=1.0`: the length of the first Barzilai-Borwein step, taken along the normalized gradient and clamped to the bounds
 $(_kwargs(:inverse_retraction_method)) used by the Barzilai–Borwein rule to compute ``s_k``
 $(_kwargs(:retraction_method))
 * `strategy=:direct`: defines if the new step size is computed using the `:direct`, `:inverse` or `:alternating` strategy

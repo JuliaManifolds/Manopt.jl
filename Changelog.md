@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* `BarzilaiBorweinStepsize` and `NonmonotoneLinesearchStepsize` accept the keywords `initial_stepsize` and `bb_initial_stepsize`, the length of the first step
 * `WolfePowellLinesearchStepsize` accepts the keywords `contraction_factor` and `expansion_factor`, the latter defaulting to `1 / contraction_factor`,
   for the factors of its search phases
 
@@ -32,6 +33,9 @@ We changed the following default keyword values
   * `max_function_evaluations = 50` (was `20`)
 * `BarzilaiBorweinStepsize` and `NonmonotoneLinesearchStepsize`
   * `min_stepsize = 1e-30` and `bb_min_stepsize = 1e-30` (were `1e-3`)
+  * the first step has the length `initial_stepsize = 1.0` along the normalized gradient, clamped to the bounds (was `max_stepsize` times the gradient)
+* `NonmonotoneLinesearchStepsize`
+  * `bb_max_stepsize = 1e3` for an infinite injectivity radius (was `1.0`), the value of the paper it implements
 * `conjugate_gradient_descent` and `ConjugateGradientDescentState`
   * `coefficient = HybridCoefficient(HestenesStiefelCoefficient(), DaiYuanCoefficient())` (was `ConjugateDescentCoefficient()`)
 * `quasi_Newton` and `QuasiNewtonState`
