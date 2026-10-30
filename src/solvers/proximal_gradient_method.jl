@@ -139,7 +139,7 @@ $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 * `acceleration=(pr, st, k) -> (copyto!(get_manifold(pr), st.a, st.p); st)` by default no acceleration is performed
-$(_kwargs(:stopping_criterion; default = "`[`StopWhenGradientMappingNormLess`](@ref)`(1.0e-2)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopWhenGradientMappingNormLess`](@ref)`(1.0e-7)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:sub_problem; default = "missing"))
 $(_kwargs(:sub_state; default = "missing"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
@@ -194,7 +194,7 @@ function ProximalGradientMethodState(
             return st
         end,
         stepsize::S = default_stepsize(M, ProximalGradientMethodState),
-        stopping_criterion::SC = StopWhenGradientMappingNormLess(1.0e-2) | StopAfterIteration(5000) | StopWhenChangeLess(M, 1.0e-9),
+        stopping_criterion::SC = StopWhenGradientMappingNormLess(1.0e-7) | StopAfterIteration(5000) | StopWhenChangeLess(M, 1.0e-9),
         X::T = zero_vector(M, p),
         retraction_method::RM = default_retraction_method(M, typeof(p)),
         inverse_retraction_method::IRM = default_inverse_retraction_method(M, typeof(p)),

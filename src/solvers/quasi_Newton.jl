@@ -33,9 +33,9 @@ Generate the Quasi Newton state on the manifold `M`.
 
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), memory_size; vector_transport_method=vector_transport_method, initial_scale=initial_scale)`
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
 * `initial_scale=1.0`: a relative initial scale. By default deactivated when using a preconditioner.
-* `memory_size=10`: a shortcut to set the memory in the default direction update
+* `memory_size=min(manifold_dimension(M), 10)`: a shortcut to set the memory in the default direction update
 * `nondescent_direction_behavior=:reinitialize_direction_update`: how to handle a direction that is not a descent direction, see [`quasi_Newton`](@ref)
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `preconditioner::Union{`[`QuasiNewtonPreconditioner`](@ref)`, Missing} = missing` specify a preconditioner or deactivate by passing `missing`.
@@ -79,12 +79,12 @@ mutable struct QuasiNewtonState{
             vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
             preconditioner::Union{QuasiNewtonPreconditioner, Missing} = missing,
             initial_scale::Union{<:Real, Nothing} = ismissing(preconditioner) ? 1.0 : nothing,
-            memory_size::Int = 10,
+            memory_size::Int = min(manifold_dimension(M), 10),
             direction_update::D = QuasiNewtonLimitedMemoryDirectionUpdate(
                 M, p, InverseBFGS(), memory_size;
                 vector_transport_method = vector_transport_method, initial_scale = initial_scale,
             ),
-            stopping_criterion::SC = StopAfterIteration(1000) | StopWhenGradientNormLess(1.0e-6),
+            stopping_criterion::SC = StopAfterIteration(max(1000, memory_size)) | StopWhenGradientNormLess(1.0e-6),
             retraction_method::RM = default_retraction_method(M, typeof(p)),
             stepsize::S = default_stepsize(
                 M, QuasiNewtonState;

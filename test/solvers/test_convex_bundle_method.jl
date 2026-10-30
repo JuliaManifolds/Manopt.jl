@@ -22,13 +22,14 @@ using Manopt: estimate_sectional_curvature
     @testset "Estimate Sectional Curvature" begin
         curv = estimate_sectional_curvature(M, p)
         @test isfinite(curv)
-        curvature_cbms = ConvexBundleMethodState(M; p = p0, diameter = diameter)
+        curvature_cbms = ConvexBundleMethodState(M; p = p0, diameter = diameter, k_max = nothing, k_min = nothing)
         @test ω ≤ curvature_cbms.k_min
         @test Ω ≥ curvature_cbms.k_max
         @test startswith(repr(curvature_cbms), "ConvexBundleMethodState(")
         # estimated bounds take the real type of the other parameters
         cbms32 = ConvexBundleMethodState(
             M; p = p0, m = 1.0f-3, atol_λ = 1.0f-8, atol_errors = 1.0f-8, diameter = 1.0f0, last_stepsize = 1.0f0,
+            k_max = nothing, k_min = nothing,
         )
         @test typeof.((cbms32.k_min, cbms32.k_max, cbms32.ϱ)) == (Float32, Float32, Float32)
         @test ω ≤ cbms32.k_min ≤ cbms32.k_max ≤ Ω
@@ -320,7 +321,7 @@ using Manopt: estimate_sectional_curvature
         domf(M, p) = distance(M, p, q) < diam / 2 ? true : false
         cbms = ConvexBundleMethodState(
             M, convex_bundle_method_subsolver;
-            diameter = diam, domain = domf, bundle_cap = 3, p = q, k_max = 1.0, k_min = 1.0,
+            diameter = diam, domain = domf, bundle_cap = 3, p = q, k_max = 1.0, k_min = 1.0, atol_λ = eps(),
             stepsize = DomainBackTrackingStepsize(M; contraction_factor = 0.975),
             stopping_criterion = StopAfterIteration(20),
         )

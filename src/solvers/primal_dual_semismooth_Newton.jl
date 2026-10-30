@@ -382,7 +382,7 @@ $(_kwargs(:inverse_retraction_method; name = "inverse_retraction_method_dual", M
 * `Λ=missing`: the exact operator, that is required if `Λ(m)=n` does not hold;
   `missing` indicates, that the forward operator is exact.
 * `primal_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
-* `reg_param=1e-5`: regularization parameter for the Newton matrix
+* `regularization_parameter=1e-5`: regularization parameter for the Newton matrix
 $(_kwargs(:retraction_method))
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(50)"))
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
@@ -426,7 +426,7 @@ function primal_dual_semismooth_Newton!(
         evaluation::AbstractEvaluationType = AllocatingEvaluation(),
         Λ::Union{Function, Missing} = missing,
         primal_stepsize = 1 / sqrt(8),
-        reg_param = 1.0e-5,
+        regularization_parameter = 1.0e-5,
         stopping_criterion::StoppingCriterion = StopAfterIteration(50),
         update_primal_base::Union{Function, Missing} = missing,
         update_dual_base::Union{Function, Missing} = missing,
@@ -458,7 +458,7 @@ function primal_dual_semismooth_Newton!(
         X = X,
         primal_stepsize = primal_stepsize,
         dual_stepsize = dual_stepsize,
-        regularization_parameter = reg_param,
+        regularization_parameter = regularization_parameter,
         stopping_criterion = stopping_criterion,
         update_primal_base = update_primal_base,
         update_dual_base = update_dual_base,

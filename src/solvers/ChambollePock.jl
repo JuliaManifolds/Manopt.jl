@@ -137,7 +137,7 @@ $(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `p=`$(Manopt._link(:rand))
 * `m=`$(Manopt._link(:rand))
 * `X=`$(Manopt._link(:zero_vector; M = "N", p = "n"))
-* `acceleration=0.0`
+* `acceleration=0.05`
 * `dual_stepsize=1/sqrt(8)`
 * `primal_stepsize=1/sqrt(8)`
 $(_kwargs(:inverse_retraction_method))
@@ -145,7 +145,7 @@ $(_kwargs(:inverse_retraction_method; name = "inverse_retraction_method_dual", M
 * `relaxation=1.0`
 * `relax=:primal`: relax the primal variable by default
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)"))
 * `variant=:exact`: run the exact Chambolle Pock by default
 * `update_primal_base=missing`
 * `update_dual_base=missing`
@@ -195,10 +195,10 @@ function Manopt.ChambollePockState(
         callbacks::C = Dict{Symbol, Function}(),
         primal_stepsize::Real = 1 / sqrt(8),
         dual_stepsize::Real = 1 / sqrt(8),
-        acceleration::Real = 0.0,
+        acceleration::Real = 0.05,
         relaxation::Real = 1.0,
         relax::Symbol = :primal,
-        stopping_criterion::SC = StopAfterIteration(300),
+        stopping_criterion::SC = StopAfterIteration(200),
         variant::Symbol = :exact,
         update_primal_base::Union{Function, Missing} = missing,
         update_dual_base::Union{Function, Missing} = missing,

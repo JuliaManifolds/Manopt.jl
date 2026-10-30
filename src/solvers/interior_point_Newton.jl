@@ -196,7 +196,7 @@ $(_args([:sub_problem, :sub_state]))
 Let `m` and `n` denote the number of inequality and equality constraints, respectively
 
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
-* `centrality_condition=(N, p) -> true`: an additional condition when to accept a step size, used as the `additional_decrease_condition` of the default `stepsize`, for example an [`InteriorPointCentralityCondition`](@ref)
+* `centrality_condition=`[`InteriorPointCentralityCondition`](@ref)`(cmo, γ)` if there are inequality constraints, otherwise `(N, p) -> true`: an additional condition when to accept a step size, used as the `additional_decrease_condition` of the default `stepsize`, for example an [`InteriorPointCentralityCondition`](@ref)
 * `is_feasible_error=:error`: specify how to handle infeasible starting points, see [`is_feasible`](@ref) for options.
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
@@ -206,12 +206,13 @@ $(_kwargs(:retraction_method))
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
 $(_kwargs(:stepsize; default = " `[`ArmijoLinesearch`](@ref)`()"))
   with the `centrality_condition` keyword as additional condition to accept a step, if this is provided
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(800)`[` | `](@ref StopWhenAny)[`StopWhenKKTResidualLess`](@ref)`(1e-12)"))
 * `vector_space=`[`Rn`](@ref Manopt.Rn): a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `W=zero(s)` tangent vector (gradient) for the slack variables
 * `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`
 * `Y=zero(μ)` tangent vector (gradient) for the inequality constraints
 * `Z=zero(λ)` tangent vector (gradient) for the equality constraints
+* `γ=0.9`: the constant of the default `centrality_condition`.
 * `λ=zeros(n)` Lagrange multipliers for the equality constraints
 * `μ=ones(m)` Lagrange multipliers for the inequality constraints
 * `ρ=μ's/m`  storage for the orthogonality check
@@ -298,14 +299,16 @@ mutable struct InteriorPointNewtonState{
             step_problem::StepPr = DefaultManoptProblem(_step_M, step_objective),
             _step_p = rand(_step_M),
             step_state::StepSt = StepsizeState(; p = _step_p, X = zero_vector(_step_M, _step_p)),
-            centrality_condition = (N, p) -> true,
+            γ::Real = 0.9,
+            centrality_condition = length(μ) > 0 ? InteriorPointCentralityCondition(cmo, γ) : (N, p) -> true,
             stepsize::S = ArmijoLinesearchStepsize(
                 get_manifold(step_problem);
                 retraction_method = default_retraction_method(get_manifold(step_problem)),
+                initial_guess = interior_point_initial_guess,
                 initial_stepsize = 1.0, stop_increasing_at_step = 0,
                 additional_decrease_condition = centrality_condition,
             ),
-            stopping_criterion = StopAfterIteration(200) | StopWhenChangeLess(M, 1.0e-8),
+            stopping_criterion = StopAfterIteration(800) | StopWhenKKTResidualLess(1.0e-12),
             kwargs...,
         ) where {
             Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,

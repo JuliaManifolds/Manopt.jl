@@ -33,7 +33,8 @@ Initialize the state with default values.
 * `α::R=0.0`
 * `β::R=0.0`
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M = "TpM"))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M = "TpM"))`)`$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)"))
+  where ``c = $(_tex(:norm, "b"))`` is the norm of the vector field `b` of `slso` at `p`.
 $(_kwargs(:X; default = _open_link(:rand; M = "TpM")))
 * `warm_start=true`: whether to reuse the values in `X` for the initialization (`true`) or to start from the zero vector (`false`), see the field description above.
 
@@ -68,7 +69,10 @@ mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion, C <: Abs
             callbacks::C = Dict{Symbol, Function}(),
             X::T = rand(TpM), r::T = (-get_gradient(TpM, aslso, X)), d::T = copy(TpM, r),
             Ar::T = get_hessian(TpM, aslso, X, r), Ad::T = copy(TpM, Ar), α::Real = 0.0, β::Real = 0.0,
-            stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) | StopWhenGradientNormLess(1.0e-8),
+            stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) |
+                StopWhenRelativeResidualLess(
+                norm(base_manifold(TpM), base_point(TpM), get_vector_field(TpM, aslso)), 1.0e-8
+            ),
             warm_start::Bool = true,
             kwargs...,
         ) where {T, SC <: StoppingCriterion, C <: AbstractDict{Symbol}}

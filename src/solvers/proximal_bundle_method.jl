@@ -54,7 +54,7 @@ $(_kwargs(:stopping_criterion; default = "`[`StopWhenLagrangeMultiplierLess`](@r
 $(_kwargs(:vector_transport_method))
 $(_kwargs(:X)) to specify the type of tangent vector to use.
 * `α₀=1.2`
-* `δ=1.0`
+* `δ=-1.0`
 * `ε=1e-2`
 * `μ=0.5`
 """
@@ -101,7 +101,7 @@ mutable struct ProximalBundleMethodState{
             stopping_criterion::SC = StopWhenLagrangeMultiplierLess(1.0e-8) | StopAfterIteration(5000),
             vector_transport_method::VT = default_vector_transport_method(M, typeof(p)),
             X::T = zero_vector(M, p),
-            α₀::Real = 1.2, δ::Real = 1.0, ε::Real = 1.0e-2, μ::Real = 0.5,
+            α₀::Real = 1.2, δ::Real = -1.0, ε::Real = 1.0e-2, μ::Real = 0.5,
         ) where {
             P, T, TM <: AbstractManifold,
             Pr <: Union{AbstractManoptProblem, F} where {F}, St <: AbstractManoptSolverState,

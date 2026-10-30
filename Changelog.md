@@ -48,12 +48,19 @@ We changed the following default keyword values
   * `ϵ_exponent = 1/30` (was `1/100`), the value of the paper it implements
 * `exact_penalty_method`
   * `ϵ_exponent = 1/30` and `u_exponent = 1/30` (were `1/100`), which are the values from the original paper
+* the state constructors `AdaptiveRegularizationState`, `AlternatingGradientDescentState`, `ChambollePockState`, `ConjugateResidualState`, `ConvexBundleMethodState`,
+  `CyclicProximalPointState`, `DifferenceOfConvexProximalState`, `DouglasRachfordState`, `FrankWolfeState`, `GradientSamplingState`, `InteriorPointNewtonState`,
+  `ParticleSwarmState`, `ProjectedGradientMethodState`, `ProximalBundleMethodState`, `ProximalGradientMethodState`, `ProximalPointState`, `QuasiNewtonState`,
+  `StochasticGradientDescentState` and `VectorBundleNewtonState` use the same keyword defaults as their solver functions
+* `StochasticGradientDescentState` and `AlternatingGradientDescentState` fill an empty `order` when the solver starts
 
 The following keyword renames are breaking changes
 
 * `NonmonotoneLinesearchStepsize`: `stepsize_reduction` is now unified to  `contraction_factor`
 * `CubicBracketingLinesearchStepsize`: `stepsize_increase` is now unified to `expansion_factor`
 * `WolfePowellLinesearchStepsize`: `max_stepsize` is now unified to `stop_when_stepsize_exceeds`, defaulting to `max_stepsize(M)` or `1e9` when that is infinite
+* `primal_dual_semismooth_Newton`: `reg_param` is now unified to `regularization_parameter`, the name of the state keyword
+* `LevenbergMarquardtState`: `damping_term` is now unified to `initial_damping_term`, the name of the solver keyword
 
 ### Fixed
 

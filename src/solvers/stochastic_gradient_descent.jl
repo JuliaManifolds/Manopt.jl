@@ -30,10 +30,10 @@ Create a `StochasticGradientDescentState` with start point `p`.
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `direction=`[`StochasticGradientRule`](@ref)`(M; X=`$(_link(:zero_vector))`)`
 * `order_type=:Random`
-* `order=Int[]`: specify how to store the order of indices for the next epoch
+* `order=Int[]`: specify how to store the order of indices for the next epoch; an empty vector is filled with `1:n` for the `n` gradients when the solver starts
 $(_kwargs(:retraction_method))
 $(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(10000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`StochasticGradientDescentState`](@ref)`)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
@@ -71,7 +71,7 @@ function StochasticGradientDescentState(
         order_type::Symbol = :Random,
         order::Vector{<:Int} = Int[],
         retraction_method::RM = default_retraction_method(M, typeof(p)),
-        stopping_criterion::SC = StopAfterIteration(1000),
+        stopping_criterion::SC = StopAfterIteration(10000) | StopWhenGradientNormLess(1.0e-9),
         stepsize::S = default_stepsize(M, StochasticGradientDescentState),
     ) where {
         P, T, C <: AbstractDict{Symbol}, D <: DirectionUpdateRule, RM <: AbstractRetractionMethod, SC <: StoppingCriterion, S <: Stepsize,
@@ -302,8 +302,9 @@ function stochastic_gradient_descent!(
 end
 calls_with_kwargs(::typeof(stochastic_gradient_descent!)) = (decorate_objective!, decorate_state!)
 
-function initialize_solver!(::AbstractManoptProblem, s::StochasticGradientDescentState)
+function initialize_solver!(mp::AbstractManoptProblem, s::StochasticGradientDescentState)
     s.k = 1
+    isempty(s.order) && (s.order = collect(1:length(get_gradients(get_manifold(mp), get_objective(mp), s.p))))
     (s.order_type == :FixedRandom) && (shuffle!(s.order))
     initialize_stepsize!(s.stepsize)
     return s

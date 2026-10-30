@@ -70,7 +70,7 @@ The following fields are keyword arguments
 * `damping_reduction_factor = 1 / damping_increase_factor`
 * `damping_term_min = 0.1`
 * `damping_term_max = Inf`
-* `damping_term = damping_term_min`
+* `initial_damping_term = damping_term_min`
 * `damping_reduction_threshold = Inf`
 * `damping_increase_threshold = candidate_acceptance_threshold`
 * `direction = copy(M, p, X)`
@@ -136,7 +136,7 @@ mutable struct LevenbergMarquardtState{
             damping_reduction_factor::Real = 1 / damping_increase_factor,
             damping_term_min::Real = 0.1,
             damping_term_max::Real = Inf,
-            damping_term::Real = damping_term_min,
+            initial_damping_term::Real = damping_term_min,
             minimum_acceptable_model_improvement::Real = eps(number_eltype(p)),
         )
         (candidate_acceptance_threshold <= 0 || candidate_acceptance_threshold >= 1) && throw(ArgumentError("The value of `candidate_acceptance_threshold` must be strictly between 0 and 1, received $(candidate_acceptance_threshold)"))
@@ -146,14 +146,14 @@ mutable struct LevenbergMarquardtState{
         R = promote_type(
             typeof(candidate_acceptance_threshold), typeof(damping_term_min), typeof(damping_increase_factor), typeof(damping_increase_threshold),
             typeof(damping_reduction_threshold), typeof(damping_reduction_factor), typeof(damping_term_min),
-            typeof(damping_term_max), typeof(damping_term), typeof(minimum_acceptable_model_improvement)
+            typeof(damping_term_max), typeof(initial_damping_term), typeof(minimum_acceptable_model_improvement)
         )
         return LevenbergMarquardtState(
             sub_problem, sub_state;
             candidate_acceptance_threshold = convert(R, candidate_acceptance_threshold),
             damping_increase_factor = convert(R, damping_increase_factor), damping_increase_threshold = convert(R, damping_increase_threshold),
             damping_reduction_threshold = convert(R, damping_reduction_threshold), damping_reduction_factor = convert(R, damping_reduction_factor),
-            damping_term = convert(R, damping_term), damping_term_min = convert(R, damping_term_min), damping_term_max = convert(R, damping_term_max),
+            damping_term = convert(R, initial_damping_term), damping_term_min = convert(R, damping_term_min), damping_term_max = convert(R, damping_term_max),
             direction = direction, callbacks = callbacks, jacobian_matrices = initial_jacobian_matrices isa AbstractMatrix ? [initial_jacobian_matrices] : initial_jacobian_matrices, minimum_acceptable_model_improvement = convert(R, minimum_acceptable_model_improvement),
             p = p, q = copy(M, p), residual_values = initial_residual_values, retraction_method = retraction_method, stopping_criterion = stopping_criterion, X = X,
         )
@@ -474,7 +474,7 @@ function LevenbergMarquardt!(
         damping_reduction_threshold = damping_reduction_threshold,
         damping_reduction_factor = damping_reduction_factor,
         candidate_acceptance_threshold = candidate_acceptance_threshold,
-        damping_term = initial_damping_term,
+        initial_damping_term = initial_damping_term,
         damping_term_min = damping_term_min, damping_term_max = damping_term_max,
         stopping_criterion = stopping_criterion,
         retraction_method = retraction_method,

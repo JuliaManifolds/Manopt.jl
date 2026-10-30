@@ -33,6 +33,8 @@ $(_args([:p, :sub_problem, :sub_state]))
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`VectorBundleNewtonState`](@ref)`)"))
+* `stop_when_newton_direction_norm_less=1e-6`: threshold for the [`StopWhenNewtonDirectionNormLess`](@ref) inside the default `stopping_criterion`.
+  This parameter has no effect, when either using a stepsize different from [`AffineCovariantStepsize`](@ref) or when setting the stopping criterion manually.
 $(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
@@ -63,8 +65,13 @@ function VectorBundleNewtonState(
         callbacks::C = Dict{Symbol, Function}(),
         X::T = zero_vector(M, p),
         retraction_method::RM = default_retraction_method(M, typeof(p)),
-        stopping_criterion::SC = StopAfterIteration(1000),
-        stepsize::S = default_stepsize(M, VectorBundleNewtonState)
+        stepsize::S = default_stepsize(M, VectorBundleNewtonState),
+        stop_when_newton_direction_norm_less = 1.0e-6,
+        stopping_criterion::SC = if stepsize isa AffineCovariantStepsize
+            StopAfterIteration(1000) | StopWhenStepsizeLess(stepsize.stop_when_stepsize_less) | StopWhenNewtonDirectionNormLess(stop_when_newton_direction_norm_less)
+        else
+            StopAfterIteration(1000)
+        end,
     ) where {
         P, T, Pr, St, C <: AbstractDict{Symbol}, RM <: AbstractRetractionMethod, SC <: StoppingCriterion, S <: Stepsize,
     }

@@ -28,7 +28,7 @@ $(_args(:M))
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `λ=k -> 1.0`: a function to compute ``λ_k`` for ``k ∈ ℕ``,
 $(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)"))
 
 # See also
 
@@ -42,7 +42,8 @@ mutable struct ProximalPointState{P, Tλ, C <: AbstractDict{Symbol}, TStop <: St
     function ProximalPointState(
             M::AbstractManifold;
             callbacks::C = Dict{Symbol, Function}(), λ::F = k -> 1.0,
-            p::P = rand(M), stopping_criterion::SC = StopAfterIteration(200),
+            p::P = rand(M),
+            stopping_criterion::SC = StopAfterIteration(1000) | StopWhenChangeLess(M, 1.0e-12),
         ) where {P, F, C <: AbstractDict{Symbol}, SC <: StoppingCriterion}
         return ProximalPointState(; callbacks = callbacks, λ = λ, p = p, stopping_criterion = stopping_criterion)
     end

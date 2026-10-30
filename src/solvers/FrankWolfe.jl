@@ -96,7 +96,7 @@ $(_args([:M, :sub_problem, :sub_state]))
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-8)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-8)"))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, `[`FrankWolfeState`](@ref)`)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 
@@ -131,7 +131,8 @@ mutable struct FrankWolfeState{
             M::AbstractManifold, sub_problem::Pr, sub_state::St;
             callbacks::C = Dict{Symbol, Function}(),
             p::P = rand(M), X::T = zero_vector(M, p),
-            stopping_criterion::TStop = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-6),
+            stopping_criterion::TStop = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-8) |
+                StopWhenChangeLess(M, 1.0e-8),
             stepsize::TStep = default_stepsize(M, FrankWolfeState),
             retraction_method::TM = default_retraction_method(M, typeof(p)),
             inverse_retraction_method::ITM = default_inverse_retraction_method(M, typeof(p)),
