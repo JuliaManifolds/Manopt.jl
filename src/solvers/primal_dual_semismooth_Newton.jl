@@ -573,7 +573,8 @@ end
 @doc raw"""
     construct_primal_dual_residual_covariant_derivative_matrix(tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonState)
 
-Constructs the matrix representation of ``V^{(k)}:T_{p^{(k)}} \mathcal{M} \times T_{n}^{*} \mathcal{N}\rightarrow T_{p^{(k)}} \mathcal{M} \times T_{n}^{*} \mathcal{N}``
+Constructs the matrix representation of an element ``V^{(k)}:T_{p^{(k)}} \mathcal{M} \times T_{n}^{*} \mathcal{N}\rightarrow T_{p^{(k)}} \mathcal{M} \times T_{n}^{*} \mathcal{N}``
+of the Clarke generalized covariant derivative [deOliveiraFerreira:2020](@cite) of the residual vector field.
 """
 function construct_primal_dual_residual_covariant_derivative_matrix(
         tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonState

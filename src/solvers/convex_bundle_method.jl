@@ -35,6 +35,9 @@ $(
 
 where ``ω ≤ κ_p`` for all ``p ∈ $(_tex(:Cal, "U"))`` is a lower bound to the sectional curvature in
 a (strongly geodesically convex) bounded subset ``$(_tex(:Cal, "U")) ⊆ $(_math(:Manifold))`` with diameter ``δ``.
+This is the quantity ``ζ`` of [AlimisisOrvietoBecigneulLucchi:2021; Equation (1)](@cite),
+an upper bound on the largest eigenvalue of an operator similar to the Riemannian Hessian
+of the squared distance.
 """
 function ζ_1(k_min, diameter)
     (k_min < zero(k_min)) && return sqrt(-k_min) * diameter * coth(sqrt(-k_min) * diameter)
@@ -60,6 +63,8 @@ $(
 
 where ``Ω ≥ κ_p`` for all ``p ∈ $(_tex(:Cal, "U"))`` is an upper bound to the sectional curvature in
 a (strongly geodesically convex) bounded subset ``$(_tex(:Cal, "U")) ⊆ $(_math(:Manifold))`` with diameter ``δ``.
+This bound is stated in [AlimisisOrvietoBecigneulLucchi:2021; Lemma 2](@cite) under a different
+symbol, as a lower bound on the smallest eigenvalue of that operator.
 """
 function ζ_2(k_max, diameter)
     (k_max > zero(k_max)) && return sqrt(k_max) * diameter * cot(sqrt(k_max) * diameter)
@@ -606,7 +611,7 @@ The subproblem for the convex bundle method is
 ```
 
 where ``J_k = $(_tex(:set, "j ∈ J_{k-1} \\ | \\ λ_j > 0")) ∪ $(_tex(:set, "k"))``.
-See [BergmannHerzogJasa:2024](@cite) for more details
+See [BergmannHerzogJasa:2026](@cite) for more details
 
 !!! tip
     A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
@@ -641,7 +646,7 @@ to the quadratic subproblem provided by the [`convex_bundle_method_subsolver`](@
 Though the subdifferential might be set valued, the argument `∂f` should always
 return one element from the subdifferential, but not necessarily deterministic.
 
-For more details, see [BergmannHerzogJasa:2024](@cite).
+For more details, see [BergmannHerzogJasa:2026](@cite).
 
 # Input
 

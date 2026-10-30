@@ -205,7 +205,7 @@ _doc_SGD = """
     stochastic_gradient_descent!(M, grad_f, p; kwargs...)
     stochastic_gradient_descent!(M, msgo, p; kwargs...)
 
-perform a stochastic gradient descent. This can be performed in-place of `p`.
+perform a stochastic gradient descent [Bonnabel:2013](@cite). This can be performed in-place of `p`.
 
 # Input
 

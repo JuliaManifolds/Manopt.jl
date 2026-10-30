@@ -1298,7 +1298,8 @@ end
 @doc """
     RestartOnNonSufficientDescent <: AbstractRestartCondition
 
-A restart strategy that indicates to restart whenever the search direction `δ` is not a sufficient descent direction, i.e. when
+A restart strategy that indicates to restart whenever the search direction `δ` is not a sufficient
+descent direction in the sense of [SakaiIiduka:2021](@cite), that is when
 
 ```math
     ⟨$(_tex(:grad))f(p), δ⟩ > - κ $(_tex(:norm, "$(_tex(:grad))f(p)"))^2,
