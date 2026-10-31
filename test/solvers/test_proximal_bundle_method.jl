@@ -203,4 +203,13 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
         # test bundle base point still p0
         @test pbms.bundle[1][1] == p0
     end
+    @testset "A nonnegative δ grows μ by the factor 1 + δ at a serious step" begin
+        f, ∂f, _ = Manopt.Test.distance_task(M, p)
+        # with μ = 200 the first direction is shorter than ε, so the full step is taken and accepted
+        s_δ = proximal_bundle_method(
+            M, f, ∂f, p0; μ = 200.0, δ = 1.0, stopping_criterion = StopAfterIteration(1), return_state = true,
+        )
+        @test f(M, get_solver_result(s_δ)) < f(M, p0)
+        @test s_δ.μ == 400.0
+    end
 end
