@@ -45,6 +45,15 @@ The following papers are using `Manopt.jl`:
 
 * [GlaubitzIskeLampertOeffner:2026](@citet*) construct summation-by-parts operators with an optimization based approach
 * [GangapuramDumitrescu:2026](@citet*) explore integration of Manopt.jl with ITensors.jl and Zygote.jl to optimize the tensor network representation of quantum states
+* [AmaralBortolotiLopesSilva:2026](@citet*) solve the subproblems of their adaptive proximal point method with the trust regions solver and compare their algorithm to the difference of convex algorithms
+* [AyralCancesFaulstichLinNegre:2026](@citet*) minimize a quantum embedding energy on the Grassmann and Stiefel manifolds with the trust regions solver
+* [deOliveiraFilhoSpomerVallentin:2026](@citet*) determine packings of regular spherical polygons with the augmented Lagrangian method on a product of rotation groups
+* [DewaeleVannieuwenhoven:2024](@citet*) compute the forward error of perturbed orthogonal Tucker decompositions by gradient descent to test their condition number bound numerically
+* [FoergerBobergHackelbergHeinischOstaszewskiFaltinathThiebenMohnJuerssMoeddelKnopp:2026](@citet*) calibrate the sensor array of a 3-D magnetic field camera by gradient descent
+* [GresistaKieseTrebstScherer:2023](@citet*) minimize a variational mean-field energy on the sphere by gradient descent in their study of spin-valley magnetism
+* [JasaBergmannKuemmerleAthreyaLubberts:2025](@citet*) solve spectral and robust Procrustes problems on the orthogonal group with mesh adaptive direct search
+* [LukashchukYemetsKouwBagaevSenoezBeckDeVries:2026](@citet*) perform natural gradient descent on exponential family manifolds for variational inference in factor graphs
+* [Pueschel:2026](@citet*) expresses the conjugate gradient coefficients and line search conditions through the differential of the cost instead of the metric. Both the conjugate gradient solver and the line searches are implemented this way.
 
 If you are missing a package or paper that uses `Manopt.jl`, please [open an issue](https://github.com/JuliaManifolds/Manopt.jl/issues/new).
 It would be great to collect anything and anyone using `Manopt.jl` in this list.

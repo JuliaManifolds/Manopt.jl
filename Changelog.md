@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `BarzilaiBorweinStepsize` and `NonmonotoneLinesearchStepsize` accept the keywords `initial_stepsize` and `bb_initial_stepsize`, the length of the first step
 * `WolfePowellLinesearchStepsize` accepts the keywords `contraction_factor` and `expansion_factor`, the latter defaulting to `1 / contraction_factor`,
   for the factors of its search phases
+* Added papers using `Manopt.jl` to the about page.
 
 ### Changed
 
