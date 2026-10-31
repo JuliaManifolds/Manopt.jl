@@ -57,7 +57,7 @@ We changed the following default keyword values
 
 The following keyword renames are breaking changes
 
-* `NonmonotoneLinesearchStepsize`: `stepsize_reduction` is now unified to  `contraction_factor`
+* `NonmonotoneLinesearchStepsize`: `stepsize_reduction` is now unified to `contraction_factor`
 * `CubicBracketingLinesearchStepsize`: `stepsize_increase` is now unified to `expansion_factor`
 * `WolfePowellLinesearchStepsize`: `max_stepsize` is now unified to `stop_when_stepsize_exceeds`, defaulting to `max_stepsize(M)` or `1e9` when that is infinite
 * `primal_dual_semismooth_Newton`: `reg_param` is now unified to `regularization_parameter`, the name of the state keyword
@@ -74,11 +74,12 @@ The following breaking changes all stem from deprecated features.
 * `DebugCallback` is removed, use the `callbacks = ` keyword of a state instead
 * `DebugSolverState` no longer accepts a function as second argument, since that was a shortcut to create a `DebugCallback`
 * `decorate_state!` processed `callback` to a `DebugCallback`. This is discontinued in favour of the `callbacks` keyword
-* `DebugFeasibility` no longer accepts `atol = `, since an constrained objective now handles tolerances itself.
+* `DebugFeasibility` no longer accepts `atol = `, since a constrained objective now handles tolerances itself.
 * the `QuasiNewtonState` no longer accepts the `initial_vector = ` keyword. Use `X = ` instead.
 * the alias `AbstractManifoldGradientObjective` for the `AbstractManifoldFirstOrderObjective` has been removed
 * the `ProjectedGradientMethodState`, `MeshAdaptiveDirectSearchState`, and `CoordinatesNormalSystemState` no longer accept an initial point as second position argument. Use the keyword `p = `.
 * `trust_regions` no longer accepts the keyword `ρ_prime = `. Use its new name `acceptance_rate = ` instead.
+* the abstract type `AbstractSubProblemSolverState` has been removed, use the trait `has_sub_problem` instead.
 
 ## [0.6.10] October 22, 2026
 
