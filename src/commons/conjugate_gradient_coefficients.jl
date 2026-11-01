@@ -178,7 +178,7 @@ function ConjugateGradientDescentState(
         callbacks = callbacks,
         p = p, p_old = copy(M, p),
         X = initial_gradient, δ = copy(M, p, initial_gradient),
-        β = zero(allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))),
+        β = zero(real(allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient)))),
         stopping_criterion = stopping_criterion, coefficient = _coefficient,
         stepsize = stepsize, restart_condition = restart_condition,
         retraction_method = retraction_method, vector_transport_method = vector_transport_method,
@@ -310,7 +310,7 @@ function (dy::DaiYuanCoefficientRule)(
     δtr = vector_transport_to(M, p, δ, cgs.p, dy.vector_transport_method)
     # previously: nominator = inner(M, cgs.p, cgs.X, cgs.X)
     nominator = get_differential(amp, cgs.p, cgs.X; gradient = cgs.X, evaluated = true)
-    return nominator / inner(M, cgs.p, δtr, ν)
+    return nominator / real(inner(M, cgs.p, δtr, ν))
 end
 function (u::DirectionUpdateRuleStorage{<:DaiYuanCoefficientRule})(
         amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
@@ -498,11 +498,13 @@ function (hz::HagerZhangCoefficientRule)(
     )
     ν = cgs.X - Xtr #notation y from [HZ06]
     δtr = vector_transport_to(M, p, δ, cgs.p, hz.vector_transport_method)
-    denom = inner(M, cgs.p, δtr, ν)
+    denom = real(inner(M, cgs.p, δtr, ν))
     if abs(denom) > hz.denom_threshold
         # when abs(denom) is small, we lose numerical stability.
-        νknormsq = inner(M, cgs.p, ν, ν)
-        β = inner(M, cgs.p, ν, cgs.X) / denom - 2 * νknormsq * inner(M, cgs.p, δtr, cgs.X) / denom^2
+        νknormsq = real(inner(M, cgs.p, ν, ν))
+        νX = get_differential(amp, cgs.p, ν; gradient = cgs.X, evaluated = true)
+        δtrX = get_differential(amp, cgs.p, δtr; gradient = cgs.X, evaluated = true)
+        β = νX / denom - 2 * νknormsq * δtrX / denom^2
         # Numerical stability from Manopt / Hager-Zhang paper
         ξn = norm(M, cgs.p, cgs.X)
         η = -1 / (ξn * min(0.01, norm(M, p, X)))

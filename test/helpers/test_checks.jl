@@ -101,3 +101,12 @@ end
         )
     )
 end
+@testset "Hessian symmetry check on the complex Stiefel manifold" begin
+    M = Stiefel(2, 1, ℂ)
+    A = ComplexF64[2 1im; -1im 2]
+    Hess_f(M, p, X) = riemannian_Hessian(M, p, 2 * A * p, 2 * A * X, X)
+    p = ComplexF64[1; 0;;]
+    X = ComplexF64[1im; 1;;]
+    Y = ComplexF64[0; 1 + 1im;;]
+    @test Manopt.is_Hessian_symmetric(M, Hess_f, p, X, Y)
+end

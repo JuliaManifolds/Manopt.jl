@@ -342,4 +342,20 @@ using Manopt, Manifolds, Test, ManifoldDiff, Random
         )
         @test qc isa Float64
     end
+    @testset "Convex backtracking on ℂ²" begin
+        Mc = Euclidean(2; field = ℂ)
+        z1 = ComplexF64[1, 1im]
+        z2 = ComplexF64[3, -1im]
+        g(M, q) = distance(M, q, z1)^2
+        grad_g(M, q) = -2 * log(M, q, z1)
+        h(M, q) = distance(M, q, z2)
+        prox_h(M, λ, q) = ManifoldDiff.prox_distance(M, λ, z2, q, 1)
+        f(M, q) = g(M, q) + h(M, q)
+        q = proximal_gradient_method(
+            Mc, f, g, grad_g, ComplexF64[0, 0]; prox_nonsmooth = prox_h,
+            stepsize = ProximalGradientMethodBacktracking(; strategy = :convex), stopping_criterion = StopAfterIteration(10),
+        )
+        # the minimizer of g + h lies on the segment from z1 to z2 at distance 1/2 from z1
+        @test isapprox(Mc, q, z1 + (z2 - z1) / (2 * distance(Mc, z1, z2)); atol = 1.0e-8)
+    end
 end

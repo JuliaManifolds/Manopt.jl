@@ -392,8 +392,8 @@ function is_Hessian_symmetric(
         rtol::Real = atol > 0 ? 0 : sqrt(eps(real(eltype(p)))),
         kwargs...,
     )
-    a = inner(M, p, Hess_f(M, p, X), Y)
-    b = inner(M, p, X, Hess_f(M, p, Y))
+    a = real(inner(M, p, Hess_f(M, p, X), Y))
+    b = real(inner(M, p, X, Hess_f(M, p, Y)))
     isapprox(a, b; atol = atol, rtol = rtol, kwargs...) && (return true)
     m = "Hess f seems to not be symmetric: ⟨Hess f(p)[X], Y⟩ = $a != $b = ⟨X, Hess f(p)[Y]⟩.\n"
     (io !== nothing) && print(io, m)

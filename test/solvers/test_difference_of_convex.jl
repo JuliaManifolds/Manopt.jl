@@ -350,4 +350,11 @@ import Manifolds: inner
         q2 = difference_of_convex_proximal_point(Mp, grad_h, pp; g = g, grad_g = grad_g)
         @test pp == q2 # started in a in a minimizer
     end
+    @testset "Linearized cost on ℂ² is real" begin
+        Mc = Euclidean(2; field = ℂ)
+        g2(M, z) = sum(abs2, z)
+        c = Manopt.LinearizedDCCost(g2, ComplexF64[1, 1im], ComplexF64[1im, 1])(Mc, ComplexF64[3, -1im])
+        @test c isa Real
+        @test c == 10 - 2 * real(dot(ComplexF64[1im, 1], ComplexF64[2, -2im]))
+    end
 end

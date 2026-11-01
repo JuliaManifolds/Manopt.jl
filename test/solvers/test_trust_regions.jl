@@ -432,4 +432,14 @@ include("trust_region_model.jl")
         @test eltype(q) === Float32
         @test isapprox(M, q, zeros(Float32, 3, 3); atol = 1.0f-6)
     end
+    @testset "Model cost on a tangent space of the complex Stiefel manifold" begin
+        M = Stiefel(2, 1, ℂ)
+        A = ComplexF64[2 1im; -1im 2]
+        f(M, p) = real((p' * A * p)[1])
+        grad_f(M, p) = project(M, p, 2 * A * p)
+        Hess_f(M, p, X) = riemannian_Hessian(M, p, 2 * A * p, 2 * A * X, X)
+        p = ComplexF64[1; 0;;]
+        mho = ManifoldHessianObjective(f, grad_f, Hess_f)
+        @test get_cost(TangentSpace(M, p), Manopt.TrustRegionModelObjective(mho), ComplexF64[1im; 1;;]) == 4.0
+    end
 end

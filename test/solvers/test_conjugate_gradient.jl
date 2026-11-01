@@ -494,4 +494,19 @@ using ManifoldDiff: grad_distance
         )
         @test norm(M, cgs.p, grad_f(M, cgs.p)) < 1.0e-8
     end
+    @testset "Dai-Yuan and Hager-Zhang on the complex Stiefel manifold" begin
+        M = Stiefel(3, 2, ℂ)
+        A = ComplexF64[1 1im 0; 0 1 1im; 1im 0 1]
+        B = ComplexF64[1 0; 0 1im; 1 1]
+        p0 = ComplexF64[1 0; 0 1; 0 0]
+        f(M, p) = sum(abs2, A * p - B)
+        grad_f(M, p) = project(M, p, 2 * A' * (A * p - B))
+        for coefficient in (DaiYuanCoefficient(), HagerZhangCoefficient())
+            st = conjugate_gradient_descent(
+                M, f, grad_f, p0; coefficient = coefficient, stopping_criterion = StopAfterIteration(2), return_state = true
+            )
+            @test st.β isa Real
+            @test is_vector(M, st.p, st.δ)
+        end
+    end
 end

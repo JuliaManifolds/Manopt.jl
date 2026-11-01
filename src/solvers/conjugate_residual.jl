@@ -336,13 +336,13 @@ function step_solver!(
     TpM = get_manifold(amp)
     M = base_manifold(TpM)
     p = base_point(TpM)
-    crs.α = inner(M, p, crs.r, crs.Ar) / inner(M, p, crs.Ad, crs.Ad)
+    crs.α = real(inner(M, p, crs.r, crs.Ar)) / real(inner(M, p, crs.Ad, crs.Ad))
     callback(:Stepsize, amp, crs, k)
     crs.X .+= crs.α .* crs.d
-    crs.rAr = inner(M, p, crs.r, crs.Ar)
+    crs.rAr = real(inner(M, p, crs.r, crs.Ar))
     crs.r .-= crs.α .* crs.Ad
     get_hessian!(amp, crs.Ar, crs.X, crs.r)
-    crs.β = inner(M, p, crs.r, crs.Ar) / crs.rAr
+    crs.β = real(inner(M, p, crs.r, crs.Ar)) / crs.rAr
     crs.d .= crs.r .+ crs.β .* crs.d
     crs.Ad .= crs.Ar .+ crs.β .* crs.Ad
     return crs

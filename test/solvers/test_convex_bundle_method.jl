@@ -351,4 +351,13 @@ using Manopt: estimate_sectional_curvature
         @test length(cbms.linearization_errors) == length(cbms.bundle)
         @test length(cbms.λ) == length(cbms.bundle)
     end
+    @testset "Convex bundle method on ℂ²" begin
+        Mc = Euclidean(2; field = ℂ)
+        z0 = ComplexF64[1, 1im]
+        f(M, z) = distance(M, z, z0)
+        ∂f(M, z) = ManifoldDiff.grad_distance(M, z0, z, 1)
+        zb = ComplexF64[3, -1im]
+        q = convex_bundle_method(Mc, f, ∂f, zb; stopping_criterion = StopAfterIteration(30))
+        @test f(Mc, q) < f(Mc, zb)
+    end
 end

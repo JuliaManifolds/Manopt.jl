@@ -212,7 +212,7 @@ function ProximalGradientMethodState(
         sub_problem_, sub_state_;
         callbacks = callbacks,
         a = copy(M, p), acceleration = acceleration,
-        stepsize = stepsize, last_stepsize = zero(number_eltype(p)),
+        stepsize = stepsize, last_stepsize = zero(real(number_eltype(p))),
         p = p, q = copy(M, p),
         stopping_criterion = stopping_criterion, X = X,
         retraction_method = retraction_method, inverse_retraction_method = inverse_retraction_method,
@@ -425,7 +425,7 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
                 ζ_δ = s.k_max ≤ zero(eltype(s.k_max)) ? one(eltype(s.k_max)) : π / (2 + s.δ) * cot(π / (2 + s.δ))
 
                 # Convex descent condition
-                if g_q <= g_p + inner(M, p, X, log_p_q) + (ζ_δ / 2λ) * squared_distance
+                if g_q <= g_p + real(inner(M, p, X, log_p_q)) + (ζ_δ / 2λ) * squared_distance
                     s.last_stepsize = λ
                     return λ
                 end

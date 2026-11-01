@@ -212,4 +212,13 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
         @test f(M, get_solver_result(s_δ)) < f(M, p0)
         @test s_δ.μ == 400.0
     end
+    @testset "Proximal bundle method on ℂ²" begin
+        Mc = Euclidean(2; field = ℂ)
+        z0 = ComplexF64[1, 1im]
+        f(M, z) = distance(M, z, z0)
+        ∂f(M, z) = ManifoldDiff.grad_distance(M, z0, z, 1)
+        zb = ComplexF64[3, -1im]
+        q = proximal_bundle_method(Mc, f, ∂f, zb; stopping_criterion = StopAfterIteration(30))
+        @test f(Mc, q) < f(Mc, zb)
+    end
 end

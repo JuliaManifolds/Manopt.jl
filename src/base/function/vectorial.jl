@@ -486,7 +486,7 @@ function get_jacobian(
         M::AbstractManifold, vgf::VGF, p, X; kwargs...
     ) where {FT, VGF <: AbstractFirstOrderVectorFunction{FT, <:AbstractVectorialType}}
     n = vgf.range_dimension
-    a = zeros(number_eltype(X), n)
+    a = zeros(real(number_eltype(X)), n)
     return get_jacobian!(M, a, vgf, p, X; kwargs...)
 end
 
@@ -758,7 +758,7 @@ function get_jacobian!(
     gradients = zero_vector(mP, fill(p, mP))
     vgf.jacobian!(M, gradients, p)
     for i in 1:n
-        a[i] = inner(M, p, gradients[mP, i], X)
+        a[i] = real(inner(M, p, gradients[mP, i], X))
     end
     return a
 end
@@ -770,7 +770,7 @@ function get_jacobian!(
     n = vgf.range_dimension
     for i in 1:n
         vgf.jacobian![i](M, Y_cache, p)
-        a[i] = inner(M, p, Y_cache, X)
+        a[i] = real(inner(M, p, Y_cache, X))
     end
     return a
 end
