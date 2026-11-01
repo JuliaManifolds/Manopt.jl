@@ -1698,7 +1698,7 @@ function get_cost(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
     c = get_objective_cost(M, trmo, p)
     G = get_objective_gradient(M, trmo, p)
     Y = get_objective_hessian(M, trmo, p, X)
-    return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X)
+    return c + real(inner(M, p, G, X)) + 1 / 2 * real(inner(M, p, Y, X))
 end
 @doc """
     get_gradient(TpM, trmo::TrustRegionModelObjective, X)

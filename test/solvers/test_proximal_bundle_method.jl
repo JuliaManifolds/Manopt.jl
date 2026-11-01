@@ -203,4 +203,13 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
         # test bundle base point still p0
         @test pbms.bundle[1][1] == p0
     end
+    @testset "Proximal bundle method on ℂ²" begin
+        Mc = Euclidean(2; field = ℂ)
+        z0 = ComplexF64[1, 1im]
+        f(M, z) = distance(M, z, z0)
+        ∂f(M, z) = ManifoldDiff.grad_distance(M, z0, z, 1)
+        zb = ComplexF64[3, -1im]
+        q = proximal_bundle_method(Mc, f, ∂f, zb; stopping_criterion = StopAfterIteration(30))
+        @test f(Mc, q) < f(Mc, zb)
+    end
 end

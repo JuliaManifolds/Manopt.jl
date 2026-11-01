@@ -816,7 +816,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
         grad_g = get_grad_inequality_constraint(amp, ips.p, :)
         β = ips.ρ * ips.σ
         # for s and μ
-        ips.W .= [-inner(M, ips.p, grad_g[i], ips.X) for i in 1:m] .- g .- ips.s
+        ips.W .= [-real(inner(M, ips.p, grad_g[i], ips.X)) for i in 1:m] .- g .- ips.s
         ips.Y .= (β .- ips.μ .* (ips.s + ips.W)) ./ ips.s
     end
 
