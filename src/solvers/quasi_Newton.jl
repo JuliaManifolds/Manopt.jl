@@ -706,7 +706,7 @@ function update_hessian!(
 end
 
 function fill_rho_i!(M::AbstractManifold, p, d::QuasiNewtonLimitedMemoryDirectionUpdate, i::Int)
-    v = inner(M, p, d.memory_s[i], d.memory_y[i])
+    v = real(inner(M, p, d.memory_s[i], d.memory_y[i]))
     if d.nonpositive_curvature_behavior === :ignore && iszero(v)
         d.ρ[i] = zero(eltype(d.ρ))
         if length(d.message) > 0

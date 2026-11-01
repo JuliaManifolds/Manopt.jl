@@ -6,6 +6,12 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.11] unreleased
+
+### Fixed
+
+* `quasi_Newton` uses the real part of `inner` in its limited-memory direction update, so that it works on complex manifolds (#656)
+
 ## [0.6.10] October 22, 2026
 
 ### Added

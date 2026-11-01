@@ -673,7 +673,7 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
         G <: Union{<:Real, Nothing},
     }
     s = isnothing(initial_scale) ? (p, initial_vector) : (p, initial_vector, initial_scale)
-    mT = allocate_result_type(M, QuasiNewtonLimitedMemoryDirectionUpdate, s)
+    mT = real(allocate_result_type(M, QuasiNewtonLimitedMemoryDirectionUpdate, s))
     m1 = zeros(mT, memory_size)
     m2 = zeros(mT, memory_size)
     _initial_state = !isnothing(initial_scale) ? convert(mT, initial_scale) : initial_scale
@@ -736,7 +736,7 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
     # backward pass
     for i in m:-1:1
         # d.ρ is precomputed in the Hessian update
-        d.ξ[i] = inner(M, p, d.memory_s[i], r) * d.ρ[i]
+        d.ξ[i] = real(inner(M, p, d.memory_s[i], r)) * d.ρ[i]
         r .-= d.ξ[i] .* d.memory_y[i]
     end
     last_safe_index = -1
@@ -763,7 +763,7 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
     # forward pass
     for i in eachindex(d.ρ)
         if abs(d.ρ[i]) > 0
-            coeff = d.ξ[i] - d.ρ[i] * inner(M, p, d.memory_y[i], r)
+            coeff = d.ξ[i] - d.ρ[i] * real(inner(M, p, d.memory_y[i], r))
             r .+= coeff .* d.memory_s[i]
         end
     end
