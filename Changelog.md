@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * the Dai–Yuan and Hager–Zhang coefficients of `conjugate_gradient_descent` are real on complex manifolds
 * `is_Hessian_symmetric`, and with it `check_Hessian`, compares the real parts of the inner products, so that it works on complex manifolds
 * `conjugate_residual` works on tangent spaces of complex manifolds
+* the convex backtracking of `proximal_gradient_method` works on complex manifolds
 
 ## [0.6.10] October 22, 2026
 
