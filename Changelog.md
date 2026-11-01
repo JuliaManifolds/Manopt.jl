@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `quasi_Newton` uses the real part of `inner` in its limited-memory direction update, so that it works on complex manifolds (#656)
 * the matrix-based direction updates of `quasi_Newton` use the real part of `inner`, so that they work on complex manifolds
 * `is_Hessian_symmetric`, and with it `check_Hessian`, compares the real parts of the inner products, so that it works on complex manifolds
+* `conjugate_residual` works on tangent spaces of complex manifolds
 
 ## [0.6.10] October 22, 2026
 
