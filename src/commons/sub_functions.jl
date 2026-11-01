@@ -188,7 +188,7 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
         Y1 .+= μ[i] .* Xt
         get_grad_inequality_constraint!(M, Xt, cKKTvfJ.cmo, p, i)
         # condensed term
-        Y1 .+= ((μ[i] / s[i]) * inner(M, p, Xt, Xp)) .* Xt
+        Y1 .+= ((μ[i] / s[i]) * real(inner(M, p, Xt, Xp))) .* Xt
     end
     for j in 1:n #eq
         get_hess_equality_constraint!(M, Xt, cKKTvfJ.cmo, p, Xp, j)
@@ -198,7 +198,7 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
         # condensed term
         Y1 .+= Xλ[j] .* Xt
         # condensed term in second part
-        Y2[j] = inner(M, p, Xt, Xp)
+        Y2[j] = real(inner(M, p, Xt, Xp))
     end
     return Y
 end
@@ -528,13 +528,13 @@ function (KKTvfJ::KKTVectorFieldJacobian)(N, Z, q, Y)
         get_grad_inequality_constraint!(M, Xt, KKTvfJ.cmo, p, i)
         Z1 .+= Y2[i] .* Xt
         # set second components as well
-        Z2[i] = inner(M, p, Xt, X) + Y4[i]
+        Z2[i] = real(inner(M, p, Xt, X)) + Y4[i]
     end
     for j in 1:n
         get_grad_equality_constraint!(M, Xt, KKTvfJ.cmo, p, j)
         Z1 .+= Y3[j] .* Xt
         # set third components as well
-        Z3[j] = inner(M, p, Xt, X)
+        Z3[j] = real(inner(M, p, Xt, X))
     end
     # Fourth component
     Z4 .= μ .* Y4 .+ s .* Y2
@@ -613,13 +613,13 @@ function (KKTvfAdJ::KKTVectorFieldAdjointJacobian)(N, Z, q, Y)
         get_grad_inequality_constraint!(M, Xt, KKTvfAdJ.cmo, p, i)
         Z1 .+= Y2[i] .* Xt
         # set second components as well
-        Z2[i] = inner(M, p, Xt, X) + s[i] * Y4[i]
+        Z2[i] = real(inner(M, p, Xt, X)) + s[i] * Y4[i]
     end
     for j in 1:n
         get_grad_equality_constraint!(M, Xt, KKTvfAdJ.cmo, p, j)
         Z1 .+= Y3[j] .* Xt
         # set third components as well
-        Z3[j] = inner(M, p, Xt, X)
+        Z3[j] = real(inner(M, p, Xt, X))
     end
     # Fourth component
     Z4 .= μ .* Y4 .+ Y2
@@ -664,7 +664,7 @@ end
 function (KKTvc::KKTVectorFieldNormSq)(N, q)
     Y = zero_vector(N, q)
     KKTVectorField(KKTvc.cmo)(N, Y, q)
-    return inner(N, q, Y, Y)
+    return real(inner(N, q, Y, Y))
 end
 function Base.show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
     print(io, "KKTVectorFieldNormSq(")
@@ -945,7 +945,7 @@ mutable struct LinearizedDCCost{P, T, TG}
         return new{P, T, typeof(g_)}(g_, pk, Xk)
     end
 end
-(F::LinearizedDCCost)(M, p) = F.g(M, p) - inner(M, F.pk, F.Xk, log(M, F.pk, p))
+(F::LinearizedDCCost)(M, p) = F.g(M, p) - real(inner(M, F.pk, F.Xk, log(M, F.pk, p)))
 
 function set_parameter!(ldc::LinearizedDCCost, ::Val{:p}, p)
     ldc.pk .= p

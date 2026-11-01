@@ -486,9 +486,9 @@ function update_hessian!(
     update_basis!(d.basis, M, p_old, p, d.vector_transport_method)
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
-    skyk_c = inner(M, p, st.sk, st.yk)
+    skyk_c = real(inner(M, p, st.sk, st.yk))
     if iter == 1 && !isnothing(d.initial_scale)
-        d.matrix = d.initial_scale * skyk_c / inner(M, p, st.yk, st.yk) * d.matrix
+        d.matrix = d.initial_scale * skyk_c / real(inner(M, p, st.yk, st.yk)) * d.matrix
     end
     d.matrix =
         (I - sk_c * yk_c' / skyk_c) * d.matrix * (I - yk_c * sk_c' / skyk_c) +
@@ -505,9 +505,9 @@ function update_hessian!(
     update_basis!(d.basis, M, p_old, p, d.vector_transport_method)
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
-    skyk_c = inner(M, p, st.sk, st.yk)
+    skyk_c = real(inner(M, p, st.sk, st.yk))
     if iter == 1 && !isnothing(d.initial_scale)
-        d.matrix = d.initial_scale * inner(M, p, st.yk, st.yk) / skyk_c * d.matrix
+        d.matrix = d.initial_scale * real(inner(M, p, st.yk, st.yk)) / skyk_c * d.matrix
     end
     d.matrix =
         d.matrix + yk_c * yk_c' / skyk_c -
@@ -525,9 +525,9 @@ function update_hessian!(
     update_basis!(d.basis, M, p_old, p, d.vector_transport_method)
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
-    skyk_c = inner(M, p, st.sk, st.yk)
+    skyk_c = real(inner(M, p, st.sk, st.yk))
     if iter == 1 && !isnothing(d.initial_scale)
-        d.matrix = d.initial_scale * inner(M, p, st.sk, st.sk) / skyk_c * d.matrix
+        d.matrix = d.initial_scale * real(inner(M, p, st.sk, st.sk)) / skyk_c * d.matrix
     end
     d.matrix =
         d.matrix + sk_c * sk_c' / skyk_c -
@@ -545,9 +545,9 @@ function update_hessian!(
     update_basis!(d.basis, M, p_old, p, d.vector_transport_method)
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
-    skyk_c = inner(M, p, st.sk, st.yk)
+    skyk_c = real(inner(M, p, st.sk, st.yk))
     if iter == 1 && !isnothing(d.initial_scale)
-        d.matrix = d.initial_scale * skyk_c / inner(M, p, st.sk, st.sk) * d.matrix
+        d.matrix = d.initial_scale * skyk_c / real(inner(M, p, st.sk, st.sk)) * d.matrix
     end
     d.matrix =
         (I - yk_c * sk_c' / skyk_c) * d.matrix * (I - sk_c * yk_c' / skyk_c) +
@@ -603,7 +603,7 @@ function update_hessian!(
     update_basis!(d.basis, M, p_old, p, d.vector_transport_method)
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
-    skyk_c = inner(M, p, st.sk, st.yk)
+    skyk_c = real(inner(M, p, st.sk, st.yk))
     ykBkyk_c = yk_c' * d.matrix * yk_c
 
     φ = update_broyden_factor!(d, sk_c, yk_c, skyk_c, ykBkyk_c, d.update.update_rule)
@@ -628,7 +628,7 @@ function update_hessian!(
     update_basis!(d.basis, M, p_old, p, d.vector_transport_method)
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
-    skyk_c = inner(M, p, st.sk, st.yk)
+    skyk_c = real(inner(M, p, st.sk, st.yk))
     skHksk_c = sk_c' * d.matrix * sk_c
 
     φ = update_broyden_factor!(d, sk_c, yk_c, skyk_c, skHksk_c, d.update.update_rule)
@@ -706,7 +706,7 @@ function update_hessian!(
 end
 
 function fill_rho_i!(M::AbstractManifold, p, d::QuasiNewtonLimitedMemoryDirectionUpdate, i::Int)
-    v = inner(M, p, d.memory_s[i], d.memory_y[i])
+    v = real(inner(M, p, d.memory_s[i], d.memory_y[i]))
     if d.nonpositive_curvature_behavior === :ignore && iszero(v)
         d.ρ[i] = zero(eltype(d.ρ))
         if length(d.message) > 0

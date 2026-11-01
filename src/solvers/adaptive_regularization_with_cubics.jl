@@ -61,7 +61,7 @@ function get_cost(
     c = get_objective_cost(M, arcmo, p)
     G = get_objective_gradient(M, arcmo, p)
     Y = get_objective_hessian(M, arcmo, p, X)
-    return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X) + arcmo.σ / 3 * norm(M, p, X)^3
+    return c + real(inner(M, p, G, X)) + 1 / 2 * real(inner(M, p, Y, X)) + arcmo.σ / 3 * norm(M, p, X)^3
 end
 function get_cost_function(arcmo::AdaptiveRegularizationWithCubicsModelObjective, recursive = false)
     recursive && (return get_cost_function(arcmo.objective, recursive))

@@ -173,7 +173,7 @@ function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosSta
             for j in 1:(k - 1)
                 ls.Hp_residual .=
                     ls.Hp_residual -
-                    inner(M, p, ls.Lanczos_vectors[j], ls.Hp_residual) *
+                    real(inner(M, p, ls.Lanczos_vectors[j], ls.Hp_residual)) *
                     ls.Lanczos_vectors[j]
             end
             if length(ls.Lanczos_vectors) < k

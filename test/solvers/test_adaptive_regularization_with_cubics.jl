@@ -352,4 +352,15 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         @test adaptive_regularization_with_cubics(M, f2, grad_f2, p0) == p0
         @test_logs (:info,) Manopt.set_parameter!(:Mode, "")
     end
+    @testset "Model cost on a tangent space of the complex Stiefel manifold" begin
+        M = Stiefel(2, 1, ℂ)
+        A = ComplexF64[2 1im; -1im 2]
+        g(M, p) = real((p' * A * p)[1])
+        grad_g(M, p) = project(M, p, 2 * A * p)
+        Hess_g(M, p, X) = riemannian_Hessian(M, p, 2 * A * p, 2 * A * X, X)
+        p = ComplexF64[1; 0;;]
+        mho = ManifoldHessianObjective(g, grad_g, Hess_g)
+        arcmo = Manopt.AdaptiveRegularizationWithCubicsModelObjective(mho, 1.0)
+        @test get_cost(TangentSpace(M, p), arcmo, ComplexF64[1im; 1;;]) ≈ 4 + 2 * sqrt(2) / 3
+    end
 end

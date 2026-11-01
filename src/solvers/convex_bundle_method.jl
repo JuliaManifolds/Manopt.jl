@@ -11,7 +11,7 @@ on two random tangent vectors at ``p`` that are orthogonal to each other.
 function estimate_sectional_curvature(M::AbstractManifold, p)
     X = rand(M; vector_at = p)
     Y = rand(M; vector_at = p)
-    Y = Y - (inner(M, p, X, Y) / norm(M, p, X)^2 * X)
+    Y = Y - (real(inner(M, p, X, Y)) / norm(M, p, X)^2 * X)
     return sectional_curvature(M, p, X, Y)
 end
 
@@ -375,10 +375,10 @@ end
 
 function _null_condition(amp, M, q, p_last_serious, X, g, VT, IRT, m, t, ξ, ϱ)
     return (
-        inner(M, p_last_serious, vector_transport_to(M, q, X, p_last_serious, VT), t * g) ≥
+        real(inner(M, p_last_serious, vector_transport_to(M, q, X, p_last_serious, VT), t * g)) ≥
             -m * t * ξ - (
             get_cost(amp, p_last_serious) - get_cost(amp, q) -
-                inner(M, q, X, inverse_retract(M, q, p_last_serious, IRT)) -
+                real(inner(M, q, X, inverse_retract(M, q, p_last_serious, IRT))) -
                 ϱ * norm(M, q, X) * norm(M, q, inverse_retract(M, q, p_last_serious, IRT))
         )
     )
@@ -834,7 +834,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
     f_last_serious = get_cost(mp, bms.p_last_serious)
     for (j, (qj, Xj)) in enumerate(bms.bundle)
         bms.linearization_errors[j] =
-            f_last_serious - get_cost(mp, qj) - (
+            f_last_serious - get_cost(mp, qj) - real(
             inner(
                 M, qj, Xj, inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
             )

@@ -274,4 +274,21 @@ using Manopt: get_value, get_value!, get_value_function
         @test Z == gh[2]
     end
     @test repr(CoefficientVectorialType(DefaultOrthonormalBasis(ℝ))) == "CoefficientVectorialType(DefaultOrthonormalBasis(ℝ))"
+    @testset "Jacobians of real-valued functions on ℂ²" begin
+        Mc = Euclidean(2; field = ℂ)
+        F(M, z) = [real(z[1]), abs2(z[2])]
+        JF(M, z) = [ComplexF64[1, 0], ComplexF64[0, 2 * z[2]]]
+        JFc = [(M, z) -> ComplexF64[1, 0], (M, z) -> ComplexF64[0, 2 * z[2]]]
+        p = ComplexF64[1, 1im]
+        X = ComplexF64[1im, 1]
+        expected = [real(X[1]), 2 * real(conj(p[2]) * X[2])]
+        for vgf in (
+                VectorGradientFunction(F, JF, 2; jacobian_type = FunctionVectorialType()),
+                VectorGradientFunction(F, JFc, 2; jacobian_type = ComponentVectorialType()),
+            )
+            a = Manopt.get_jacobian(Mc, vgf, p, X)
+            @test eltype(a) <: Real
+            @test a ≈ expected
+        end
+    end
 end

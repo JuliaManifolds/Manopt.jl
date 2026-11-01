@@ -74,4 +74,12 @@ using Manifolds, Manopt, Test, LRUCache
     scs = StopWhenRelativeResidualLess(1.0, 0.1)
     @test repr(scs) == "StopWhenRelativeResidualLess(1.0, 0.1)"
     @test startswith(Manopt.status_summary(scs), "A stopping criterion to stop when the relative residual is less")
+    @testset "Conjugate residual on a tangent space of ℂ²" begin
+        Mc = Euclidean(2; field = ℂ)
+        p = ComplexF64[1, 1im]
+        A = ComplexF64[2 1im; -1im 2]
+        b = ComplexF64[1, 1 + 1im]
+        X = conjugate_residual(TangentSpace(Mc, p), (M, p, X) -> A * X, (M, p) -> b; stopping_criterion = StopAfterIteration(4))
+        @test isapprox(A * X + b, zero(b); atol = 1.0e-12)
+    end
 end

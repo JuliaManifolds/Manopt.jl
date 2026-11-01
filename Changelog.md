@@ -6,6 +6,25 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.11] November 1, 2026
+
+### Fixed
+
+The following fixes all address the general case, that certain coefficients or values e.g. from an `inner`
+call were complex in value where they should have been real (#657)
+
+* `quasi_Newton` uses the real part of `inner` in its limited-memory direction update, so that it works on complex manifolds (#656) as well as
+* the matrix-based direction updates of `quasi_Newton`
+* the Dai–Yuan and Hager–Zhang coefficients of `conjugate_gradient_descent`
+* `is_Hessian_symmetric`, and with it `check_Hessian`
+* `conjugate_residual`
+* the convex backtracking of `proximal_gradient_method`
+* `get_jacobian` of a vectorial function
+* the model costs of `trust_regions` and `adaptive_regularization_with_cubics`
+* the subsolvers of `convex_bundle_method`, `proximal_bundle_method` and `gradient_sampling`
+* the linearized cost of `difference_of_convex_algorithm`
+* the Lanczos subsolver
+
 ## [0.6.10] October 22, 2026
 
 ### Added
