@@ -669,4 +669,20 @@ end
         )
         @test norm(M, p, grad_f(M, p)) < 1.0e-7
     end
+    @testset "Matrix update on ℂ² equals the update on the realification ℝ⁴" begin
+        Mc = Euclidean(2; field = ℂ)
+        Mr = Euclidean(4)
+        C = ComplexF64[1 -1im]
+        fc(M, z) = sum((abs2.(z) .- 1) .^ 2) + sum(abs2, C * z)
+        grad_fc(M, z) = 4 .* (abs2.(z) .- 1) .* z + 2 * C' * (C * z)
+        toz(x) = x[1:2] + im * x[3:4]
+        tox(z) = [real(z); imag(z)]
+        fr(M, x) = fc(Mc, toz(x))
+        grad_fr(M, x) = tox(grad_fc(Mc, toz(x)))
+        z0 = ComplexF64[2.0, 1 + im]
+        sc = StopAfterIteration(4)
+        zc = quasi_Newton(Mc, fc, grad_fc, z0; memory_size = -1, stopping_criterion = sc)
+        xr = quasi_Newton(Mr, fr, grad_fr, tox(z0); memory_size = -1, stopping_criterion = sc)
+        @test isapprox(Mc, zc, toz(xr))
+    end
 end
