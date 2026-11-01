@@ -355,11 +355,11 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
     @testset "Model cost on a tangent space of the complex Stiefel manifold" begin
         M = Stiefel(2, 1, ℂ)
         A = ComplexF64[2 1im; -1im 2]
-        f(M, p) = real((p' * A * p)[1])
-        grad_f(M, p) = project(M, p, 2 * A * p)
-        Hess_f(M, p, X) = riemannian_Hessian(M, p, 2 * A * p, 2 * A * X, X)
+        g(M, p) = real((p' * A * p)[1])
+        grad_g(M, p) = project(M, p, 2 * A * p)
+        Hess_g(M, p, X) = riemannian_Hessian(M, p, 2 * A * p, 2 * A * X, X)
         p = ComplexF64[1; 0;;]
-        mho = ManifoldHessianObjective(f, grad_f, Hess_f)
+        mho = ManifoldHessianObjective(g, grad_g, Hess_g)
         arcmo = Manopt.AdaptiveRegularizationWithCubicsModelObjective(mho, 1.0)
         @test get_cost(TangentSpace(M, p), arcmo, ComplexF64[1im; 1;;]) ≈ 4 + 2 * sqrt(2) / 3
     end
