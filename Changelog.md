@@ -6,6 +6,12 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.12] unreleased
+
+### Fixed
+
+* `initialize_update!` of `QuasiNewtonLimitedMemoryBoxDirectionUpdate`, which is called when `quasi_Newton` resets the memory after a non-descent direction, now also resets the Hessian scaling `current_scale`. Before, the generalized Cauchy direction computed with the emptied memory used the stale scaling from the previous memory.
+
 ## [0.6.11] November 1, 2026
 
 ### Fixed

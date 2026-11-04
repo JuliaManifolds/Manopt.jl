@@ -150,6 +150,19 @@ using RecursiveArrayTools
             @test ha2.M_11 == fill(0.0, 0, 0)
             @test ha2.M_21 == fill(0.0, 0, 0)
             @test ha2.M_22 == fill(0.0, 0, 0)
+            # resetting the memory also resets the scale, so that the limited memory
+            # segment updater agrees with the generic one
+            ha2.current_scale = 5.0
+            Manopt.initialize_update!(ha2)
+            @test ha2.current_scale == inv(ha2.qn_du.initial_scale)
+            gupd2 = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
+            Manopt.init_updater!(M, gupd2, p, d, ha2)
+            lmupd2 = Manopt.get_default_hessian_segment_updater(M, p, ha2)
+            Manopt.init_updater!(M, lmupd2, p, d, ha2)
+            @test all(
+                lmupd2(M, p, t_current, dt, b, db, ha2) .≈
+                    gupd2(M, p, t_current, dt, b, db, ha2)
+            )
         end
     end
 

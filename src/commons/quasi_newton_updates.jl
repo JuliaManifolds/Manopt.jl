@@ -1004,6 +1004,8 @@ end
 
 function initialize_update!(ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
     initialize_update!(ha.qn_du)
+    # with an empty memory the Hessian approximation is `θ Id` with `θ = 1/initial_scale`
+    ha.current_scale = inv(_box_initial_scale(ha))
     ha.last_gcd_result = :not_searched
     return ha
 end
