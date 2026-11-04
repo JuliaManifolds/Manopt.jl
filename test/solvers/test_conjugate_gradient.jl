@@ -1,5 +1,5 @@
 using Manopt, Manifolds, ManifoldsBase, Test, Random, LinearAlgebra
-using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
+using LinearAlgebra: Diagonal, dot, eigen, eigvals
 using ManifoldDiff: grad_distance
 
 @testset "Conjugate Gradient Descent" begin
@@ -229,7 +229,10 @@ using ManifoldDiff: grad_distance
             stopping_criterion = StopAfterIteration(15),
         )
         @test isapprox(f(M, x_opt), minimum(eigvals(A)); atol = 2.0 * 1.0e-2)
-        @test isapprox(x_opt, eigvecs(A)[:, size(A, 1)]; atol = 3.0 * 1.0e-1)
+        # eigenvector of the smallest eigenvalue; do not rely on the ordering of `eigen`,
+        # since for `Diagonal` it changed in Julia 1.14 (now sorted ascending, before unsorted)
+        λ, V = eigen(A)
+        @test isapprox(x_opt, V[:, argmin(λ)]; atol = 3.0 * 1.0e-1)
         x_opt2 = conjugate_gradient_descent(
             M,
             f,
