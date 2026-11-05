@@ -697,34 +697,60 @@ end
         @test hz.last_termination === :not_searched
         @test !Manopt.linesearch_failed(hz)
         @test_throws ArgumentError QuasiNewtonState(M; p = copy(p0), linesearch_failure_behavior = :foo)
-        @testset "$b" for b in (:accept, :restart)
+        @testset "accept" begin
+            # accepting failed line searches makes the iterates sensitive to rounding,
+            # so only check the default stopping criterion of a full run
+            st = quasi_Newton(
+                M, f, grad_f, p0;
+                stepsize = HagerZhangLinesearch(; max_function_evaluations = 3),
+                linesearch_failure_behavior = :accept, return_state = true,
+            )
+            qns = Manopt.get_state(st)
+            @test qns.linesearch_failure_behavior === :accept
+            @test !any(c -> c isa StopWhenLinesearchFailed, get_stopping_criteria(qns.stop))
+            # and the behavior step by step: the first failed line search is accepted
+            mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            qns = QuasiNewtonState(
+                M; p = copy(p0), linesearch_failure_behavior = :accept,
+                stepsize = HagerZhangLinesearch(; max_function_evaluations = 3)(M),
+            )
+            initialize_solver!(mp, qns)
+            k = 0
+            while qns.linesearch_status !== :failure_accepted && k < 50
+                k += 1
+                step_solver!(mp, qns, k)
+            end
+            @test qns.linesearch_status === :failure_accepted
+            @test Manopt.linesearch_failed(qns.stepsize)
+            @test qns.stepsize.last_termination === :evaluation_limit
+            # the iterate moved by the last trial step α η (η is scaled by α after the step)
+            @test qns.p ≈ qns.p_old + qns.η
+            @test get_last_stepsize(qns.stepsize) == qns.stepsize.triples[3].t
+            @test !qns.direction_update_reset
+            @test occursin("last trial step was accepted", Manopt.get_message(qns))
+        end
+        @testset "restart" begin
             # the default stopping criterion for :restart includes StopWhenLinesearchFailed
             st = quasi_Newton(
                 M, f, grad_f, p0;
                 stepsize = HagerZhangLinesearch(; max_function_evaluations = 3),
-                linesearch_failure_behavior = b,
+                linesearch_failure_behavior = :restart,
                 record = [:Cost], return_state = true,
             )
-            costs = get_record(st)
+            costs = [f(M, p0); get_record(st)]
             qns = Manopt.get_state(st)
-            @test qns.linesearch_failure_behavior === b
-            if b === :accept
-                # failed line searches are accepted, here once with an increase of the cost
-                @test any(diff(costs) .> 0)
-                @test norm(grad_f(M, get_solver_result(st))) < 1.0e-6
-                @test !any(c -> c isa StopWhenLinesearchFailed, get_stopping_criteria(qns.stop))
-            else
-                # rejected steps keep the cost monotone, and the second failure in a row stops
-                @test all(diff(costs) .<= 0)
-                @test qns.linesearch_status === :failure_after_restart
-                @test qns.direction_update_reset
-                @test any(c -> c isa StopWhenLinesearchFailed && Manopt.is_active_stopping_criterion(c), get_stopping_criteria(qns.stop))
-                @test occursin("line search failed", get_reason(st))
-                @test occursin("just been reinitialized", Manopt.get_message(qns))
-                # the cost from the line search is the one at the (unchanged) iterate
-                mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
-                @test get_cost(mp, qns) == f(M, get_iterate(qns))
-            end
+            @test qns.linesearch_failure_behavior === :restart
+            # rejected steps keep the cost monotone, up to the tolerance of the approximate Wolfe conditions
+            @test all(diff(costs) .<= 1.0e-6 * maximum(abs, costs))
+            # the second failure in a row stops
+            @test qns.linesearch_status === :failure_after_restart
+            @test qns.direction_update_reset
+            @test any(c -> c isa StopWhenLinesearchFailed && Manopt.is_active_stopping_criterion(c), get_stopping_criteria(qns.stop))
+            @test occursin("line search failed", get_reason(st))
+            @test occursin("just been reinitialized", Manopt.get_message(qns))
+            # the cost from the line search is the one at the (unchanged) iterate
+            mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            @test get_cost(mp, qns) == f(M, get_iterate(qns))
         end
         @testset "a custom stopping criterion is kept as is" begin
             st = quasi_Newton(
