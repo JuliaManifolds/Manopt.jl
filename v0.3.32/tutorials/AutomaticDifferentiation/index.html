@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Use AD in Manopt · Manopt.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="Manopt.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Manopt.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../about/">About</a></li><li><span class="tocitem">How to...</span><ul><li><a class="tocitem" href="../Optimize!/">Get started: Optimize!</a></li><li class="is-active"><a class="tocitem" href>Use AD in Manopt</a></li><li><a class="tocitem" href="../HowToRecord/">Record values</a></li><li><a class="tocitem" href="../GeodesicRegression/">Do Geodesic regression</a></li><li><a class="tocitem" href="../Bezier/">Use Bezier Curves</a></li><li><a class="tocitem" href="../SecondOrderDifference/">Compute a second order difference</a></li><li><a class="tocitem" href="../StochasticGradientDescent/">Do stochastic gradient descent</a></li><li><a class="tocitem" href="../Benchmark/">speed up! using <code>gradF!</code></a></li><li><a class="tocitem" href="../JacobiFields/">Illustrate Jacobi Fields</a></li></ul></li><li><span class="tocitem">Solvers</span><ul><li><a class="tocitem" href="../../solvers/">Introduction</a></li><li><a class="tocitem" href="../../solvers/alternating_gradient_descent/">Alternating Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/ChambollePock/">Chambolle-Pock</a></li><li><a class="tocitem" href="../../solvers/conjugate_gradient_descent/">Conjugate gradient descent</a></li><li><a class="tocitem" href="../../solvers/cyclic_proximal_point/">Cyclic Proximal Point</a></li><li><a class="tocitem" href="../../solvers/DouglasRachford/">Douglas–Rachford</a></li><li><a class="tocitem" href="../../solvers/gradient_descent/">Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/NelderMead/">Nelder–Mead</a></li><li><a class="tocitem" href="../../solvers/particle_swarm/">Particle Swarm Optimization</a></li><li><a class="tocitem" href="../../solvers/primal_dual_semismooth_Newton/">Primal-dual Riemannian semismooth Newton</a></li><li><a class="tocitem" href="../../solvers/quasi_Newton/">Quasi-Newton</a></li><li><a class="tocitem" href="../../solvers/stochastic_gradient_descent/">Stochastic Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/subgradient/">Subgradient method</a></li><li><a class="tocitem" href="../../solvers/truncated_conjugate_gradient_descent/">Steihaug-Toint TCG Method</a></li><li><a class="tocitem" href="../../solvers/trust_regions/">Trust-Regions Solver</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../../examples/robustPCA/">Robust PCA</a></li><li><a class="tocitem" href="../../examples/smallestEigenvalue/">Rayleigh quotient</a></li></ul></li><li><span class="tocitem">Plans</span><ul><li><a class="tocitem" href="../../plans/">Specify a Solver</a></li><li><a class="tocitem" href="../../plans/problem/">Problem</a></li><li><a class="tocitem" href="../../plans/options/">Options</a></li><li><a class="tocitem" href="../../plans/stepsize/">Stepsize</a></li><li><a class="tocitem" href="../../plans/stopping_criteria/">Stopping Criteria</a></li><li><a class="tocitem" href="../../plans/debug/">Debug Output</a></li><li><a class="tocitem" href="../../plans/record/">Recording values</a></li></ul></li><li><span class="tocitem">Functions</span><ul><li><a class="tocitem" href="../../functions/">Introduction</a></li><li><a class="tocitem" href="../../functions/bezier/">Bézier curves</a></li><li><a class="tocitem" href="../../functions/costs/">Cost functions</a></li><li><a class="tocitem" href="../../functions/differentials/">Differentials</a></li><li><a class="tocitem" href="../../functions/adjointdifferentials/">Adjoint Differentials</a></li><li><a class="tocitem" href="../../functions/gradients/">Gradients</a></li><li><a class="tocitem" href="../../functions/Jacobi_fields/">Jacobi Fields</a></li><li><a class="tocitem" href="../../functions/proximal_maps/">Proximal Maps</a></li><li><a class="tocitem" href="../../functions/manifold/">Specific Manifold Functions</a></li></ul></li><li><span class="tocitem">Helpers</span><ul><li><a class="tocitem" href="../../helpers/checks/">Checks</a></li><li><a class="tocitem" href="../../helpers/data/">Data</a></li><li><a class="tocitem" href="../../helpers/errorMeasures/">Error Measures</a></li><li><a class="tocitem" href="../../helpers/exports/">Exports</a></li></ul></li><li><a class="tocitem" href="../../contributing/">Contributing to Manopt.jl</a></li><li><a class="tocitem" href="../../notation/">Notation</a></li><li><a class="tocitem" href="../../list/">Function Index</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">How to...</a></li><li class="is-active"><a href>Use AD in Manopt</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Use AD in Manopt</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaManifolds/Manopt.jl/blob/main/nothing" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><style>
+    table {
+        display: table !important;
+        margin: 2rem auto !important;
+        border-top: 2pt solid rgba(0,0,0,0.2);
+        border-bottom: 2pt solid rgba(0,0,0,0.2);
+    }
+
+    pre, div {
+        margin-top: 1.4rem !important;
+        margin-bottom: 1.4rem !important;
+    }
+
+    .code-output {
+        padding: 0.7rem 0.5rem !important;
+    }
+
+    .admonition-body {
+        padding: 0em 1.25em !important;
+    }
+</style>
+
+<!-- PlutoStaticHTML.Begin -->
+<!--
+    # This information is used for caching.
+    [PlutoStaticHTML.State]
+    input_sha = "34c46022203c42e6fc2b0df073c20523454fc93aa1d2306c84a08686923669d0"
+    julia_version = "1.7.3"
+-->
+
+<div class="markdown"><h1>Using &#40;Euclidean&#41; AD in Manopt.jl</h1>
+</div>
+
+
+<div class="markdown"><p>Since <a href="https://juliamanifolds.github.io/Manifolds.jl/latest/">Manifolds.jl</a> 0.7 the support of automatic differentiation support has been extended.</p>
+<p>This tutorial explains how to use Euclidean tools to derive a gradient for a real-valued function <span class="tex">$F\colon \mathcal M → ℝ$</span>. We will consider two methods: an intrinsic variant and a variant employing the embedding. These gradients can then be used within any gradient based optimisation algorithm in <a href="https://manoptjl.org">Manopt.jl</a>.</p>
+<p>While by default we use <a href="https://juliadiff.org/FiniteDifferences.jl/latest/">FiniteDifferences.jl</a>, you can also use <a href="https://github.com/JuliaDiff/FiniteDiff.jl">FiniteDiff.jl</a>, <a href="https://juliadiff.org/ForwardDiff.jl/stable/">ForwardDiff.jl</a>, <a href="https://juliadiff.org/ReverseDiff.jl/">ReverseDiff.jl</a>, or  <a href="https://fluxml.ai/Zygote.jl/">Zygote.jl</a>.</p>
+</div>
+
+
+<div class="markdown"><p>In this Notebook we will take a look at a few possibilities to approximate or derive the gradient of a function <span class="tex">$f:\mathcal M \to ℝ$</span> on a Riemannian manifold, without computing it yourself. There is mainly two different philosophies:</p>
+<ol>
+<li><p>Working <em>instrinsically</em>, i.e. stay on the manifold and in the tangent spaces. Here, we will consider approximating the gradient by forward differences.</p>
+</li>
+<li><p>Working in an embedding – there we can use all tools from functions on Euclidean spaces – finite differences or automatic differenciation – and then compute the corresponding Riemannian gradient from there.</p>
+</li>
+</ol>
+<p>Let&#39;s first load all packages we need.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>using Manifolds, Manopt, Random, LinearAlgebra</code></pre>
+
+
+<pre class='language-julia'><code class='language-julia'>using FiniteDifferences</code></pre>
+
+
+
+<div class="markdown"><h2>1. &#40;Intrinsic&#41; Forward Differences</h2>
+<p>A first idea is to generalise &#40;multivariate&#41; finite differences to Riemannian manifolds. Let <span class="tex">$X_1,\ldots,X_d ∈ T_p\mathcal M$</span> denote an orthonormal basis of the tangent space <span class="tex">$T_p\mathcal M$</span> at the point <span class="tex">$p∈\mathcal M$</span> on the Riemannian manifold.</p>
+<p>We can generalise the notion of a directional derivative, i.e. for the “direction” <span class="tex">$Y∈T_p\mathcal M$</span> let <span class="tex">$c\colon &#91;-ε,ε&#93;$</span>, <span class="tex">$ε&gt;0$</span>, be a curve with <span class="tex">$c&#40;0&#41; &#61; p$</span>, <span class="tex">$\dot c&#40;0&#41; &#61; Y$</span> and we obtain</p>
+<p class="tex">$$	Df&#40;p&#41;&#91;Y&#93; &#61; \frac&#123;\mathrm&#123;d&#125;&#125;&#123;\mathrm&#123;d&#125;t&#125; f&#40;c&#40;t&#41;&#41; &#61; \lim_&#123;h \to 0&#125; \frac&#123;1&#125;&#123;h&#125;&#40;f&#40;\exp_p&#40;hY&#41;&#41;-f&#40;p&#41;&#41;$$</p>
+<p>We can approximate <span class="tex">$Df&#40;p&#41;&#91;X&#93;$</span> by a finite difference scheme for an <span class="tex">$h&gt;0$</span> as</p>
+<p class="tex">$$DF&#40;p&#41;&#91;Y&#93; ≈ G_h&#40;Y&#41; :&#61; \frac&#123;1&#125;&#123;h&#125;&#40;f&#40;\exp_p&#40;hY&#41;&#41;-f&#40;p&#41;&#41;$$</p>
+<p>Furthermore the gradient <span class="tex">$\operatorname&#123;grad&#125;f$</span> is the Riesz representer of the differential, ie.</p>
+<p class="tex">$$	Df&#40;p&#41;&#91;Y&#93; &#61; g_p&#40;\operatorname&#123;grad&#125;f&#40;p&#41;, Y&#41;,\qquad \text&#123; for all &#125; Y ∈ T_p\mathcal M$$</p>
+<p>and since it is a tangent vector, we can write it in terms of a basis as</p>
+<p class="tex">$$	\operatorname&#123;grad&#125;f&#40;p&#41; &#61; \sum_&#123;i&#61;1&#125;^&#123;d&#125; g_p&#40;\operatorname&#123;grad&#125;f&#40;p&#41;,X_i&#41;X_i
+	&#61; \sum_&#123;i&#61;1&#125;^&#123;d&#125; Df&#40;p&#41;&#91;X_i&#93;X_i$$</p>
+<p>and perform the approximation from above to obtain</p>
+<p class="tex">$$	\operatorname&#123;grad&#125;f&#40;p&#41; ≈ \sum_&#123;i&#61;1&#125;^&#123;d&#125; G_h&#40;X_i&#41;X_i$$</p>
+<p>for some suitable step size <span class="tex">$h$</span>.This comes at the cost of <span class="tex">$d&#43;1$</span> function evaluations and <span class="tex">$d$</span> exponential maps.</p>
+</div>
+
+
+<div class="markdown"><p>This is the first variant we can use. An advantage is, that it is <em>intrinsic</em> in the sense that it does not require any embedding of the manifold.</p>
+</div>
+
+
+<div class="markdown"><h3>An Example: The Rayleigh Quotient</h3>
+<p>The Rayleigh quotient is concerned with finding Eigenvalues &#40;and Eigenvectors&#41; of a symmetric matrix <span class="tex">$A\in ℝ^&#123;&#40;n&#43;1&#41;×&#40;n&#43;1&#41;&#125;$</span>. The optimisation problem reads</p>
+<p class="tex">$$F\colon ℝ^&#123;n&#43;1&#125; \to ℝ,\quad F&#40;\mathbf x&#41; &#61; \frac&#123;\mathbf x^\mathrm&#123;T&#125;A\mathbf x&#125;&#123;\mathbf x^\mathrm&#123;T&#125;\mathbf x&#125;$$</p>
+<p>Minimizing this function yields the smallest eigenvalue <span class="tex">$\lambda_1$</span> as a value and the corresponding minimizer <span class="tex">$\mathbf x^*$</span> is a corresponding eigenvector.</p>
+<p>Since the length of an eigenvector is irrelevant, there is an ambiguity in the cost function. It can be better phrased on the sphere <span class="tex">$𝕊^n$</span> of unit vectors in <span class="tex">$\mathbb R^&#123;n&#43;1&#125;$</span>, i.e.</p>
+<p class="tex">$$\operatorname*&#123;arg\,min&#125;_&#123;p \in 𝕊^n&#125; f&#40;p&#41; &#61; \operatorname*&#123;arg\,min&#125;_&#123;p \in 𝕊^n&#125; p^\mathrm&#123;T&#125;Ap$$</p>
+<p>We can compute the Riemannian gradient exactly as</p>
+<p class="tex">$$\operatorname&#123;grad&#125; f&#40;p&#41; &#61; 2&#40;Ap - pp^\mathrm&#123;T&#125;Ap&#41;$$</p>
+<p>so we can compare it to the approximation by finite differences.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>begin
+    Random.seed!(42)
+    n = 200
+    A = randn(n + 1, n + 1)
+    A = Symmetric(A)
+    M = Sphere(n)
+    nothing
+end</code></pre>
+
+
+<pre class='language-julia'><code class='language-julia'>f1(p) = p' * A'p</code></pre>
+<pre id='var-f1' class='code-output documenter-example-output'>f1 (generic function with 1 method)</pre>
+
+<pre class='language-julia'><code class='language-julia'>gradf1(p) = 2 * (A * p - p * p' * A * p)</code></pre>
+<pre id='var-gradf1' class='code-output documenter-example-output'>gradf1 (generic function with 1 method)</pre>
+
+
+<div class="markdown"><p>Manifolds provides a finite difference scheme in Tangent spaces, that you can introduce to use an existing framework &#40;if the wrapper is implemented&#41; form Euclidean space. Here we use <code>FiniteDiff.jl</code>.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>r_backend = Manifolds.TangentDiffBackend(Manifolds.FiniteDifferencesBackend())</code></pre>
+<pre id='var-r_backend' class='code-output documenter-example-output'>Manifolds.TangentDiffBackend{Manifolds.FiniteDifferencesBackend{FiniteDifferences.AdaptedFiniteDifferenceMethod{5, 1, FiniteDifferences.UnadaptedFiniteDifferenceMethod{7, 5}}}, ExponentialRetraction, LogarithmicInverseRetraction, DefaultOrthonormalBasis{ℝ, ManifoldsBase.TangentSpaceType}, DefaultOrthonormalBasis{ℝ, ManifoldsBase.TangentSpaceType}}(Manifolds.FiniteDifferencesBackend{FiniteDifferences.AdaptedFiniteDifferenceMethod{5, 1, FiniteDifferences.UnadaptedFiniteDifferenceMethod{7, 5}}}(FiniteDifferences.AdaptedFiniteDifferenceMethod{5, 1, FiniteDifferences.UnadaptedFiniteDifferenceMethod{7, 5}}([-2, -1, 0, 1, 2], [0.08333333333333333, -0.6666666666666666, 0.0, 0.6666666666666666, -0.08333333333333333], ([-0.08333333333333333, 0.5, -1.5, 0.8333333333333334, 0.25], [0.08333333333333333, -0.6666666666666666, 0.0, 0.6666666666666666, -0.08333333333333333], [-0.25, -0.8333333333333334, 1.5, -0.5, 0.08333333333333333]), 10.0, 1.0, Inf, 0.05555555555555555, 1.4999999999999998, FiniteDifferences.UnadaptedFiniteDifferenceMethod{7, 5}([-3, -2, -1, 0, 1, 2, 3], [-0.5, 2.0, -2.5, 0.0, 2.5, -2.0, 0.5], ([0.5, -4.0, 12.5, -20.0, 17.5, -8.0, 1.5], [-0.5, 2.0, -2.5, 0.0, 2.5, -2.0, 0.5], [-1.5, 8.0, -17.5, 20.0, -12.5, 4.0, -0.5]), 10.0, 1.0, Inf, 0.5365079365079365, 10.0))), ExponentialRetraction(), LogarithmicInverseRetraction(), DefaultOrthonormalBasis(ℝ), DefaultOrthonormalBasis(ℝ))</pre>
+
+<pre class='language-julia'><code class='language-julia'>gradf1_FD(p) = Manifolds.gradient(M, f1, p, r_backend)</code></pre>
+<pre id='var-gradf1_FD' class='code-output documenter-example-output'>gradf1_FD (generic function with 1 method)</pre>
+
+<pre class='language-julia'><code class='language-julia'>begin
+    p = zeros(n + 1)
+    p[1] = 1.0
+    X1 = gradf1(p)
+    X2 = gradf1_FD(p)
+    norm(M, p, X1 - X2)
+end</code></pre>
+<pre id='var-p' class='code-output documenter-example-output'>1.0011275864637277e-12</pre>
+
+
+<div class="markdown"><p>We obtain quite a good approximation of the gradient.</p>
+</div>
+
+
+<div class="markdown"><h2>2. Conversion of an Euclidean Gradient in the Embedding to a Riemannian Gradient of an &#40;not necessarily isometrically&#41; embedded Manifold</h2>
+<p>Let <span class="tex">$\tilde f\colon\mathbb R^m \to \mathbb R$</span> be a function in the embedding of an <span class="tex">$n$</span>-dimensional manifold <span class="tex">$\mathcal M \subset \mathbb R^m$</span> and <span class="tex">$f\colon \mathcal M \to \mathbb R$</span> denote the restriction of <span class="tex">$\tilde f$</span> to the manifold <span class="tex">$\mathcal M$</span>.</p>
+<p>Since we can use the push forward of the embedding to also embed the tangent space <span class="tex">$T_p\mathcal M$</span>, <span class="tex">$p\in \mathcal M$</span>, we can similarly obtain the differential <span class="tex">$Df&#40;p&#41;\colon T_p\mathcal M \to \mathbb R$</span> by restricting the differential <span class="tex">$D\tilde f&#40;p&#41;$</span> to the tangent space.</p>
+<p>If both <span class="tex">$T_p\mathcal M$</span> and <span class="tex">$T_p\mathcal R^m$</span> have the same inner product, or in other words the manifold is isometrically embedded in <span class="tex">$R^m$</span> &#40;like for example the sphere <span class="tex">$\mathbb S^n\subset\mathbb R^&#123;m&#43;1&#125;$</span> then this restriction of the differential directly translates to a projection of the gradient, i.e.</p>
+<p class="tex">$$\operatorname&#123;grad&#125;f&#40;p&#41; &#61; \operatorname&#123;Proj&#125;_&#123;T_p\mathcal M&#125;&#40;\operatorname&#123;grad&#125; \tilde f&#40;p&#41;&#41;$$</p>
+<p>More generally we might have to take a change of the metric into account, i.e.</p>
+<p class="tex">$$\langle  \operatorname&#123;Proj&#125;_&#123;T_p\mathcal M&#125;&#40;\operatorname&#123;grad&#125; \tilde f&#40;p&#41;&#41;, X \rangle
+&#61; Df&#40;p&#41;&#91;X&#93; &#61; g_p&#40;\operatorname&#123;grad&#125;f&#40;p&#41;, X&#41;$$</p>
+<p>or in words: we have to change the Riesz representer of the &#40;restricted/projected&#41; differential of <span class="tex">$f$</span> &#40;<span class="tex">$\tilde f$</span>&#41; to the one with respect to the Riemannian metric. This is done using <a href="https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/metric.html#Manifolds.change_representer-Tuple&#123;AbstractManifold,&#37;20AbstractMetric,&#37;20Any,&#37;20Any&#125;"><code>change_representer</code></a>.</p>
+</div>
+
+
+<div class="markdown"><h3>A continued Example</h3>
+<p>We continue with the Rayleigh Quotient from before, now just starting with the defintion of the Euclidean case in the embedding, the function <span class="tex">$F$</span>.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>F(x) = x' * A * x / (x' * x);</code></pre>
+
+
+
+<div class="markdown"><p>The cost function is the same by restriction</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>f2(M, p) = F(p);</code></pre>
+
+
+
+<div class="markdown"><p>The gradient is now computed combining our gradient scheme with FiniteDifferences.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>function grad_f2_AD(M, p)
+    return Manifolds.gradient(
+        M, F, p, Manifolds.RiemannianProjectionBackend(Manifolds.FiniteDifferencesBackend())
+    )
+end</code></pre>
+<pre id='var-grad_f2_AD' class='code-output documenter-example-output'>grad_f2_AD (generic function with 1 method)</pre>
+
+<pre class='language-julia'><code class='language-julia'>X3 = grad_f2_AD(M, p)</code></pre>
+<pre id='var-X3' class='code-output documenter-example-output'>201-element Vector{Float64}:
+  0.0
+  0.14038510230588766
+  1.2081562751116681
+ -1.8650092022183193
+ -1.3296034534632897
+  0.8233596435551424
+  0.013307949254910802
+  ⋮
+ -1.0895103349140873
+  2.423453243905215
+  2.349106449107357
+  0.5799736335284804
+ -0.07423232665910076
+  2.0859147085739482</pre>
+
+<pre class='language-julia'><code class='language-julia'>norm(M, p, X1 - X3)</code></pre>
+<pre id='var-hash230331' class='code-output documenter-example-output'>1.7170887860513741e-12</pre>
+
+
+<div class="markdown"><h3>An Example for a nonisometrically embedded Manifold</h3>
+<p>on the manifold <span class="tex">$\mathcal P&#40;3&#41;$</span> of symmetric positive definite matrices.</p>
+</div>
+
+
+<div class="markdown"><p>The following function computes &#40;half&#41; the distance squared &#40;with respect to the linear affine metric&#41; on the manifold <span class="tex">$\mathcal P&#40;3&#41;$</span> to the identity, i.e. <span class="tex">$I_3$</span>. denoting the unit matrix we consider the function</p>
+<p class="tex">$$	G&#40;q&#41; &#61; \frac&#123;1&#125;&#123;2&#125;d^2_&#123;\mathcal P&#40;3&#41;&#125;&#40;q,I_3&#41; &#61; \lVert \operatorname&#123;Log&#125;&#40;q&#41; \rVert_F^2,$$</p>
+<p>where <span class="tex">$\operatorname&#123;Log&#125;$</span> denotes the matrix logarithm and <span class="tex">$\lVert \cdot \rVert_F$</span> is the Frobenius norm. This can be computed for symmetric positive definite matrices by summing the squares of the <span class="tex">$\log$</span>arithms of the eigenvalues of <span class="tex">$q$</span> and divide by two:</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>G(q) = sum(log.(eigvals(Symmetric(q))) .^ 2) / 2</code></pre>
+<pre id='var-G' class='code-output documenter-example-output'>G (generic function with 1 method)</pre>
+
+
+<div class="markdown"><p>We can also interpret this as a function on the space of matrices and apply the Euclidean finite differences machinery; in this way we can easily derive the Euclidean gradient. But when computing the Riemannian gradient, we have to change the representer &#40;see again <a href="https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/metric.html#Manifolds.change_representer-Tuple&#123;AbstractManifold,&#37;20AbstractMetric,&#37;20Any,&#37;20Any&#125;"><code>change_representer</code></a>&#41; after projecting onto the tangent space <span class="tex">$T_p\mathcal P&#40;n&#41;$</span> at <span class="tex">$p$</span>.</p>
+<p>Let&#39;s first define a point and the manifold <span class="tex">$N&#61;\mathcal P&#40;3&#41;$</span>.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>rotM(α) = [1.0 0.0 0.0; 0.0 cos(α) sin(α); 0.0 -sin(α) cos(α)]</code></pre>
+<pre id='var-rotM' class='code-output documenter-example-output'>rotM (generic function with 1 method)</pre>
+
+<pre class='language-julia'><code class='language-julia'>q = rotM(π / 6) * [1.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 3.0] * transpose(rotM(π / 6))</code></pre>
+<pre id='var-q' class='code-output documenter-example-output'>3×3 Matrix{Float64}:
+ 1.0  0.0       0.0
+ 0.0  2.25      0.433013
+ 0.0  0.433013  2.75</pre>
+
+<pre class='language-julia'><code class='language-julia'>N = SymmetricPositiveDefinite(3)</code></pre>
+<pre id='var-N' class='code-output documenter-example-output'>SymmetricPositiveDefinite(3)</pre>
+
+<pre class='language-julia'><code class='language-julia'>is_point(N, q)</code></pre>
+<pre id='var-hash141872' class='code-output documenter-example-output'>true</pre>
+
+
+<div class="markdown"><p>We could first just compute the gradient using <code>FiniteDifferences.jl</code>, but this yields the Euclidean gradient:</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>FiniteDifferences.grad(central_fdm(5, 1), G, q)</code></pre>
+<pre id='var-hash184002' class='code-output documenter-example-output'>([3.240417492806275e-14 -2.3531899864903462e-14 0.0; 0.0 0.3514812167654708 0.017000516835452926; 0.0 0.0 0.36129646973723023],)</pre>
+
+
+<div class="markdown"><p>Instead, we use the <a href="https://juliamanifolds.github.io/Manifolds.jl/latest/features/differentiation.html#Manifolds.RiemannianProjectionBackend"><code>RiemannianProjectedBackend</code></a> of <code>Manifolds.jl</code>, which in this case internally uses <code>FiniteDifferences.jl</code> to compute a Euclidean gradient but then uses the conversion explained above to derive the Riemannian gradient.</p>
+<p>We define this here again as a function <code>grad_G_FD</code> that could be used in the <code>Manopt.jl</code> framework within a gradient based optimisation.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>function grad_G_FD(N, q)
+    return Manifolds.gradient(
+        N, G, q, Manifolds.RiemannianProjectionBackend(Manifolds.FiniteDifferencesBackend())
+    )
+end</code></pre>
+<pre id='var-grad_G_FD' class='code-output documenter-example-output'>grad_G_FD (generic function with 1 method)</pre>
+
+<pre class='language-julia'><code class='language-julia'>G1 = grad_G_FD(N, q)</code></pre>
+<pre id='var-G1' class='code-output documenter-example-output'>3×3 Matrix{Float64}:
+  3.24042e-14  -2.64734e-14  -5.09481e-15
+ -2.64734e-14   1.86368       0.826856
+ -5.09481e-15   0.826856      2.81845</pre>
+
+
+<div class="markdown"><p>Now, we can agaon compare this to the &#40;known&#41; solution of the gradient, namely the gradient of &#40;a half&#41; the distance suqared, i.e. <span class="tex">$G&#40;q&#41; &#61; \frac&#123;1&#125;&#123;2&#125;d^2_&#123;\mathcal P&#40;3&#41;&#125;&#40;q,I_3&#41;$</span> is given by <span class="tex">$\operatorname&#123;grad&#125; G&#40;q&#41; &#61; -\operatorname&#123;log&#125;_q I_3$</span>, where <span class="tex">$\operatorname&#123;log&#125;$</span> is the <a href="https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/symmetricpositivedefinite.html#Base.log-Tuple&#123;SymmetricPositiveDefinite,&#37;20Vararg&#123;Any,&#37;20N&#125;&#37;20where&#37;20N&#125;">logarithmic map</a> on the manifold.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>G2 = -log(N, q, Matrix{Float64}(I, 3, 3))</code></pre>
+<pre id='var-G2' class='code-output documenter-example-output'>3×3 Matrix{Float64}:
+ -0.0  -0.0       -0.0
+ -0.0   1.86368    0.826856
+ -0.0   0.826856   2.81845</pre>
+
+
+<div class="markdown"><p>Both terms agree up to <span class="tex">$1.8×10^&#123;-12&#125;$</span>:</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>norm(G1 - G2)</code></pre>
+<pre id='var-hash135981' class='code-output documenter-example-output'>1.776388869742036e-12</pre>
+
+<pre class='language-julia'><code class='language-julia'>isapprox(M, q, G1, G2; atol=2 * 1e-12)</code></pre>
+<pre id='var-hash251789' class='code-output documenter-example-output'>true</pre>
+
+
+<div class="markdown"><h2>Summary</h2>
+<p>This tutorial illustrates how to use tools from Euclidean spaces, finite differences or automatic differentiation, to compute gradients on Riemannian manifolds. The scheme allows to use <em>any</em> differentiation framework within the embedding to derive a Riemannian gradient.</p>
+</div>
+
+<!-- PlutoStaticHTML.End --></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Optimize!/">« Get started: Optimize!</a><a class="docs-footer-nextpage" href="../HowToRecord/">Record values »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.21 on <span class="colophon-date" title="Wednesday 20 July 2022 07:59">Wednesday 20 July 2022</span>. Using Julia version 1.7.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

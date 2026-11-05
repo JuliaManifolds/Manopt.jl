@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Jacobi Fields · Manopt.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../../index.html"><img class="logo" src="../../assets/logo.png" alt="Manopt.jl logo"/></a><h1>Manopt.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Home</a></li><li><span class="toctext">Manifolds</span><ul><li><a class="toctext" href="../../manifolds/">Introduction</a></li><li><a class="toctext" href="../../manifolds/combined/">Combinations of Manifolds</a></li><li><a class="toctext" href="../../manifolds/circle/">The Circle <span>$\mathbb S^1$</span></a></li><li><a class="toctext" href="../../manifolds/euclidean/">The Euclidean Space <span>$\mathbb R^n$</span></a></li><li><a class="toctext" href="../../manifolds/grassmannian/">The Grassmannian Manifold <span>$\mathrm{Gr}(k,n)$</span></a></li><li><a class="toctext" href="../../manifolds/hyperbolic/">The Hyperbolic Space <span>$\mathbb H^n$</span></a></li><li><a class="toctext" href="../../manifolds/rotations/">The Special Orthogonal Group <span>$\mathrm{SO}(n)$</span></a></li><li><a class="toctext" href="../../manifolds/sphere/">The Sphere <span>$\mathbb S^n$</span></a></li><li><a class="toctext" href="../../manifolds/stiefel/">The Stiefel Manifold <span>$\mathrm{St}(k,n)$</span></a></li><li><a class="toctext" href="../../manifolds/symmetric/">The Symmetric Matrices <span>$\mathrm{Sym}(n)$</span></a></li><li><a class="toctext" href="../../manifolds/symmetricpositivedefinite/">The Symmetric Positive Definite Matrices <span>$\mathcal P(n)$</span></a></li></ul></li><li><a class="toctext" href="../../plans/">Plans</a></li><li><span class="toctext">Solvers</span><ul><li><a class="toctext" href="../../solvers/">Introduction</a></li><li><a class="toctext" href="../../solvers/cyclicProximalPoint/">Cyclic Proximal Point</a></li><li><a class="toctext" href="../../solvers/DouglasRachford/">Douglas–Rachford</a></li><li><a class="toctext" href="../../solvers/gradientDescent/">Gradient Descent</a></li><li><a class="toctext" href="../../solvers/subGradientMethod/">Subgradient Method</a></li></ul></li><li><span class="toctext">Functions</span><ul><li><a class="toctext" href="../../functions/">Introduction</a></li><li><a class="toctext" href="../../functions/costFunctions/">cost functions</a></li><li><a class="toctext" href="../../functions/differentials/">Differentials</a></li><li><a class="toctext" href="../../functions/adjointDifferentials/">Adjoint Differentials</a></li><li><a class="toctext" href="../../functions/gradients/">Gradients</a></li><li><a class="toctext" href="../../functions/jacobiFields/">JacobiFields</a></li><li><a class="toctext" href="../../functions/proximalMaps/">Proximal Maps</a></li></ul></li><li><span class="toctext">Helpers</span><ul><li><a class="toctext" href="../../helpers/data/">Data</a></li><li><a class="toctext" href="../../helpers/errorMeasures/">Error Measures</a></li><li><a class="toctext" href="../../helpers/exports/">Exports</a></li></ul></li><li><span class="toctext">Tutorials</span><ul><li><a class="toctext" href="../MeanAndMedian/">Getting Started: Optimize!</a></li><li><a class="toctext" href="../GradientOfSecondOrderDifference/">Gradient of <span>$d_2$</span></a></li><li class="current"><a class="toctext" href>Jacobi Fields</a><ul class="internal"><li><a class="toctext" href="#Literature-1">Literature</a></li></ul></li></ul></li><li><a class="toctext" href="../../list/">Function Index</a></li></ul></nav><article id="docs"><header><nav><ul><li>Tutorials</li><li><a href>Jacobi Fields</a></li></ul><a class="edit-page" href="https://github.com/kellertuer/Manopt.jl/blob/master/src/tutorials/JacobiFields.jl"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Jacobi Fields</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Illustration-of-Jacobi-Fields-1" href="#Illustration-of-Jacobi-Fields-1">Illustration of Jacobi Fields</a></h1><p>This tutorial illustrates the usage of Jacobi Fields within <code>Manopt.jl</code>. For this tutorial you should be familiar with the basic terminology on a manifold like the exponential and logarithmic map as well as <a href="../../manifolds/#Manopt.geodesic"><code>geodesic</code></a>s.</p><p>We first initialize the manifold</p><pre><code class="language-julia">using Manopt</code></pre><p>and we define some colors from <a href="https://personal.sron.nl/~pault/">Paul Tol</a></p><pre><code class="language-julia">using Colors
+black = RGBA{Float64}(colorant&quot;#000000&quot;)
+TolVibrantOrange = RGBA{Float64}(colorant&quot;#EE7733&quot;)
+TolVibrantCyan = RGBA{Float64}(colorant&quot;#33BBEE&quot;)
+TolVibrantTeal = RGBA{Float64}(colorant&quot;#009988&quot;)</code></pre><p>Assume we have two <a href="../../manifolds/sphere/#Manopt.SnPoint"><code>SnPoint</code></a>s on the equator of the <a href="../../manifolds/sphere/#Manopt.Sphere"><code>Sphere</code></a><code>(2)</code> <span>$\mathcal M = \mathbb S^2$</span></p><pre><code class="language-julia">M = Sphere(2)
+x,y = [ SnPoint([1.,0.,0.]), SnPoint([0.,1.,0.])]</code></pre><pre><code class="language-none">2-element Array{SnPoint{Float64},1}:
+ Sn([1.0, 0.0, 0.0])
+ Sn([0.0, 1.0, 0.0])</code></pre><p>their connecting <a href="../../manifolds/#Manopt.geodesic"><code>geodesic</code></a> (sampled at <code>100</code> points)</p><pre><code class="language-julia">geodesicCurve = geodesic(M,x,y,100);
+asyResolution = 2</code></pre><p>looks as follows using <a href="../../helpers/exports/#Manopt.renderAsymptote"><code>renderAsymptote</code></a> with the <a href="../../helpers/exports/#Manopt.asyExportS2Signals"><code>asyExportS2Signals</code></a> export</p><pre><code class="language-julia">renderAsymptote(&quot;jacobiGeodesic.asy&quot;,asyExportS2Signals;
+    render = asyResolution,
+    curves=[geodesicCurve], points = [ [x,y] ],
+    colors=Dict(:curves =&gt; [black], :points =&gt; [TolVibrantOrange]),
+    dotSize = 3.5, lineWidth = 0.75, cameraPosition = (1.,1.,.5)
+)</code></pre><p><img src="../../assets/images/tutorials/jacobiGeodesic.png" alt="A geodesic connecting two points on the equator"/></p><p>where <span>$x$</span> is on the left. Then this tutorial solves the following task:</p><p>Given a direction <span>$\xi_x\in T_x\mathcal M$</span>, for example the <a href="../../manifolds/sphere/#Manopt.SnTVector"><code>SnTVector</code></a></p><pre><code class="language-julia">ξx = SnTVector([0.,0.4,0.5])</code></pre><pre><code class="language-none">SnT([0.0, 0.4, 0.5])</code></pre><p>we move the start point <span>$x$</span> into, how does any point on the geodesic move?</p><p>Or mathematically: Compute <span>$D_x g(t; x,y)$</span> for some fixed <span>$t\in[0,1]$</span> and a given direction <span>$\xi_x$</span>. Of course two cases are quite easy: For <span>$t=0$</span> we are in <span>$x$</span> and how <span>$x$</span> “moves” is already known, so <span>$D_x g(0;x,y) = \xi$</span>. On the other side, for <span>$t=1$</span>, <span>$g(1; x,y) = y$</span> which is fixed, so <span>$D_x g(1; x,y)$</span> is the zero tangent vector (in <span>$T_y\mathcal M$</span>).</p><p>For all other cases we employ a <a href="../../manifolds/#Manopt.jacobiField"><code>jacobiField</code></a>, which is a (tangent) vector field along the <a href="../../manifolds/#Manopt.geodesic"><code>geodesic</code></a> given as follows: The <em>geodesic variation</em> <span>$\Gamma_{g,\xi}(s,t)$</span> is defined for some <span>$\varepsilon &gt; 0$</span> as</p><div>\[\Gamma_{g,\xi}(s,t):=\exp{\gamma_{x,\xi}(s)}[t\log_{g(s;x,\xi)}y],\qquad s\in(-\varepsilon,\varepsilon),\ t\in[0,1].\]</div><p>Intuitively we make a small step <span>$s$</span> into direction <span>$\xi$</span> using the geodesic <span>$g(\cdot; x,\xi)$</span> and from <span>$z=g(s; x,\xi)$</span> we follow (in <span>$t$</span>) the geodesic <span>$g(\cdot; z,y)$</span>. The corresponding Jacobi field~(J_{g,\xi}) along~(g(\cdot; x,y) is given</p><div>\[J_{g,\xi}(t):=\frac{D}{\partial s}\Gamma_{g,\xi}(s,t)\Bigl\rvert_{s=0}\]</div><p>which is an ODE and we know the boundary conditions <span>$J_{g,\xi}(0)=\xi$</span> and <span>$J_{g,\xi}(t) = 0$</span>. In symmetric spaces we can compute the solution, since the system of ODEs decouples, see for example <a href="#doCarmo1992">do Carmo</a>, Chapter 4.2. Within <code>Manopt.jl</code> this is implemented as <a href="../../manifolds/#Manopt.jacobiField"><code>jacobiField</code></a><code>(M,x,y,t,ξ[,β])</code>, where the optional parameter (function) <code>β</code> specifies, which Jacobi field we want to evaluate and the one used here is the default.</p><p>We can hence evaluate that on the points on the geodesic at</p><pre><code class="language-julia">T = [0:0.1:1.0...]</code></pre><p>namely</p><pre><code class="language-julia">Z = geodesic(M,x,y,T)</code></pre><p>the geodesic moves as</p><pre><code class="language-julia">ηx = jacobiField.(Ref(M), Ref(x), Ref(y), T, Ref(ξx) )</code></pre><pre><code class="language-none">11-element Array{SnTVector{Float64},1}:
+ SnT([0.0, 0.4, 0.5])                    
+ SnT([-0.0563164, 0.355568, 0.493844])   
+ SnT([-0.0988854, 0.304338, 0.475528])   
+ SnT([-0.127117, 0.249482, 0.445503])    
+ SnT([-0.141068, 0.194164, 0.404508])    
+ SnT([-0.141421, 0.141421, 0.353553])    
+ SnT([-0.129443, 0.0940456, 0.293893])   
+ SnT([-0.106921, 0.0544789, 0.226995])   
+ SnT([-0.0760845, 0.0247214, 0.154508])  
+ SnT([-0.0395075, 0.00625738, 0.0782172])
+ SnT([0.0, 0.0, 0.0])                    </code></pre><p>which can also be called using <a href="../../functions/differentials/#Manopt.DxGeo-Union{Tuple{T}, Tuple{P}, Tuple{mT}, Tuple{mT,P,P,Number,T}} where T&lt;:TVector where P&lt;:MPoint where mT&lt;:Manifold"><code>DxGeo</code></a>. We can add to the image above by creating extended tangent vectors <a href="../../manifolds/#Manopt.TVectorE"><code>TVectorE</code></a> the include their base points</p><pre><code class="language-julia">Vx = TVectorE.(ηx,Z)</code></pre><pre><code class="language-none">11-element Array{TVectorE{SnTVector{Float64},SnPoint{Float64}},1}:
+ SnT([0.0, 0.4, 0.5])E_Sn([1.0, 0.0, 0.0])                              
+ SnT([-0.0563164, 0.355568, 0.493844])E_Sn([0.987688, 0.156434, 0.0])   
+ SnT([-0.0988854, 0.304338, 0.475528])E_Sn([0.951057, 0.309017, 0.0])   
+ SnT([-0.127117, 0.249482, 0.445503])E_Sn([0.891007, 0.45399, 0.0])     
+ SnT([-0.141068, 0.194164, 0.404508])E_Sn([0.809017, 0.587785, 0.0])    
+ SnT([-0.141421, 0.141421, 0.353553])E_Sn([0.707107, 0.707107, 0.0])    
+ SnT([-0.129443, 0.0940456, 0.293893])E_Sn([0.587785, 0.809017, 0.0])   
+ SnT([-0.106921, 0.0544789, 0.226995])E_Sn([0.45399, 0.891007, 0.0])    
+ SnT([-0.0760845, 0.0247214, 0.154508])E_Sn([0.309017, 0.951057, 0.0])  
+ SnT([-0.0395075, 0.00625738, 0.0782172])E_Sn([0.156434, 0.987688, 0.0])
+ SnT([0.0, 0.0, 0.0])E_Sn([6.12323e-17, 1.0, 0.0])                      </code></pre><p>and add that as one further set to the Asymptote export.</p><pre><code class="language-julia">renderAsymptote(&quot;jacobiGeodesicDxGeo.asy&quot;,asyExportS2Signals;
+    render = asyResolution,
+    curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx],
+    colors=Dict(
+        :curves =&gt; [black],
+        :points =&gt; [TolVibrantOrange,TolVibrantCyan],
+        :tvectors =&gt; [TolVibrantCyan]
+    ),
+    dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,.5)
+)</code></pre><p><img src="../../assets/images/tutorials/jacobiGeodesicDxGeo.png" alt="A Jacobi field for \$D_xg(t,x,y)[\\eta]\$"/></p><p>If we further move the end point, too, we can derive that Differential in direction</p><pre><code class="language-julia">ξy = SnTVector([0.2,0.,-0.5])
+ηy = DyGeo.(Ref(M),Ref(x),Ref(y),T,Ref(ξy))
+Vy = TVectorE.(ηy,Z)</code></pre><pre><code class="language-none">11-element Array{TVectorE{SnTVector{Float64},SnPoint{Float64}},1}:
+ SnT([0.0, -0.0, 0.0])E_Sn([1.0, 0.0, 0.0])                              
+ SnT([0.00312869, -0.0197538, -0.0782172])E_Sn([0.987688, 0.156434, 0.0])
+ SnT([0.0123607, -0.0380423, -0.154508])E_Sn([0.951057, 0.309017, 0.0])  
+ SnT([0.0272394, -0.0534604, -0.226995])E_Sn([0.891007, 0.45399, 0.0])   
+ SnT([0.0470228, -0.0647214, -0.293893])E_Sn([0.809017, 0.587785, 0.0])  
+ SnT([0.0707107, -0.0707107, -0.353553])E_Sn([0.707107, 0.707107, 0.0])  
+ SnT([0.097082, -0.0705342, -0.404508])E_Sn([0.587785, 0.809017, 0.0])   
+ SnT([0.124741, -0.0635587, -0.445503])E_Sn([0.45399, 0.891007, 0.0])    
+ SnT([0.152169, -0.0494427, -0.475528])E_Sn([0.309017, 0.951057, 0.0])   
+ SnT([0.177784, -0.0281582, -0.493844])E_Sn([0.156434, 0.987688, 0.0])   
+ SnT([0.2, 0.0, -0.5])E_Sn([6.12323e-17, 1.0, 0.0])                      </code></pre><p>and we can look at the total effect, where the <a href="../../manifolds/#Manopt.TVectorE"><code>TVectorE</code></a>s even verify that only tangent vectors are added that have a common base point</p><pre><code class="language-julia">Vb = Vx .+ Vy</code></pre><pre><code class="language-none">11-element Array{TVectorE{SnTVector{Float64},SnPoint{Float64}},1}:
+ SnT([0.0, 0.4, 0.5])E_Sn([1.0, 0.0, 0.0])                             
+ SnT([-0.0531877, 0.335814, 0.415627])E_Sn([0.987688, 0.156434, 0.0])  
+ SnT([-0.0865248, 0.266296, 0.32102])E_Sn([0.951057, 0.309017, 0.0])   
+ SnT([-0.0998779, 0.196021, 0.218508])E_Sn([0.891007, 0.45399, 0.0])   
+ SnT([-0.0940456, 0.129443, 0.110616])E_Sn([0.809017, 0.587785, 0.0])  
+ SnT([-0.0707107, 0.0707107, 0.0])E_Sn([0.707107, 0.707107, 0.0])      
+ SnT([-0.0323607, 0.0235114, -0.110616])E_Sn([0.587785, 0.809017, 0.0])
+ SnT([0.0178201, -0.00907981, -0.218508])E_Sn([0.45399, 0.891007, 0.0])
+ SnT([0.0760845, -0.0247214, -0.32102])E_Sn([0.309017, 0.951057, 0.0]) 
+ SnT([0.138276, -0.0219008, -0.415627])E_Sn([0.156434, 0.987688, 0.0]) 
+ SnT([0.2, 0.0, -0.5])E_Sn([6.12323e-17, 1.0, 0.0])                    </code></pre><pre><code class="language-julia">renderAsymptote(&quot;jacobiGeodesicResult.asy&quot;,asyExportS2Signals;
+   render = asyResolution,
+   curves=[geodesicCurve], points = [ [x,y], Z], tVectors = [Vx,Vy,Vb],
+   colors=Dict(
+       :curves =&gt; [black],
+       :points =&gt; [TolVibrantOrange,TolVibrantCyan],
+       :tvectors =&gt; [TolVibrantCyan,TolVibrantCyan,TolVibrantTeal]
+  ),
+  dotSizes = [3.5,2.], lineWidth = 0.75, cameraPosition = (1.,1.,0.)
+)</code></pre><p><img src="../../assets/images/tutorials/jacobiGeodesicResult.png" alt="A Jacobi field for the effect of two differentials (blue) in sum (teal)"/></p><h2><a class="nav-anchor" id="Literature-1" href="#Literature-1">Literature</a></h2><ul><li id="doCarmo1992">[<a>doCarmo1992</a>] do Carmo, M. P.:
+   <emph>Riemannian Geometry</emph>, Mathematics: Theory & Applications,
+   Birkhäuser Basel, 1992, ISBN: 0-8176-3490-8</li>
+<li id="BergmannGousenbourger2018">[<a>BergmannGousenbourger2018</a>]
+  Bergmann, R.; Gousenbourger, P.-Y.: <emph>A variational model for data
+  fitting on manifolds by minimizing the acceleration of a Bézier curve</emph>,
+  Frontiers in Applied Mathematics and Statistics, 2018.
+  doi: <a href="https://dx.doi.org/10.3389/fams.2018.00059">10.3389/fams.2018.00059</a></li>
+</ul><footer><hr/><a class="previous" href="../GradientOfSecondOrderDifference/"><span class="direction">Previous</span><span class="title">Gradient of <span>$d_2$</span></span></a><a class="next" href="../../list/"><span class="direction">Next</span><span class="title">Function Index</span></a></footer></article></body></html>

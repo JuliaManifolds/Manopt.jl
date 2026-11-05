@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Define objectives in the embedding · Manopt.jl</title><meta name="title" content="Define objectives in the embedding · Manopt.jl"/><meta property="og:title" content="Define objectives in the embedding · Manopt.jl"/><meta property="twitter:title" content="Define objectives in the embedding · Manopt.jl"/><meta name="description" content="Documentation for Manopt.jl."/><meta property="og:description" content="Documentation for Manopt.jl."/><meta property="twitter:description" content="Documentation for Manopt.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/><link href="../../assets/citations.css" rel="stylesheet" type="text/css"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="Manopt.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Manopt.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../about/">About</a></li><li><span class="tocitem">How to...</span><ul><li><a class="tocitem" href="../Optimize/">🏔️ Get started: optimize.</a></li><li><a class="tocitem" href="../InplaceGradient/">Speedup using in-place computations</a></li><li><a class="tocitem" href="../AutomaticDifferentiation/">Use automatic differentiation</a></li><li class="is-active"><a class="tocitem" href>Define objectives in the embedding</a><ul class="internal"><li><a class="tocitem" href="#Summary"><span>Summary</span></a></li><li><a class="tocitem" href="#Literature"><span>Literature</span></a></li><li><a class="tocitem" href="#Technical-Details"><span>Technical Details</span></a></li></ul></li><li><a class="tocitem" href="../CountAndCache/">Count and use a cache</a></li><li><a class="tocitem" href="../HowToDebug/">Print debug output</a></li><li><a class="tocitem" href="../HowToRecord/">Record values</a></li><li><a class="tocitem" href="../ImplementASolver/">Implement a solver</a></li><li><a class="tocitem" href="../ImplementOwnManifold/">Optimize on your own manifold</a></li><li><a class="tocitem" href="../ConstrainedOptimization/">Do constrained optimization</a></li><li><a class="tocitem" href="../GeodesicRegression/">Do geodesic regression</a></li></ul></li><li><span class="tocitem">Solvers</span><ul><li><a class="tocitem" href="../../solvers/">Introduction</a></li><li><a class="tocitem" href="../../solvers/adaptive-regularization-with-cubics/">Adaptive Regularization with Cubics</a></li><li><a class="tocitem" href="../../solvers/alternating_gradient_descent/">Alternating Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/augmented_Lagrangian_method/">Augmented Lagrangian Method</a></li><li><a class="tocitem" href="../../solvers/ChambollePock/">Chambolle-Pock</a></li><li><a class="tocitem" href="../../solvers/conjugate_gradient_descent/">Conjugate gradient descent</a></li><li><a class="tocitem" href="../../solvers/cyclic_proximal_point/">Cyclic Proximal Point</a></li><li><a class="tocitem" href="../../solvers/difference_of_convex/">Difference of Convex</a></li><li><a class="tocitem" href="../../solvers/DouglasRachford/">Douglas—Rachford</a></li><li><a class="tocitem" href="../../solvers/exact_penalty_method/">Exact Penalty Method</a></li><li><a class="tocitem" href="../../solvers/FrankWolfe/">Frank-Wolfe</a></li><li><a class="tocitem" href="../../solvers/gradient_descent/">Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/LevenbergMarquardt/">Levenberg–Marquardt</a></li><li><a class="tocitem" href="../../solvers/NelderMead/">Nelder–Mead</a></li><li><a class="tocitem" href="../../solvers/particle_swarm/">Particle Swarm Optimization</a></li><li><a class="tocitem" href="../../solvers/primal_dual_semismooth_Newton/">Primal-dual Riemannian semismooth Newton</a></li><li><a class="tocitem" href="../../solvers/quasi_Newton/">Quasi-Newton</a></li><li><a class="tocitem" href="../../solvers/stochastic_gradient_descent/">Stochastic Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/subgradient/">Subgradient method</a></li><li><a class="tocitem" href="../../solvers/truncated_conjugate_gradient_descent/">Steihaug-Toint TCG Method</a></li><li><a class="tocitem" href="../../solvers/trust_regions/">Trust-Regions Solver</a></li></ul></li><li><span class="tocitem">Plans</span><ul><li><a class="tocitem" href="../../plans/">Specify a Solver</a></li><li><a class="tocitem" href="../../plans/problem/">Problem</a></li><li><a class="tocitem" href="../../plans/objective/">Objective</a></li><li><a class="tocitem" href="../../plans/state/">Solver State</a></li><li><a class="tocitem" href="../../plans/stepsize/">Stepsize</a></li><li><a class="tocitem" href="../../plans/stopping_criteria/">Stopping Criteria</a></li><li><a class="tocitem" href="../../plans/debug/">Debug Output</a></li><li><a class="tocitem" href="../../plans/record/">Recording values</a></li></ul></li><li><span class="tocitem">Helpers</span><ul><li><a class="tocitem" href="../../helpers/checks/">Checks</a></li><li><a class="tocitem" href="../../helpers/exports/">Exports</a></li></ul></li><li><a class="tocitem" href="../../contributing/">Contributing to Manopt.jl</a></li><li><a class="tocitem" href="../../extensions/">Extensions</a></li><li><a class="tocitem" href="../../notation/">Notation</a></li><li><a class="tocitem" href="../../changelog/">Changelog</a></li><li><a class="tocitem" href="../../references/">References</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">How to...</a></li><li class="is-active"><a href>Define objectives in the embedding</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Define objectives in the embedding</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaManifolds/Manopt.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JuliaManifolds/Manopt.jl/blob/master/docs/src/tutorials/EmbeddingObjectives.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="How-to-define-the-cost-in-the-embedding"><a class="docs-heading-anchor" href="#How-to-define-the-cost-in-the-embedding">How to define the cost in the embedding</a><a id="How-to-define-the-cost-in-the-embedding-1"></a><a class="docs-heading-anchor-permalink" href="#How-to-define-the-cost-in-the-embedding" title="Permalink"></a></h1><p>Ronny Bergmann</p><p>Specifying a cost function <span>$f\colon \mathcal M \to \mathbb R$</span> on a manifold is usually the model one starts with. Specifying its gradient <span>$\operatorname{grad} f\colon\mathcal M \to T\mathcal M$</span>, or more precisely <span>$\operatorname{grad}f(p) \in T_p\mathcal M$</span>, and eventually a Hessian <span>$\operatorname{Hess} f\colon T_p\mathcal M \to T_p\mathcal M$</span> are then necessary to perform optimization. Since these might be challenging to compute, especially when manifolds and differential geometry are not the main area of a user, easier to use methods might be welcome.</p><p>This tutorial discusses how to specify <span>$f$</span> in the embedding as <span>$\tilde f$</span>, maybe only locally around the manifold, and use the Euclidean gradient <span>$∇ \tilde f$</span> and Hessian <span>$∇^2 \tilde f$</span> within <code>Manopt.jl</code>.</p><p>For the theoretical background see <a href="../AutomaticDifferentiation/#EmbeddedGradient">convert an Euclidean to an Riemannian Gradient</a>, or Section 4.7 of [<a href="../../references/#Boumal:2023">Bou23</a>] for the gradient part or Section 5.11 as well as [<a href="../../references/#Nguyen:2023">Ngu23</a>] for the background on converting Hessians.</p><p>Here we use the Examples 9.40 and 9.49 of [<a href="../../references/#Boumal:2023">Bou23</a>] and compare the different methods, one can call the solver, depending on which gradient and/or Hessian one provides.</p><pre><code class="language-julia hljs">using Manifolds, Manopt, ManifoldDiff
+using LinearAlgebra, Random, Colors, Plots
+Random.seed!(123)</code></pre><p>We consider the cost function on the <a href="https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/grassmann.html"><code>Grassmann</code></a> manifold given by</p><pre><code class="language-julia hljs">n = 5
+k = 2
+M = Grassmann(5,2)
+A = Symmetric(rand(n,n));</code></pre><pre><code class="language-julia hljs">f(M, p) = 1 / 2 * tr(p&#39; * A * p)</code></pre><p>Note that this implementation is already also a valid implementation / continuation of <span>$f$</span> into the (lifted) embedding of the Grassmann manifold. In the implementation we can use <code>f</code> for both the Euclidean <span>$\tilde f$</span> and the Grassmann case <span>$f$</span>.</p><p>Its Euclidean gradient <span>$\nabla f$</span> and Hessian <span>$\nabla^2f$</span> are easy to compute as</p><pre><code class="language-julia hljs">∇f(M, p) = A * p
+∇²f(M,p,X) = A*X</code></pre><p>On the other hand, from the aforementioned Example 9.49 we can also state the Riemannian gradient and Hessian for comparison as</p><pre><code class="language-julia hljs">grad_f(M, p) = A * p - p * (p&#39; * A * p)
+Hess_f(M, p, X) = A * X - p * p&#39; * A * X - X * p&#39; * A * p</code></pre><p>We can check that these are the correct at least numerically by calling the <a href="../../helpers/checks/#Manopt.check_gradient"><code>check_gradient</code></a></p><pre><code class="language-julia hljs">check_gradient(M, f, grad_f; plot=true)</code></pre><p><img src="../EmbeddingObjectives_files/figure-commonmark/cell-8-output-1.svg" alt/></p><p>and the <a href="../../helpers/checks/#Manopt.check_Hessian"><code>check_Hessian</code></a>, which requires a bit more tolerance in its linearity check</p><pre><code class="language-julia hljs">check_Hessian(M, f, grad_f, Hess_f; plot=true, throw_error=true, atol=1e-15)</code></pre><p><img src="../EmbeddingObjectives_files/figure-commonmark/cell-9-output-1.svg" alt/></p><p>While they look reasonable here and were already derived, for the general case this derivation might be more complicated.</p><p>Luckily there exist two functions in <a href="https://juliamanifolds.github.io/ManifoldDiff.jl/stable/"><code>ManifoldDiff.jl</code></a> that are implemented for several manifolds from <a href="https://github.com/JuliaManifolds/Manifolds.jl"><code>Manifolds.jl</code></a>, namely <a href="https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_gradient-Tuple%7BAbstractManifold,%20Any,%20Any%7D"><code>riemannian_gradient</code></a><code>(M, p, eG)</code> that converts a Riemannian gradient <code>eG=</code><span>$\nabla \tilde f(p)$</span> into a the Riemannian one <span>$\operatorname{grad} f(p)$</span> and <a href="https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_Hessian-Tuple%7BAbstractManifold,%20Any,%20Any,%20Any,%20Any%7D"><code>riemannian_Hessian</code></a><code>(M, p, eG, eH, X)</code> which converts the Euclidean Hessian <code>eH=</code><span>$\nabla^2 \tilde f(p)[X]$</span> into <span>$\operatorname{Hess} f(p)[X]$</span>, where we also require the Euclidean gradient <code>eG=</code><span>$\nabla \tilde f(p)$</span>.</p><p>So we can define</p><pre><code class="language-julia hljs">grad2_f(M, p) = riemannian_gradient(M, p, ∇f(get_embedding(M), embed(M, p)))</code></pre><p>where only formally we here call <code>embed(M,p)</code> before passing <code>p</code> to the Euclidean gradient, though here (for the Grassmann manifold with Stiefel representation) the embedding function is the identity.</p><p>Similarly for the Hessian, where in our example the embeddings of both the points and tangent vectors are the identity.</p><pre><code class="language-julia hljs">function Hess2_f(M, p, X)
+    return riemannian_Hessian(
+        M,
+        p,
+        ∇f(get_embedding(M), embed(M, p)),
+        ∇²f(get_embedding(M), embed(M, p), embed(M, p, X)),
+        X
+    )
+end</code></pre><p>And we can again check these numerically,</p><pre><code class="language-julia hljs">check_gradient(M, f, grad2_f; plot=true)</code></pre><p><img src="../EmbeddingObjectives_files/figure-commonmark/cell-12-output-1.svg" alt/></p><p>and</p><pre><code class="language-julia hljs">check_Hessian(M, f, grad2_f, Hess2_f; plot=true, throw_error=true, atol=1e-14)</code></pre><p><img src="../EmbeddingObjectives_files/figure-commonmark/cell-13-output-1.svg" alt/></p><p>which yields the same result, but we see that the Euclidean conversion might be a bit less stable.</p><p>Now if we want to use these in optimization we would require these two functions to call e.g.</p><pre><code class="language-julia hljs">p0 = [1.0 0.0; 0.0 1.0; 0.0 0.0; 0.0 0.0; 0.0 0.0]
+r1 = adaptive_regularization_with_cubics(
+    M,
+    f,
+    grad_f,
+    Hess_f,
+    p0;
+    debug=[:Iteration, :Cost, &quot;\n&quot;],
+    return_objective=true,
+    return_state=true,
+)
+q1 = get_solver_result(r1)
+r1</code></pre><pre><code class="nohighlight hljs">Initial f(x): 0.666814
+# 1     f(x): 0.333500
+# 2     f(x): -0.233216
+# 3     f(x): -0.440390
+# 4     f(x): -0.607973
+# 5     f(x): -0.608796
+# 6     f(x): -0.608797
+# 7     f(x): -0.608797
+
+# Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)
+After 7 iterations
+
+## Parameters
+* η1 | η2              : 0.1 | 0.9
+* γ1 | γ2              : 0.1 | 2.0
+* σ (σmin)             : 0.0004082482904638632 (1.0e-10)
+* ρ (ρ_regularization) : 0.999799931549384 (1000.0)
+* retraction method    : PolarRetraction()
+* sub solver state     :
+    | # Solver state for `Manopt.jl`s Lanczos Iteration
+    | After 6 iterations
+    | 
+    | ## Parameters
+    | * σ                         : 0.0040824829046386315
+    | * # of Lanczos vectors used : 6
+    | 
+    | ## Stopping Criteria
+    | (a) For the Lanczos Iteration
+    | Stop When _one_ of the following are fulfilled:
+    |     Max Iteration 6:  reached
+    |     First order progress with θ=0.5:  not reached
+    | Overall: reached
+    | (b) For the Newton sub solver
+    | Max Iteration 200:    not reached
+    | This indicates convergence: No
+
+## Stopping Criterion
+Stop When _one_ of the following are fulfilled:
+    Max Iteration 40:   not reached
+    |grad f| &lt; 1.0e-9: reached
+    All Lanczos vectors (5) used:   not reached
+Overall: reached
+This indicates convergence: Yes
+
+## Debug
+    [ (:Iteration, &quot;# %-6d&quot;), (:Cost, &quot;f(x): %f&quot;), &quot;\n&quot; ]</code></pre><p>but if you choose to go for the conversions, then, thinking of the embedding and defining two new functions might be tedious. There is a shortcut for these, which performs the change internally, when necessary by specifying <code>objective_type=:Euclidean</code>.</p><pre><code class="language-julia hljs">r2 = adaptive_regularization_with_cubics(
+    M,
+    f,
+    ∇f,
+    ∇²f,
+    p0;
+    # The one line different to specify our grad/Hess are Eucldiean:
+    objective_type=:Euclidean,
+    debug=[:Iteration, :Cost, &quot;\n&quot;],
+    return_objective=true,
+    return_state=true,
+)
+q2 = get_solver_result(r2)
+r2</code></pre><pre><code class="nohighlight hljs">Initial f(x): 0.666814
+# 1     f(x): 0.333500
+# 2     f(x): -0.233216
+# 3     f(x): -0.440390
+# 4     f(x): -0.607973
+# 5     f(x): -0.608796
+# 6     f(x): -0.608797
+# 7     f(x): -0.608797
+
+# Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)
+After 7 iterations
+
+## Parameters
+* η1 | η2              : 0.1 | 0.9
+* γ1 | γ2              : 0.1 | 2.0
+* σ (σmin)             : 0.0004082482904638632 (1.0e-10)
+* ρ (ρ_regularization) : 0.9988100306237745 (1000.0)
+* retraction method    : PolarRetraction()
+* sub solver state     :
+    | # Solver state for `Manopt.jl`s Lanczos Iteration
+    | After 6 iterations
+    | 
+    | ## Parameters
+    | * σ                         : 0.0040824829046386315
+    | * # of Lanczos vectors used : 6
+    | 
+    | ## Stopping Criteria
+    | (a) For the Lanczos Iteration
+    | Stop When _one_ of the following are fulfilled:
+    |     Max Iteration 6:  reached
+    |     First order progress with θ=0.5:  not reached
+    | Overall: reached
+    | (b) For the Newton sub solver
+    | Max Iteration 200:    not reached
+    | This indicates convergence: No
+
+## Stopping Criterion
+Stop When _one_ of the following are fulfilled:
+    Max Iteration 40:   not reached
+    |grad f| &lt; 1.0e-9: reached
+    All Lanczos vectors (5) used:   not reached
+Overall: reached
+This indicates convergence: Yes
+
+## Debug
+    [ (:Iteration, &quot;# %-6d&quot;), (:Cost, &quot;f(x): %f&quot;), &quot;\n&quot; ]</code></pre><p>which returns the same result, see</p><pre><code class="language-julia hljs">distance(M, q1, q2)</code></pre><pre><code class="nohighlight hljs">4.0221650305342743e-16</code></pre><p>This conversion also works for the gradients of constraints, and is passed down to subsolvers by default when these are created using the Euclidean objective <span>$f$</span>, <span>$\nabla f$</span> and <span>$\nabla^2 f$</span>.</p><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>If you have the Euclidean gradient (or Hessian) available for a solver call, all you need to provide is <code>objective_type=:Euclidean</code> to convert the objective to a Riemannian one.</p><h2 id="Literature"><a class="docs-heading-anchor" href="#Literature">Literature</a><a id="Literature-1"></a><a class="docs-heading-anchor-permalink" href="#Literature" title="Permalink"></a></h2><div class="citation noncanonical"><dl><dt>[Bou23]</dt><dd><div>N. Boumal. <a href="https://doi.org/10.1017/9781009166164"><em>An Introduction to Optimization on Smooth Manifolds</em></a>. First Edition (Cambridge University Press, 2023). Homepage to the book: <a href="https://www.nicolasboumal.net/book/index.html">nicolasboumal.net/book/index.html</a>.</div></dd><dt>[Ngu23]</dt><dd><div>D. Nguyen. <em>Operator-Valued Formulas for Riemannian Gradient and Hessian and Families of Tractable Metrics in Riemannian Optimization</em>. <a href="https://doi.org/10.1007/s10957-023-02242-z">Journal of Optimization Theory and Applications <strong>198</strong>, 135–164</a> (2023), <a href="https://arxiv.org/abs/2009.10159">arXiv:2009.10159</a>.</div></dd></dl></div><h2 id="Technical-Details"><a class="docs-heading-anchor" href="#Technical-Details">Technical Details</a><a id="Technical-Details-1"></a><a class="docs-heading-anchor-permalink" href="#Technical-Details" title="Permalink"></a></h2><p>This notebook was rendered with the following environment</p><pre><code class="language-julia hljs">Pkg.status()</code></pre><pre><code class="nohighlight hljs">Status `~/work/Manopt.jl/Manopt.jl/tutorials/Project.toml`
+  [6e4b80f9] BenchmarkTools v1.4.0
+  [5ae59095] Colors v0.12.10
+  [31c24e10] Distributions v0.25.104
+  [26cc04aa] FiniteDifferences v0.12.31
+  [7073ff75] IJulia v1.24.2
+  [8ac3fa9e] LRUCache v1.6.0
+  [af67fdf4] ManifoldDiff v0.3.9
+  [1cead3c2] Manifolds v0.9.8
+  [3362f125] ManifoldsBase v0.15.4
+  [0fc0a36d] Manopt v0.4.44 `~/work/Manopt.jl/Manopt.jl`
+  [91a5bcdd] Plots v1.39.0</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../AutomaticDifferentiation/">« Use automatic differentiation</a><a class="docs-footer-nextpage" href="../CountAndCache/">Count and use a cache »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Tuesday 30 January 2024 17:49">Tuesday 30 January 2024</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
