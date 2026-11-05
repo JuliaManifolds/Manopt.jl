@@ -741,9 +741,9 @@ end
         @testset "same iterates without failures" begin
             res = [
                 quasi_Newton(
-                        M, f, grad_f, p0;
-                        stepsize = HagerZhangLinesearch(), linesearch_failure_behavior = b, stopping_criterion = sc,
-                    ) for b in (:accept, :restart)
+                    M, f, grad_f, p0;
+                    stepsize = HagerZhangLinesearch(), linesearch_failure_behavior = b, stopping_criterion = sc,
+                ) for b in (:accept, :restart)
             ]
             @test res[1] == res[2]
         end
