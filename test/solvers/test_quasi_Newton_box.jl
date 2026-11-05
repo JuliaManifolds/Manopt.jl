@@ -208,6 +208,55 @@ using RecursiveArrayTools
         @test Manopt.find_generalized_cauchy_direction!(M2, gf3, d_out, p3, [1.0], [-10.0]) === (:found_limited, 90.0)
     end
 
+    @testset "Zero breakpoints in GCD" begin
+        # x1 ≥ 0 is active and d points outwards in x1: that element has to be fixed from the
+        # start, otherwise the model is minimized along p + t d and the result is an ascent direction
+        M = Hyperrectangle([0.0, -Inf], [Inf, Inf])
+        p = [0.0, 0.0]
+        X = [10.0, 1.0]
+        B = [0.12 -0.2; -0.2 1.0]
+        ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), inv(B))
+        gf = Manopt.GeneralizedCauchyDirectionSubsolver(M, p, ha)
+        d = -B * X # descent direction, ⟨X, d⟩ = -9, but its projection (0, 1) is not
+        d_out = similar(d)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf, d_out, p, d, X) === (:not_found, NaN)
+        @test d_out == [0.0, 0.0]
+        # aliasing d_out and d, as done by the quasi-Newton direction update
+        d_alias = copy(d)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf, d_alias, p, d_alias, X) === (:not_found, NaN)
+        @test d_alias == [0.0, 0.0]
+        # projected gradient direction after a reset
+        ha_id = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [1.0 0.0; 0.0 1.0])
+        gf_id = Manopt.GeneralizedCauchyDirectionSubsolver(M, p, ha_id)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf_id, d_out, p, -X, X) === (:found_unlimited, Inf)
+        @test d_out ≈ [0.0, -1.0]
+
+        # a projected direction that is still a descent direction: the zero-breakpoint element
+        # must not influence the step along the remaining elements
+        ha2 = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [1.0 0.5; 0.5 2.0])
+        gf2 = Manopt.GeneralizedCauchyDirectionSubsolver(M, p, ha2)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf2, d_out, p, [-1.0, -1.0], [1.0, 1.0]) === (:found_unlimited, Inf)
+        @test d_out ≈ [0.0, -0.5] # minimizer of t ↦ -t + t^2 along (0, -1)
+
+        # every bounded variable at an active bound with d pointing outwards
+        M3 = Hyperrectangle([0.0, 0.0], [1.0, 1.0])
+        gf3 = Manopt.GeneralizedCauchyDirectionSubsolver(M3, p, ha_id)
+        @test Manopt.find_generalized_cauchy_direction!(M3, gf3, d_out, p, [-1.0, -0.05], [1.0, -0.1]) === (:not_found, NaN)
+        @test d_out == [0.0, 0.0]
+
+        # the same with an unbounded manifold factor without an isotropic stepsize limit
+        M4 = Hyperrectangle([0.0], [1.0]) × Euclidean(1)
+        p4 = ArrayPartition([0.0], [0.0])
+        ha4 = QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+            QuasiNewtonLimitedMemoryDirectionUpdate(M4, p4, InverseBFGS(), 2)
+        )
+        gf4 = Manopt.GeneralizedCauchyDirectionSubsolver(M4, p4, ha4)
+        d_out4 = zero_vector(M4, p4)
+        X4 = ArrayPartition([1.0], [1.0])
+        @test Manopt.find_generalized_cauchy_direction!(M4, gf4, d_out4, p4, -X4, X4) === (:found_unlimited, Inf)
+        @test d_out4 ≈ ArrayPartition([0.0], [-1.0])
+    end
+
     @testset "Hitting multiple bounds at the same time in GCD" begin
         M = Hyperrectangle([-1.0, -1.0, -1.0], [1.0, 1.0, 1.0])
         ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [1.0 0 0; 0 1 0; 0 0 1])

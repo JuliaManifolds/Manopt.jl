@@ -1429,6 +1429,83 @@ requires_update(::Type{<:StopWhenLagrangeMultiplierLess}) = false
 #
 # ---
 @doc """
+    StopWhenLinesearchFailed <: StoppingCriterion
+
+A stopping criterion that indicates to stop when the solver reports a line search failure
+it cannot recover from, see [`has_terminal_linesearch_failure`](@ref Manopt.has_terminal_linesearch_failure).
+
+For example the [`quasi_Newton`](@ref) solver with `linesearch_failure_behavior=:restart`
+reports such a failure when the line search fails, see [`linesearch_failed`](@ref Manopt.linesearch_failed),
+although the direction update held no curvature information, i.e. directly after
+a (re)initialization of the direction update.
+This corresponds to the abnormal termination in the line search of L-BFGS-B [ByrdLuNocedalZhu:1995](@cite).
+The iterate is then the last one with an accepted step.
+
+For solver states that do not report such failures, this criterion never indicates to stop.
+
+# Fields
+
+$(_fields(:at_iteration))
+
+# Constructor
+
+    StopWhenLinesearchFailed()
+"""
+mutable struct StopWhenLinesearchFailed <: StoppingCriterion
+    at_iteration::Int
+end
+StopWhenLinesearchFailed() = StopWhenLinesearchFailed(-1)
+function (c::StopWhenLinesearchFailed)(
+        ::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
+    if k == 0 # reset on init
+        c.at_iteration = -1
+    end
+    if k > 0 && has_terminal_linesearch_failure(s)
+        c.at_iteration = k
+        return true
+    end
+    return false
+end
+indicates_convergence(::StopWhenLinesearchFailed) = false
+function get_reason(c::StopWhenLinesearchFailed)
+    if c.at_iteration >= 0
+        return "The line search failed at iteration $(c.at_iteration) and the solver could not recover from this failure.\n"
+    end
+    return ""
+end
+function status_summary(c::StopWhenLinesearchFailed; context::Symbol = :default)
+    (context === :short) && (return repr(c))
+    has_stopped = is_active_stopping_criterion(c)
+    s = has_stopped ? "reached" : "not reached"
+    (context === :inline) && (return "Line search failed terminally:$(_MANOPT_INDENT)$s")
+    return "A stopping criterion to stop when the line search fails and the solver cannot recover\n$(_MANOPT_INDENT)$s"
+end
+function Base.show(io::IO, ::StopWhenLinesearchFailed)
+    return print(io, "StopWhenLinesearchFailed()")
+end
+requires_update(::Type{<:StopWhenLinesearchFailed}) = false
+
+@doc """
+    has_terminal_linesearch_failure(s::AbstractManoptSolverState)
+
+Return `true` if the last line search of the solver with state `s` failed and the solver
+cannot recover from this failure, for example by a restart. This is used by
+[`StopWhenLinesearchFailed`](@ref).
+
+This method takes into account that `s` might be decorated. By default, `false` is returned;
+solvers that can detect such failures implement this function for their state.
+"""
+function has_terminal_linesearch_failure(s::AbstractManoptSolverState)
+    return _has_terminal_linesearch_failure(s, dispatch_state_decorator(s))
+end
+_has_terminal_linesearch_failure(s::AbstractManoptSolverState, ::Val{true}) = has_terminal_linesearch_failure(s.state)
+_has_terminal_linesearch_failure(::AbstractManoptSolverState, ::Val{false}) = false
+
+#
+#
+# ---
+@doc """
     StopWhenRepeated <: StoppingCriterion
 
 A stopping criterion that indicates to stop when the (internal) stopping criterion it wraps

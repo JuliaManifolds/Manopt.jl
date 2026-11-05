@@ -1527,8 +1527,8 @@ end
 @doc raw"""
     GeneralizedCauchyDirectionSubsolver{TX, T_HA, TFU <: AbstractSegmentHessianUpdater, TFT, TBI, TO}
 
-Helper container for generalized Cauchy direction search. Stores the cached
-original descent direction (`d_original`), the quasi-Newton direction update `ha`, the
+Helper container for generalized Cauchy direction search. Stores a buffer for the
+search direction projected onto the tangent cone at the bounds (`d_projected`), the quasi-Newton direction update `ha`, the
 `hessian_segment_updater`, which computes certain values of the Hessian while advancing
 segments, the list of bounds `F_list`, the bound indices `bounds_indices`, and the heap
 `ordering`.
@@ -1540,7 +1540,7 @@ struct GeneralizedCauchyDirectionSubsolver{
         T_HA, TFU <: AbstractSegmentHessianUpdater, TFT <: Tuple{<:Real, Any}, TBI,
         TO <: Base.Order.Ordering,
     }
-    d_original::TX
+    d_projected::TX
     ha::T_HA
     hessian_segment_updater::TFU
     F_list::Vector{TFT}
@@ -1596,6 +1596,10 @@ end
 Find generalized Cauchy direction looking from point `p` on manifold `M` in direction `d`
 and save it to `d_out`. Gradient of the objective at `p` is `X`.
 
+Elements of `d` that point out of the box at a variable that is already at its bound
+(that is, with a zero breakpoint) are set to zero before the search, so the piecewise
+quadratic model is minimized along the projected path of `d`.
+
 The function returns a pair (status, max_stepsize) where `status` is a symbol describing
 the result of the search, and `max_stepsize` is the maximum stepsize that can be taken in
 the direction `d_out`.
@@ -1605,7 +1609,8 @@ The `status` can be one of the following:
   `max_stepsize`, which is at least 1, can be performed in direction `d_out` afterwards,
 * `:found_unlimited` if the point was found and we can perform a step of length at most
   `max_stepsize(M, p)` in direction `d_out` afterwards,
-* `:not_found` if the search cannot be performed in direction `d`.
+* `:not_found` if `d`, with the elements described above set to zero, is not a descent
+  direction of the model, or vanishes. In this case `d_out` is set to the zero vector.
 """
 function find_generalized_cauchy_direction!(
         M::AbstractManifold,
@@ -1615,8 +1620,12 @@ function find_generalized_cauchy_direction!(
         },
         d_out, p, d, X
     ) where {TF <: Real}
-    copyto!(M, gcd.d_original, d)
-    copyto!(M, d_out, d)
+    # `d_projected` is `d` with the elements that point out of the box at an active bound (zero
+    # breakpoints) set to zero, i.e. the projection of `d` onto the tangent cone at `p`.
+    # These variables cannot move along the projected path, so they are fixed from the
+    # start. `d_out` may alias `d`, so everything below uses `d_projected`.
+    d_projected = gcd.d_projected
+    copyto!(M, d_projected, d)
 
     ordering = gcd.ordering
     F_list = gcd.F_list
@@ -1635,22 +1644,25 @@ function find_generalized_cauchy_direction!(
             if sbi < smallest_positive_limit
                 smallest_positive_limit = sbi
             end
+            has_finite_limit |= isfinite(sbi)
+        else
+            set_zero_at_index!(M, d_projected, i)
         end
-        has_finite_limit |= isfinite(sbi)
     end
 
-    # In this case we can't move in the direction `d` at all, though it's usually not
-    # a problem relevant to the end user because it can be handled by step_solver! that
-    # uses the GCD subsolver.
-    if isempty(F_list)
-        return (:not_found, NaN)
-    end
+    # No positive breakpoint and no isotropic limit: the remaining part of `d_projected`
+    # (if any) can be followed without limit.
+    isempty(F_list) && push!(F_list, (convert(TF, Inf), -1))
     heapify!(F_list, ordering)
 
-    f_prime = inner(M, p, X, d)
-    f_double_prime = hessian_value_diag(gcd.ha, M, p, d)
+    f_prime = inner(M, p, X, d_projected)
+    f_double_prime = hessian_value_diag(gcd.ha, M, p, d_projected)
 
-    if iszero(f_prime) || iszero(f_double_prime)
+    # `f_prime ≥ 0`: `d_projected` is not a descent direction of the model;
+    # `f_double_prime = 0`: `d_projected` vanishes (the Hessian approximation is positive definite).
+    # Return the zero vector so that the result cannot be mistaken for a descent direction.
+    if f_prime >= 0 || iszero(f_double_prime)
+        zero_vector!(M, d_out, p)
         return (:not_found, NaN)
     end
 
@@ -1660,10 +1672,10 @@ function find_generalized_cauchy_direction!(
     t_current, b = heappop!(F_list, ordering)
     dt = t_current - t_old
 
-    init_updater!(M, gcd.hessian_segment_updater, p, d, gcd.ha)
+    init_updater!(M, gcd.hessian_segment_updater, p, d_projected, gcd.ha)
     # b can be -1 if it corresponds to the max stepsize limit on the manifold part
     while dt_min > dt && b != -1
-        db = get_at_bound_index(M, d, b)::TF
+        db = get_at_bound_index(M, d_projected, b)::TF
         gb = get_at_bound_index(M, X, b)::TF
 
         hv_eb_dz, hv_eb_d = gcd.hessian_segment_updater(M, p, t_current, dt, b, db, gcd.ha)::Tuple{TF, TF}
@@ -1691,12 +1703,13 @@ function find_generalized_cauchy_direction!(
 
     dt_min = max(dt_min, 0.0)
     t_old = t_old + dt_min
+    copyto!(M, d_out, d_projected)
     d_out .*= t_old
     # by construction, there is no bound achievable before stepsize 1.0 in direction d_out
     # there first bound after that is achieved at smallest_positive_limit / t_old
     max_feasible_stepsize = max(1.0, smallest_positive_limit / t_old)
 
-    set_stepsize_bound!(M, d_out, p, gcd.d_original, t_old)
+    set_stepsize_bound!(M, d_out, p, d_projected, t_old)
     if has_finite_limit
         return (:found_limited, max_feasible_stepsize)
     else

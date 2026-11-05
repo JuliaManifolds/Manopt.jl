@@ -8,9 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.12] unreleased
 
+### Added
+
+* a keyword `linesearch_failure_behavior=` for `quasi_Newton` (and a field in `QuasiNewtonState`) that decides how to proceed when the line search fails. `:accept` (default) keeps the previous behavior of accepting the last trial step; `:restart` rejects the step and reinitializes the direction update, as L-BFGS-B does, and stops if the line search fails again before any curvature information was gathered.
+* a stopping criterion `StopWhenLinesearchFailed` that indicates to stop when a solver reports a line search failure it cannot recover from, determined by the new function `has_terminal_linesearch_failure(state)`, which returns `false` by default. `quasi_Newton` reports the latter case of `linesearch_failure_behavior=:restart` this way, and its default stopping criterion includes this criterion for this behavior.
+* a function `linesearch_failed(::Stepsize)` that reports whether the last line search failed. The `HagerZhangLinesearch` reports a failure when it reaches its limit on function evaluations without satisfying the Wolfe conditions, and stores the reason for its last termination in the new field `last_termination`. All other step sizes report no failures.
+
 ### Fixed
 
 * `initialize_update!` of `QuasiNewtonLimitedMemoryBoxDirectionUpdate`, which is called when `quasi_Newton` resets the memory after a non-descent direction, now also resets the Hessian scaling `current_scale`. Before, the generalized Cauchy direction computed with the emptied memory used the stale scaling from the previous memory.
+* `find_generalized_cauchy_direction!` now sets elements of the search direction that point out of the box at an active bound (zero breakpoints) to zero before the search, as in the Euclidean L-BFGS-B. Before, they were excluded from the breakpoints but still entered the piecewise quadratic model, so the returned direction might not have always been the minimizer along the projected path.
+* `find_generalized_cauchy_direction!` returns `:not_found` together with a zero direction whenever the (projected) search direction is not a descent direction of the model. Before, `d_out` was left equal to the unprojected input direction, which could pass the descent check of `quasi_Newton` while pointing out of the box, for example when all bounded variables were at active bounds and no isotropic stepsize limit was present.
 
 ## [0.6.11] November 1, 2026
 
