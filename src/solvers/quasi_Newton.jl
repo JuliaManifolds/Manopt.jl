@@ -283,6 +283,12 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
     keeps retrying from the same iterate until the custom criterion indicates to stop.
 * `memory_size::Int=min(manifold_dimension(M), 20)`: limited memory, number of ``s_k, y_k`` to store.
    Set to a negative value to use a full memory (matrix) representation
+* `model_decrease_factor=1e-4`: on manifolds with box constraints, i.e. an anisotropic maximal
+  step size like a [`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`), the generalized
+  Cauchy direction computed from the quasi-Newton direction is only used if it decreases the
+  quadratic model by at least `model_decrease_factor` times a reference value, see
+  [`QuasiNewtonLimitedMemoryBoxDirectionUpdate`](@ref). Otherwise it is treated as a
+  non-descent direction, see `nondescent_direction_behavior`. `0` deactivates this test.
 * `nondescent_direction_behavior=:reinitialize_direction_update`:
   specify how non-descent direction is handled. This can be
   * `:step_towards_negative_gradient`: the direction is replaced with negative gradient, a message is stored.
@@ -385,6 +391,7 @@ function quasi_Newton!(
         nondescent_direction_behavior::Symbol = :reinitialize_direction_update,
         nonpositive_curvature_behavior::Symbol = :ignore,
         sy_tol::Real = 1.0e-8,
+        model_decrease_factor::Real = 1.0e-4,
         kwargs...,
     ) where {
         O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective},
@@ -404,7 +411,9 @@ function quasi_Newton!(
             cautious_update && error(
                 "`cautious_update=true` is not supported on manifolds with an anisotropic maximal step size such as $(M).",
             )
-            local_dir_upd = QuasiNewtonLimitedMemoryBoxDirectionUpdate(local_dir_upd)
+            local_dir_upd = QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+                local_dir_upd; model_decrease_factor = model_decrease_factor
+            )
         end
     else
         local_dir_upd = QuasiNewtonMatrixDirectionUpdate(

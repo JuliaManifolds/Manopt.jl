@@ -1,5 +1,5 @@
 using Manopt, Manifolds, Test
-using LinearAlgebra: I, eigvecs, tr, Diagonal, dot
+using LinearAlgebra: I, eigvecs, eigvals, tr, Diagonal, dot, norm, Symmetric
 
 using RecursiveArrayTools
 
@@ -336,6 +336,90 @@ using RecursiveArrayTools
         p0 = [0.0, 4.0, 1.0]
         p_opt = quasi_Newton(MInf, f3, grad_f3, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test f3(MInf, p_opt) < 16.1
+    end
+
+    @testset "project_truncate" begin
+        M = Hyperrectangle([1.0, 1.0], [2.0, 2.0])
+        # at the lower bound with X pointing out of the box, and in the interior
+        @test Manopt.project_truncate(M, [1.0, 1.5], [-2.0, -0.1]) ≈ [0.0, -0.1]
+        # the step to P(p + X) is cut at the bounds
+        @test Manopt.project_truncate(M, [1.5, 1.5], [1.0, -0.2]) ≈ [0.5, -0.2]
+        # close to the bound, the result is small although X points into the box
+        Y = Manopt.project_truncate(M, [1.0 + 1.0e-9, 1.5], [-2.0, 0.0])
+        @test isapprox(Y, [-1.0e-9, 0.0]; atol = 1.0e-15)
+        # in place of X
+        Y = [-2.0, -0.1]
+        Manopt.project_truncate!(M, Y, [1.0, 1.5], Y)
+        @test Y ≈ [0.0, -0.1]
+        N = ProductManifold(M, Sphere(2))
+        p = ArrayPartition([1.0, 1.5], [1.0, 0.0, 0.0])
+        X = ArrayPartition([-2.0, -0.1], [0.0, -1.0, 2.0])
+        Y = Manopt.project_truncate(N, p, X)
+        @test Y.x[1] ≈ [0.0, -0.1]
+        @test Y.x[2] ≈ [0.0, -1.0, 2.0]
+        # without box constraints, X is only projected onto the tangent space
+        @test Manopt.project_truncate(Sphere(2), [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]) ≈
+            [0.0, 1.0, 0.0]
+        @test Manopt.project_truncate(Sphere(2), [1.0, 0.0, 0.0], [0.5, 1.0, 0.0]) ≈
+            [0.0, 1.0, 0.0]
+        @test Manopt.isotropic_max_stepsize(M, [1.5, 1.5]) == Inf
+        @test Manopt.isotropic_max_stepsize(N, p) ≈ Manopt.max_stepsize(Sphere(2), p.x[2])
+    end
+
+    @testset "Sufficient model decrease of the generalized Cauchy direction" begin
+        M = Hyperrectangle([-1.0, -1.0, -1.0], [1.0, 2.0, 2.0])
+        A = [4.0 1.0 0.0; 1.0 3.0 1.0; 0.0 1.0 2.0]
+        b = [1.0, -8.0, 3.0]
+        f(M, p) = 0.5 * dot(p, A * p) - dot(b, p)
+        grad_f(M, p) = A * p - b
+        p0 = [0.5, 0.5, 0.5]
+        pg_norm(p) = norm(Manopt.project_truncate(M, p, -grad_f(M, p)))
+
+        @test_throws DomainError Manopt.QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+            Manopt.QuasiNewtonLimitedMemoryDirectionUpdate(M, p0, InverseBFGS(), 2);
+            model_decrease_factor = -1.0,
+        )
+
+        # the bound on the norm of the Hessian approximation and the reference value
+        s = quasi_Newton(
+            M, f, grad_f, p0; memory_size = 3, nonpositive_curvature_behavior = :byrd,
+            stopping_criterion = StopAfterIteration(2), return_state = true,
+        )
+        qns = get_state(s)
+        du = qns.direction_update
+        p = get_iterate(qns)
+        X = grad_f(M, p)
+        @test any(!iszero, du.qn_du.ρ)
+        E = [[i == j ? 1.0 : 0.0 for i in 1:3] for j in 1:3]
+        H = [Manopt.hessian_value(du, M, p, Manopt.UnitVector(i), E[j]) for i in 1:3, j in 1:3]
+        λ = Manopt.hessian_norm_bound(du, M, p)
+        @test maximum(eigvals(Symmetric(H))) <= λ * (1 + 1.0e-12)
+        h = pg_norm(p)
+        @test Manopt.model_decrease_reference(du, M, p, X, zero_vector(M, p)) ≈
+            h^2 / norm(X) * h / max(1.0, λ)
+
+        # a huge factor rejects every direction computed with curvature information:
+        # the memory is then reset in each iteration and the solver still converges
+        for (κ, rejected) in ((1.0e8, true), (0.0, false))
+            s = quasi_Newton(
+                M, f, grad_f, p0; memory_size = 3, nonpositive_curvature_behavior = :byrd,
+                model_decrease_factor = κ, return_state = true,
+                stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-9) |
+                    StopAfterIteration(200),
+            )
+            qns = get_state(s)
+            @test pg_norm(get_iterate(qns)) < 1.0e-9
+            @test (qns.direction_update.insufficient_decrease_count > 0) == rejected
+            @test qns.direction_update.model_decrease_factor == κ
+        end
+        @test contains(
+            Manopt.status_summary(
+                Manopt.QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+                    Manopt.QuasiNewtonLimitedMemoryDirectionUpdate(M, p0, InverseBFGS(), 2)
+                )
+            ),
+            "model decrease factor",
+        )
     end
 
     @testset "has_anisotropic_max_stepsize" begin

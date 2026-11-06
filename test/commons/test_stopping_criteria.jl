@@ -469,6 +469,16 @@ end
         @test sc(prob, s, 1)
         @test length(get_reason(sc)) > 0
 
+        # close to the active bound, the projected negative gradient P(p - X) - p is small,
+        # although -X points into the box there
+        sc2 = StopWhenProjectedNegativeGradientNormLess(1.0e-6)
+        s2 = GradientDescentState(M; p = [1.0 + 1.0e-9], X = [2.0 + 2.0e-9])
+        @test sc2(prob, s2, 1)
+        @test isapprox(sc2.last_change, 1.0e-9; atol = 1.0e-15)
+        s3 = GradientDescentState(M; p = [1.5], X = [3.0])
+        @test !sc2(prob, s3, 1)
+        @test sc2.last_change ≈ 0.5
+
         @test startswith(
             to_display_string(sc),
             "A stopping criterion to stop when the projected negative gradient norm is less than",
