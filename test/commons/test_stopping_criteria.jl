@@ -590,6 +590,7 @@ end
                 StopWhenIterateNaN(),
                 StopWhenKKTResidualLess(1.0),
                 StopWhenLagrangeMultiplierLess(1.0),
+                StopWhenLinesearchFailed(),
                 StopWhenProjectedNegativeGradientNormLess(1.0),
                 StopWhenSmallerOrEqual(:p, 1.0),
                 StopWhenStepsizeLess(1.0),

@@ -23,6 +23,21 @@ using RecursiveArrayTools
         @test Manopt.get_stepsize_bound(M, p, d, 2) ≈ Inf
     end
 
+    @testset "set_stepsize_bound!" begin
+        M = Hyperrectangle([0.0, 0.0], [2.0, 2.0])
+        # p[1] is at its lower bound and d[1] points outward: bound 0, entry is zeroed;
+        # d[2] reaches the upper bound at t = 0.5
+        p = [0.0, 1.0]; d = [-1.0, 2.0]
+        # t_current beyond the bound of entry 2: it is cut to the distance to the bound
+        d_out = copy(d)
+        @test Manopt.set_stepsize_bound!(M, d_out, p, d, 1.0) === d_out
+        @test d_out == [0.0, 1.0]
+        # t_current within the bound of entry 2: it is kept
+        d_out = copy(d)
+        Manopt.set_stepsize_bound!(M, d_out, p, d, 0.25)
+        @test d_out == [0.0, 2.0]
+    end
+
     @testset "segment Hessian updater - basic d = -g" begin
         M = Hyperrectangle([0.0, 1.0], [3.0, 3.0])
 

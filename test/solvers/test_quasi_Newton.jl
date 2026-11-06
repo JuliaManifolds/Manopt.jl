@@ -809,6 +809,7 @@ end
             qns.linesearch_status = :failure_restarted
             @test get_reason(c) == ""
             @test repr(c) == "StopWhenLinesearchFailed()"
+            @test !Manopt.indicates_convergence(c)
             @test Manopt.status_summary(c; context = :short) == repr(c)
             @test endswith(Manopt.status_summary(c; context = :inline), "not reached")
             @test startswith(Manopt.status_summary(c), "A stopping criterion to stop when the line search fails")
