@@ -208,6 +208,18 @@ Returns `true`, as [`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`) manifo
 Manopt.has_anisotropic_max_stepsize(::Hyperrectangle) = true
 
 """
+    Manopt.project_truncate!(M::Hyperrectangle, Y, p, X)
+
+Compute `Y = clamp.(p .+ X, M.lb, M.ub) .- p` on
+[`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M`, the step from `p` to the
+projection of `p + X` onto `M`.
+"""
+function Manopt.project_truncate!(M::Hyperrectangle, Y, p, X)
+    Y .= clamp.(p .+ X, M.lb, M.ub) .- p
+    return Y
+end
+
+"""
     Manopt.get_at_bound_index(::Hyperrectangle, X, b)
 
 Extract the element of tangent vector `X` to a point on [`Hyperrectangle`](@extref Manifolds.Hyperrectangle)

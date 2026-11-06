@@ -1,5 +1,5 @@
 using Manopt, Manifolds, Test
-using LinearAlgebra: I, eigvecs, tr, Diagonal, dot
+using LinearAlgebra: I, eigvecs, eigvals, tr, Diagonal, dot, norm, Symmetric
 
 using RecursiveArrayTools
 
@@ -21,6 +21,21 @@ using RecursiveArrayTools
         p = [0.0, 1.0]; d = [0.0, 0.0]
         @test Manopt.get_stepsize_bound(M, p, d, 1) ≈ Inf
         @test Manopt.get_stepsize_bound(M, p, d, 2) ≈ Inf
+    end
+
+    @testset "set_stepsize_bound!" begin
+        M = Hyperrectangle([0.0, 0.0], [2.0, 2.0])
+        # p[1] is at its lower bound and d[1] points outward: bound 0, entry is zeroed;
+        # d[2] reaches the upper bound at t = 0.5
+        p = [0.0, 1.0]; d = [-1.0, 2.0]
+        # t_current beyond the bound of entry 2: it is cut to the distance to the bound
+        d_out = copy(d)
+        @test Manopt.set_stepsize_bound!(M, d_out, p, d, 1.0) === d_out
+        @test d_out == [0.0, 1.0]
+        # t_current within the bound of entry 2: it is kept
+        d_out = copy(d)
+        Manopt.set_stepsize_bound!(M, d_out, p, d, 0.25)
+        @test d_out == [0.0, 2.0]
     end
 
     @testset "segment Hessian updater - basic d = -g" begin
@@ -150,6 +165,19 @@ using RecursiveArrayTools
             @test ha2.M_11 == fill(0.0, 0, 0)
             @test ha2.M_21 == fill(0.0, 0, 0)
             @test ha2.M_22 == fill(0.0, 0, 0)
+            # resetting the memory also resets the scale, so that the limited memory
+            # segment updater agrees with the generic one
+            ha2.current_scale = 5.0
+            Manopt.initialize_update!(ha2)
+            @test ha2.current_scale == inv(ha2.qn_du.initial_scale)
+            gupd2 = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
+            Manopt.init_updater!(M, gupd2, p, d, ha2)
+            lmupd2 = Manopt.get_default_hessian_segment_updater(M, p, ha2)
+            Manopt.init_updater!(M, lmupd2, p, d, ha2)
+            @test all(
+                lmupd2(M, p, t_current, dt, b, db, ha2) .≈
+                    gupd2(M, p, t_current, dt, b, db, ha2)
+            )
         end
     end
 
@@ -193,6 +221,55 @@ using RecursiveArrayTools
 
         d_out = similar(p3)
         @test Manopt.find_generalized_cauchy_direction!(M2, gf3, d_out, p3, [1.0], [-10.0]) === (:found_limited, 90.0)
+    end
+
+    @testset "Zero breakpoints in GCD" begin
+        # x1 ≥ 0 is active and d points outwards in x1: that element has to be fixed from the
+        # start, otherwise the model is minimized along p + t d and the result is an ascent direction
+        M = Hyperrectangle([0.0, -Inf], [Inf, Inf])
+        p = [0.0, 0.0]
+        X = [10.0, 1.0]
+        B = [0.12 -0.2; -0.2 1.0]
+        ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), inv(B))
+        gf = Manopt.GeneralizedCauchyDirectionSubsolver(M, p, ha)
+        d = -B * X # descent direction, ⟨X, d⟩ = -9, but its projection (0, 1) is not
+        d_out = similar(d)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf, d_out, p, d, X) === (:not_found, NaN)
+        @test d_out == [0.0, 0.0]
+        # aliasing d_out and d, as done by the quasi-Newton direction update
+        d_alias = copy(d)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf, d_alias, p, d_alias, X) === (:not_found, NaN)
+        @test d_alias == [0.0, 0.0]
+        # projected gradient direction after a reset
+        ha_id = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [1.0 0.0; 0.0 1.0])
+        gf_id = Manopt.GeneralizedCauchyDirectionSubsolver(M, p, ha_id)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf_id, d_out, p, -X, X) === (:found_unlimited, Inf)
+        @test d_out ≈ [0.0, -1.0]
+
+        # a projected direction that is still a descent direction: the zero-breakpoint element
+        # must not influence the step along the remaining elements
+        ha2 = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [1.0 0.5; 0.5 2.0])
+        gf2 = Manopt.GeneralizedCauchyDirectionSubsolver(M, p, ha2)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf2, d_out, p, [-1.0, -1.0], [1.0, 1.0]) === (:found_unlimited, Inf)
+        @test d_out ≈ [0.0, -0.5] # minimizer of t ↦ -t + t^2 along (0, -1)
+
+        # every bounded variable at an active bound with d pointing outwards
+        M3 = Hyperrectangle([0.0, 0.0], [1.0, 1.0])
+        gf3 = Manopt.GeneralizedCauchyDirectionSubsolver(M3, p, ha_id)
+        @test Manopt.find_generalized_cauchy_direction!(M3, gf3, d_out, p, [-1.0, -0.05], [1.0, -0.1]) === (:not_found, NaN)
+        @test d_out == [0.0, 0.0]
+
+        # the same with an unbounded manifold factor without an isotropic stepsize limit
+        M4 = Hyperrectangle([0.0], [1.0]) × Euclidean(1)
+        p4 = ArrayPartition([0.0], [0.0])
+        ha4 = QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+            QuasiNewtonLimitedMemoryDirectionUpdate(M4, p4, InverseBFGS(), 2)
+        )
+        gf4 = Manopt.GeneralizedCauchyDirectionSubsolver(M4, p4, ha4)
+        d_out4 = zero_vector(M4, p4)
+        X4 = ArrayPartition([1.0], [1.0])
+        @test Manopt.find_generalized_cauchy_direction!(M4, gf4, d_out4, p4, -X4, X4) === (:found_unlimited, Inf)
+        @test d_out4 ≈ ArrayPartition([0.0], [-1.0])
     end
 
     @testset "Hitting multiple bounds at the same time in GCD" begin
@@ -274,6 +351,90 @@ using RecursiveArrayTools
         p0 = [0.0, 4.0, 1.0]
         p_opt = quasi_Newton(MInf, f3, grad_f3, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test f3(MInf, p_opt) < 16.1
+    end
+
+    @testset "project_truncate" begin
+        M = Hyperrectangle([1.0, 1.0], [2.0, 2.0])
+        # at the lower bound with X pointing out of the box, and in the interior
+        @test Manopt.project_truncate(M, [1.0, 1.5], [-2.0, -0.1]) ≈ [0.0, -0.1]
+        # the step to P(p + X) is cut at the bounds
+        @test Manopt.project_truncate(M, [1.5, 1.5], [1.0, -0.2]) ≈ [0.5, -0.2]
+        # close to the bound, the result is small although X points into the box
+        Y = Manopt.project_truncate(M, [1.0 + 1.0e-9, 1.5], [-2.0, 0.0])
+        @test isapprox(Y, [-1.0e-9, 0.0]; atol = 1.0e-15)
+        # in place of X
+        Y = [-2.0, -0.1]
+        Manopt.project_truncate!(M, Y, [1.0, 1.5], Y)
+        @test Y ≈ [0.0, -0.1]
+        N = ProductManifold(M, Sphere(2))
+        p = ArrayPartition([1.0, 1.5], [1.0, 0.0, 0.0])
+        X = ArrayPartition([-2.0, -0.1], [0.0, -1.0, 2.0])
+        Y = Manopt.project_truncate(N, p, X)
+        @test Y.x[1] ≈ [0.0, -0.1]
+        @test Y.x[2] ≈ [0.0, -1.0, 2.0]
+        # without box constraints, X is only projected onto the tangent space
+        @test Manopt.project_truncate(Sphere(2), [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]) ≈
+            [0.0, 1.0, 0.0]
+        @test Manopt.project_truncate(Sphere(2), [1.0, 0.0, 0.0], [0.5, 1.0, 0.0]) ≈
+            [0.0, 1.0, 0.0]
+        @test Manopt.isotropic_max_stepsize(M, [1.5, 1.5]) == Inf
+        @test Manopt.isotropic_max_stepsize(N, p) ≈ Manopt.max_stepsize(Sphere(2), p.x[2])
+    end
+
+    @testset "Sufficient model decrease of the generalized Cauchy direction" begin
+        M = Hyperrectangle([-1.0, -1.0, -1.0], [1.0, 2.0, 2.0])
+        A = [4.0 1.0 0.0; 1.0 3.0 1.0; 0.0 1.0 2.0]
+        b = [1.0, -8.0, 3.0]
+        f(M, p) = 0.5 * dot(p, A * p) - dot(b, p)
+        grad_f(M, p) = A * p - b
+        p0 = [0.5, 0.5, 0.5]
+        pg_norm(p) = norm(Manopt.project_truncate(M, p, -grad_f(M, p)))
+
+        @test_throws DomainError Manopt.QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+            Manopt.QuasiNewtonLimitedMemoryDirectionUpdate(M, p0, InverseBFGS(), 2);
+            model_decrease_factor = -1.0,
+        )
+
+        # the bound on the norm of the Hessian approximation and the reference value
+        s = quasi_Newton(
+            M, f, grad_f, p0; memory_size = 3, nonpositive_curvature_behavior = :byrd,
+            stopping_criterion = StopAfterIteration(2), return_state = true,
+        )
+        qns = get_state(s)
+        du = qns.direction_update
+        p = get_iterate(qns)
+        X = grad_f(M, p)
+        @test any(!iszero, du.qn_du.ρ)
+        E = [[i == j ? 1.0 : 0.0 for i in 1:3] for j in 1:3]
+        H = [Manopt.hessian_value(du, M, p, Manopt.UnitVector(i), E[j]) for i in 1:3, j in 1:3]
+        λ = Manopt.hessian_norm_bound(du, M, p)
+        @test maximum(eigvals(Symmetric(H))) <= λ * (1 + 1.0e-12)
+        h = pg_norm(p)
+        @test Manopt.model_decrease_reference(du, M, p, X, zero_vector(M, p)) ≈
+            h^2 / norm(X) * h / max(1.0, λ)
+
+        # a huge factor rejects every direction computed with curvature information:
+        # the memory is then reset in each iteration and the solver still converges
+        for (κ, rejected) in ((1.0e8, true), (0.0, false))
+            s = quasi_Newton(
+                M, f, grad_f, p0; memory_size = 3, nonpositive_curvature_behavior = :byrd,
+                model_decrease_factor = κ, return_state = true,
+                stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-9) |
+                    StopAfterIteration(200),
+            )
+            qns = get_state(s)
+            @test pg_norm(get_iterate(qns)) < 1.0e-9
+            @test (qns.direction_update.insufficient_decrease_count > 0) == rejected
+            @test qns.direction_update.model_decrease_factor == κ
+        end
+        @test contains(
+            Manopt.status_summary(
+                Manopt.QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+                    Manopt.QuasiNewtonLimitedMemoryDirectionUpdate(M, p0, InverseBFGS(), 2)
+                )
+            ),
+            "model decrease factor",
+        )
     end
 
     @testset "has_anisotropic_max_stepsize" begin

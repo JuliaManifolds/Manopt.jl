@@ -2798,6 +2798,14 @@ $(_fields(:vector_transport_method))
 * `last_stepsize`: last stepsize computed since reset
 * `last_cost`: last cost value computed since reset
 * `ϵₖ`: the current ϵ parameter used in the approximate Wolfe condition and bracketing
+* `last_termination`: why the last line search terminated, one of
+  * `:not_searched` before the first line search,
+  * `:wolfe` if the (standard or approximate) Wolfe conditions are satisfied,
+  * `:max_stepsize` if the maximal step size was reached with a decrease in cost,
+    see `allow_early_maxstep_termination`,
+  * `:evaluation_limit` if `max_function_evaluations` was reached first. The returned
+    step size is then the last trial step and [`linesearch_failed`](@ref Manopt.linesearch_failed)
+    returns `true`.
 
 # Constructor
 
@@ -2844,6 +2852,7 @@ mutable struct HagerZhangLinesearchStepsize{
     last_stepsize::TF
     last_cost::TF
     ϵₖ::TF
+    last_termination::Symbol
     function HagerZhangLinesearchStepsize(
             M::AbstractManifold;
             initial_guess::TIG = HagerZhangInitialGuess(),
@@ -2918,7 +2927,7 @@ mutable struct HagerZhangLinesearchStepsize{
             triples, 0,
             0.0, 0.0, # Qₖ, Cₖ
             initial_wolfe_mode,
-            initial_last_stepsize, initial_last_cost, ϵ,
+            initial_last_stepsize, initial_last_cost, ϵ, :not_searched,
         )
     end
 end
@@ -2934,6 +2943,7 @@ function initialize_stepsize!(hzls::HagerZhangLinesearchStepsize)
         hzls.current_mode = :standard
     end
     hzls.last_evaluation_index = 0
+    hzls.last_termination = :not_searched
     return hzls
 end
 
@@ -3307,11 +3317,19 @@ function (hzls::HagerZhangLinesearchStepsize)(
         # of objective evaluations
     end
 
+    hzls.last_termination = if f_early_maxstep
+        :max_stepsize
+    elseif f_wolfe
+        :wolfe
+    else
+        :evaluation_limit
+    end
     hzls.last_stepsize = hzls.triples[hzls.last_evaluation_index].t
     hzls.last_cost = hzls.triples[hzls.last_evaluation_index].f
     return hzls.last_stepsize
 end
 get_last_stepsize(hzls::HagerZhangLinesearchStepsize, ::Any...) = hzls.last_stepsize
+linesearch_failed(hzls::HagerZhangLinesearchStepsize) = hzls.last_termination === :evaluation_limit
 
 function Base.show(io::IO, hzls::HagerZhangLinesearchStepsize)
     return print(

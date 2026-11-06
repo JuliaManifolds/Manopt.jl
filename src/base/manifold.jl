@@ -47,3 +47,51 @@ with a standard manifold. Otherwise return `false`.
 """
 has_anisotropic_max_stepsize(::AbstractManifold) = false
 has_anisotropic_max_stepsize(M::ProductManifold) = any(has_anisotropic_max_stepsize, M.manifolds)
+
+_doc_project_truncate = raw"""
+    project_truncate(M::AbstractManifold, p, X)
+    project_truncate!(M::AbstractManifold, Y, p, X)
+
+Project the tangent vector `X` at `p` onto the set of tangent vectors ``Z`` for which
+``\exp_p Z`` satisfies the box constraints of `M`, that is, compute
+```math
+Y = \log_p P(\exp_p X),
+```
+where ``P`` denotes the projection onto the box constraints.
+The in-place variant can also be called with `Y` and `X` being the same tangent vector.
+
+* On a [`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`) with bounds ``l`` and ``u``,
+  this is ``Y = \operatorname{clamp}(p + X, l, u) - p``.
+* On a product manifold, `Y` is computed componentwise.
+* On manifolds without box constraints, this is ``Y = X``, projected onto the tangent
+  space at `p` with `embed_project!` for numerical stability.
+
+The set `X` is projected onto is contained in the tangent cone at `p`. Unlike the tangent
+cone, it changes continuously with `p`, and `Y` depends continuously on `p` and `X`.
+
+For example, for the negative gradient ``X = -\operatorname{grad} f(p)``, `Y` is the
+projected negative gradient of L-BFGS-B [ByrdLuNocedalZhu:1995](@cite). Its norm vanishes
+exactly at the stationary points of the problem and is used as a criticality measure by
+[`StopWhenProjectedNegativeGradientNormLess`](@ref) and
+[`model_decrease_reference`](@ref).
+"""
+
+@doc "$(_doc_project_truncate)"
+function project_truncate(M::AbstractManifold, p, X)
+    return project_truncate!(M, allocate_result(M, project_truncate, X, p), p, X)
+end
+@doc "$(_doc_project_truncate)"
+function project_truncate!(M::AbstractManifold, Y, p, X)
+    embed_project!(M, Y, p, X)
+    return Y
+end
+function project_truncate!(M::ProductManifold, Y, p, X)
+    map(
+        project_truncate!,
+        M.manifolds,
+        submanifold_components(M, Y),
+        submanifold_components(M, p),
+        submanifold_components(M, X),
+    )
+    return Y
+end

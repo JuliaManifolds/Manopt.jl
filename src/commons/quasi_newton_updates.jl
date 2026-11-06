@@ -912,11 +912,34 @@ index for which ``⟨s_k, y_k⟩`` is not equal to 0.
 `last_gcd_result` and `last_gcd_stepsize` store the status and the maximal step size returned
 by the last generalized Cauchy direction search, see [`find_generalized_cauchy_direction!`](@ref).
 
+# Sufficient decrease test
+
+While the memory holds curvature pairs, the generalized Cauchy direction ``d`` computed from
+the quasi-Newton direction is only returned if it decreases the quadratic model
+``m(d) = ⟨X, d⟩ + \frac{1}{2}⟨d, B d⟩`` sufficiently, that is if
+```math
+-m(d) ≥ κ ψ,
+```
+where ``κ ≥ 0`` is the `model_decrease_factor` and ``ψ`` is computed by
+[`model_decrease_reference`](@ref). This guards against projected quasi-Newton paths whose
+model decrease is negligible although the point is far from stationary.
+If the test fails, the zero vector is returned and `last_gcd_result` is set to
+`:insufficient_decrease`. The direction is hence handled like a non-descent direction by
+[`quasi_Newton`](@ref), which by default reinitializes this update and computes the
+generalized Cauchy direction for the empty memory.
+The number of failed tests since the construction of the update is stored in
+`insufficient_decrease_count`.
+With an empty memory, the direction is the generalized Cauchy direction along the projected
+negative gradient, so no test is performed. Setting `model_decrease_factor` to 0 deactivates
+the test.
+
 # Constructor
 
-    QuasiNewtonLimitedMemoryBoxDirectionUpdate(qn_du::QuasiNewtonLimitedMemoryDirectionUpdate)
+    QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+        qn_du::QuasiNewtonLimitedMemoryDirectionUpdate; model_decrease_factor::Real=1e-4
+    )
 
-See [ByrdNocedalSchnabel:1994](@cite) for details.
+See [ByrdNocedalSchnabel:1994](@cite) for details on the compact representation.
 """
 mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
         TDU <: QuasiNewtonLimitedMemoryDirectionUpdate,
@@ -939,6 +962,8 @@ mutable struct QuasiNewtonLimitedMemoryBoxDirectionUpdate{
     buffer_inner_Yk_Y::V
     last_gcd_result::Symbol
     last_gcd_stepsize::F
+    model_decrease_factor::F
+    insufficient_decrease_count::Int
 end
 
 # a deactivated `initial_scale` (`nothing`, used together with a preconditioner) acts as 1,
@@ -960,6 +985,8 @@ function status_summary(
     * current scale:                $(_MANOPT_INDENT)$(d.current_scale)
     * last Cauchy direction result: $(_MANOPT_INDENT):$(d.last_gcd_result)
     * last Cauchy step size:        $(_MANOPT_INDENT)$(d.last_gcd_stepsize)
+    * model decrease factor:        $(_MANOPT_INDENT)$(d.model_decrease_factor)
+    * insufficient decrease count:  $(_MANOPT_INDENT)$(d.insufficient_decrease_count)
 
     ## Internal direction update
     $(_in_str(status_summary(d.qn_du; context = context); indent = 1, headers = 1))
@@ -975,8 +1002,12 @@ function get_parameter(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate, ::Val{:max
 end
 
 function QuasiNewtonLimitedMemoryBoxDirectionUpdate(
-        qn_du::QuasiNewtonLimitedMemoryDirectionUpdate{<:AbstractQuasiNewtonUpdateRule, T, F}
+        qn_du::QuasiNewtonLimitedMemoryDirectionUpdate{<:AbstractQuasiNewtonUpdateRule, T, F};
+        model_decrease_factor::Real = 1.0e-4,
     ) where {T, F <: Real}
+    model_decrease_factor < 0 && throw(
+        DomainError(model_decrease_factor, "The model decrease factor must be nonnegative.")
+    )
     memory_size = capacity(qn_du.memory_s)
     M_11 = zeros(F, memory_size, memory_size)
     M_21 = zeros(F, memory_size, memory_size)
@@ -999,11 +1030,15 @@ function QuasiNewtonLimitedMemoryBoxDirectionUpdate(
         buffer_inner_Yk_Y,
         :not_searched,
         NaN,
+        model_decrease_factor,
+        0,
     )
 end
 
 function initialize_update!(ha::QuasiNewtonLimitedMemoryBoxDirectionUpdate)
     initialize_update!(ha.qn_du)
+    # with an empty memory the Hessian approximation is `θ Id` with `θ = 1/initial_scale`
+    ha.current_scale = inv(_box_initial_scale(ha))
     ha.last_gcd_result = :not_searched
     return ha
 end
@@ -1023,7 +1058,101 @@ function (d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)(
     X = get_gradient(st)
     gcd = GeneralizedCauchyDirectionSubsolver(M, p, d)
     d.last_gcd_result, d.last_gcd_stepsize = find_generalized_cauchy_direction!(M, gcd, r, p, r, X)
+    # With an empty memory, `r` is the generalized Cauchy direction along the projected
+    # negative gradient and needs no test. `:not_found` already yields the zero vector.
+    if d.model_decrease_factor > 0 && d.last_gcd_result !== :not_found &&
+            any(!iszero, d.qn_du.ρ)
+        model_decrease = -(real(inner(M, p, X, r)) + hessian_value_diag(d, M, p, r) / 2)
+        # the projected direction of the search is no longer needed, use it as a buffer
+        ψ = model_decrease_reference(d, M, p, X, gcd.d_projected)
+        if model_decrease < d.model_decrease_factor * ψ
+            zero_vector!(M, r, p)
+            d.last_gcd_result = :insufficient_decrease
+            d.last_gcd_stepsize = NaN
+            d.insufficient_decrease_count += 1
+        end
+    end
     return r
+end
+
+@doc raw"""
+    hessian_norm_bound(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p)
+
+Return an upper bound ``\hat λ`` on the largest eigenvalue of the Hessian approximation
+``B`` stored in `gh`,
+```math
+\hat λ = θ + \sum_{i} \frac{\lVert y_i \rVert^2}{⟨s_i, y_i⟩},
+```
+where ``θ`` is the current scale and the sum runs over the stored pairs with
+``⟨s_i, y_i⟩ > 0``.
+``B`` results from BFGS updates of ``θ \operatorname{Id}``, each of which subtracts a positive
+semidefinite rank-one term and adds ``\frac{y_i y_i^{\mathrm{T}}}{⟨s_i, y_i⟩}``.
+By Weyl's inequality, the largest eigenvalue increases by at most
+``\frac{\lVert y_i\rVert^2}{⟨s_i, y_i⟩}`` per update.
+"""
+function hessian_norm_bound(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p)
+    bound = gh.current_scale
+    for i in 1:length(gh.qn_du.memory_y)
+        ρ_i = gh.qn_du.ρ[i]
+        (ρ_i > 0) || continue
+        # written this way to avoid an overflow of the squared norm, cf. `update_current_scale!`
+        y_norm = norm(M, p, gh.qn_du.memory_y[i])
+        bound += (ρ_i * y_norm) * y_norm
+    end
+    return bound
+end
+
+"""
+    isotropic_max_stepsize(M::AbstractManifold, p)
+
+Return the smallest maximal step size [`max_stepsize`](@ref)`(N, q)` among the components
+`N` of the product manifold `M`, at the corresponding components `q` of `p`, that do not
+have an anisotropic maximal step size. Return `Inf` if there is no such component, and for
+manifolds that are not product manifolds.
+These are the limits that [`find_generalized_cauchy_direction!`](@ref) imposes on the
+manifold components of the search direction.
+"""
+isotropic_max_stepsize(::AbstractManifold, ::Any) = Inf
+function isotropic_max_stepsize(M::ProductManifold, p)
+    t = Inf
+    for (N, q) in zip(M.manifolds, submanifold_components(M, p))
+        has_anisotropic_max_stepsize(N) || (t = min(t, max_stepsize(N, q)))
+    end
+    return t
+end
+
+@doc raw"""
+    model_decrease_reference(gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X, Y)
+
+Compute the reference value ``ψ`` for the sufficient decrease test of the generalized
+Cauchy direction in [`QuasiNewtonLimitedMemoryBoxDirectionUpdate`](@ref),
+```math
+ψ = \frac{h^2}{\lVert X \rVert} \min\Bigl\{\frac{h}{\max\{1, \hat λ\}},\ t_{\max}\Bigr\},
+```
+where ``X`` is the gradient at ``p``, ``h`` is the norm of the projected negative gradient
+[`project_truncate`](@ref Manopt.project_truncate)`(M, p, -X)`,
+``\hat λ`` is the bound from [`hessian_norm_bound`](@ref), and ``t_{\max}`` is the
+[`isotropic_max_stepsize`](@ref).
+`Y` is used as a buffer for the projected negative gradient. If ``h = 0``, ``ψ = 0``.
+
+The value mimics the lower bound on the model decrease achieved by the generalized Cauchy
+point along the projected negative gradient from [ConnGouldToint:1988; Lemma 5](@cite).
+There, the bounds on the norm of the gradient and of the Hessian approximation are replaced
+by ``\lVert X \rVert`` and ``\hat λ``.
+If the quasi-Newton step ``-B^{-1}X`` is feasible and does not exceed the maximal step size,
+it is the generalized Cauchy direction, and its model decrease
+``\frac{1}{2}⟨X, B^{-1}X⟩ ≥ \frac{\lVert X \rVert^2}{2\hat λ}`` is at least ``ψ/2``.
+"""
+function model_decrease_reference(
+        gh::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p, X, Y
+    )
+    copyto!(M, Y, p, X)
+    Y .*= -1
+    project_truncate!(M, Y, p, Y)
+    h = norm(M, p, Y)
+    iszero(h) && return zero(h)
+    λ = hessian_norm_bound(gh, M, p)
+    return h^2 / norm(M, p, X) * min(h / max(one(λ), λ), isotropic_max_stepsize(M, p))
 end
 
 get_update_vector_transport(u::QuasiNewtonLimitedMemoryBoxDirectionUpdate) = get_update_vector_transport(u.qn_du)
@@ -1525,8 +1654,8 @@ end
 @doc raw"""
     GeneralizedCauchyDirectionSubsolver{TX, T_HA, TFU <: AbstractSegmentHessianUpdater, TFT, TBI, TO}
 
-Helper container for generalized Cauchy direction search. Stores the cached
-original descent direction (`d_original`), the quasi-Newton direction update `ha`, the
+Helper container for generalized Cauchy direction search. Stores a buffer for the
+search direction projected onto the tangent cone at the bounds (`d_projected`), the quasi-Newton direction update `ha`, the
 `hessian_segment_updater`, which computes certain values of the Hessian while advancing
 segments, the list of bounds `F_list`, the bound indices `bounds_indices`, and the heap
 `ordering`.
@@ -1538,7 +1667,7 @@ struct GeneralizedCauchyDirectionSubsolver{
         T_HA, TFU <: AbstractSegmentHessianUpdater, TFT <: Tuple{<:Real, Any}, TBI,
         TO <: Base.Order.Ordering,
     }
-    d_original::TX
+    d_projected::TX
     ha::T_HA
     hessian_segment_updater::TFU
     F_list::Vector{TFT}
@@ -1594,6 +1723,10 @@ end
 Find generalized Cauchy direction looking from point `p` on manifold `M` in direction `d`
 and save it to `d_out`. Gradient of the objective at `p` is `X`.
 
+Elements of `d` that point out of the box at a variable that is already at its bound
+(that is, with a zero breakpoint) are set to zero before the search, so the piecewise
+quadratic model is minimized along the projected path of `d`.
+
 The function returns a pair (status, max_stepsize) where `status` is a symbol describing
 the result of the search, and `max_stepsize` is the maximum stepsize that can be taken in
 the direction `d_out`.
@@ -1603,7 +1736,8 @@ The `status` can be one of the following:
   `max_stepsize`, which is at least 1, can be performed in direction `d_out` afterwards,
 * `:found_unlimited` if the point was found and we can perform a step of length at most
   `max_stepsize(M, p)` in direction `d_out` afterwards,
-* `:not_found` if the search cannot be performed in direction `d`.
+* `:not_found` if `d`, with the elements described above set to zero, is not a descent
+  direction of the model, or vanishes. In this case `d_out` is set to the zero vector.
 """
 function find_generalized_cauchy_direction!(
         M::AbstractManifold,
@@ -1613,8 +1747,12 @@ function find_generalized_cauchy_direction!(
         },
         d_out, p, d, X
     ) where {TF <: Real}
-    copyto!(M, gcd.d_original, d)
-    copyto!(M, d_out, d)
+    # `d_projected` is `d` with the elements that point out of the box at an active bound (zero
+    # breakpoints) set to zero, i.e. the projection of `d` onto the tangent cone at `p`.
+    # These variables cannot move along the projected path, so they are fixed from the
+    # start. `d_out` may alias `d`, so everything below uses `d_projected`.
+    d_projected = gcd.d_projected
+    copyto!(M, d_projected, d)
 
     ordering = gcd.ordering
     F_list = gcd.F_list
@@ -1633,22 +1771,25 @@ function find_generalized_cauchy_direction!(
             if sbi < smallest_positive_limit
                 smallest_positive_limit = sbi
             end
+            has_finite_limit |= isfinite(sbi)
+        else
+            set_zero_at_index!(M, d_projected, i)
         end
-        has_finite_limit |= isfinite(sbi)
     end
 
-    # In this case we can't move in the direction `d` at all, though it's usually not
-    # a problem relevant to the end user because it can be handled by step_solver! that
-    # uses the GCD subsolver.
-    if isempty(F_list)
-        return (:not_found, NaN)
-    end
+    # No positive breakpoint and no isotropic limit: the remaining part of `d_projected`
+    # (if any) can be followed without limit.
+    isempty(F_list) && push!(F_list, (convert(TF, Inf), -1))
     heapify!(F_list, ordering)
 
-    f_prime = inner(M, p, X, d)
-    f_double_prime = hessian_value_diag(gcd.ha, M, p, d)
+    f_prime = inner(M, p, X, d_projected)
+    f_double_prime = hessian_value_diag(gcd.ha, M, p, d_projected)
 
-    if iszero(f_prime) || iszero(f_double_prime)
+    # `f_prime ≥ 0`: `d_projected` is not a descent direction of the model;
+    # `f_double_prime = 0`: `d_projected` vanishes (the Hessian approximation is positive definite).
+    # Return the zero vector so that the result cannot be mistaken for a descent direction.
+    if f_prime >= 0 || iszero(f_double_prime)
+        zero_vector!(M, d_out, p)
         return (:not_found, NaN)
     end
 
@@ -1658,10 +1799,10 @@ function find_generalized_cauchy_direction!(
     t_current, b = heappop!(F_list, ordering)
     dt = t_current - t_old
 
-    init_updater!(M, gcd.hessian_segment_updater, p, d, gcd.ha)
+    init_updater!(M, gcd.hessian_segment_updater, p, d_projected, gcd.ha)
     # b can be -1 if it corresponds to the max stepsize limit on the manifold part
     while dt_min > dt && b != -1
-        db = get_at_bound_index(M, d, b)::TF
+        db = get_at_bound_index(M, d_projected, b)::TF
         gb = get_at_bound_index(M, X, b)::TF
 
         hv_eb_dz, hv_eb_d = gcd.hessian_segment_updater(M, p, t_current, dt, b, db, gcd.ha)::Tuple{TF, TF}
@@ -1689,12 +1830,13 @@ function find_generalized_cauchy_direction!(
 
     dt_min = max(dt_min, 0.0)
     t_old = t_old + dt_min
+    copyto!(M, d_out, d_projected)
     d_out .*= t_old
     # by construction, there is no bound achievable before stepsize 1.0 in direction d_out
     # there first bound after that is achieved at smallest_positive_limit / t_old
     max_feasible_stepsize = max(1.0, smallest_positive_limit / t_old)
 
-    set_stepsize_bound!(M, d_out, p, gcd.d_original, t_old)
+    set_stepsize_bound!(M, d_out, p, d_projected, t_old)
     if has_finite_limit
         return (:found_limited, max_feasible_stepsize)
     else

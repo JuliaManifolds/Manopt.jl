@@ -105,6 +105,20 @@ If no last step size is stored, this returns `NaN`.
 get_last_stepsize(::Stepsize, ::Any...) = NaN
 
 @doc """
+    linesearch_failed(s::Stepsize)
+
+Return `true` if the last call of the step size `s` terminated without finding a step size
+that satisfies its acceptance conditions, for example because an evaluation limit was
+reached. The step size returned by such a call is then the last trial step.
+
+Solvers can use this to decide how to proceed, see for example the
+`linesearch_failure_behavior=` keyword of [`quasi_Newton`](@ref).
+The default returns `false`, i.e. step sizes that do not report failures are always
+considered successful.
+"""
+linesearch_failed(::Stepsize) = false
+
+@doc """
     get_initial_stepsize(::Stepsize)
 
 return the initial stepsize stored within a [`Stepsize`](@ref).
