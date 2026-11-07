@@ -319,10 +319,19 @@ using RecursiveArrayTools
         e1 = Manopt.UnitVector(1)
         @test Manopt.hessian_value_diag(u_s, M, p0, e1) ≈
             Manopt.hessian_value(u_s, M, p0, e1, [1.0, 0.0, 0.0])
-        # `cautious_update` can not be combined with the box update; report that clearly
-        @test_throws ErrorException quasi_Newton(
-            M, f, grad_f, p0; cautious_update = true, stopping_criterion = StopAfterIteration(3)
-        )
+        # `cautious_update` wraps the box update; the cautious function `x -> 1e3 * x`
+        # rejects every pair, so the memory stays empty
+        for (cautious_function, memory_length) in ((x -> 1.0e-4 * x, 2), (x -> 1.0e3 * x, 0))
+            st_c = quasi_Newton(
+                M, f, grad_f, p0;
+                cautious_update = true, cautious_function = cautious_function, return_state = true,
+                stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(10),
+            )
+            du_c = Manopt.get_state(st_c).direction_update
+            @test du_c isa QuasiNewtonCautiousDirectionUpdate{<:QuasiNewtonLimitedMemoryBoxDirectionUpdate}
+            @test length(du_c.update.qn_du.memory_s) == memory_length
+            @test get_solver_result(st_c) ≈ [0, 2, 0]
+        end
 
 
         f2(M, p) = sum(p .^ 4)
@@ -507,6 +516,53 @@ using RecursiveArrayTools
 
         p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test distance(M, p_opt, ArrayPartition(px, [0 2; 0 0])) < 0.1
+        p_opt_c = quasi_Newton(
+            M, f, grad_f, p0; cautious_update = true,
+            stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100),
+        )
+        @test is_point(M, p_opt_c)
+        @test distance(M, p_opt_c, ArrayPartition(px, [0 2; 0 0])) < 0.1
+    end
+
+    @testset "Cautious update with box constraints" begin
+        M = Hyperrectangle([-1.0, 2.0, -Inf], [2.0, Inf, 2.0])
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = project(M, p, 2 .* p)
+        p0 = [0.0, 4.0, 1.0]
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        ha = QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+            QuasiNewtonLimitedMemoryDirectionUpdate(M, p0, InverseBFGS(), 2)
+        )
+        cha = QuasiNewtonCautiousDirectionUpdate(ha; θ = identity)
+        @test startswith(
+            repr(cha),
+            "QuasiNewtonCautiousDirectionUpdate with θ = identity and internal state:\nQuasiNewtonLimitedMemoryBoxDirectionUpdate",
+        )
+        st = QuasiNewtonState(M; p = copy(M, p0), direction_update = cha)
+        # with θ = identity the bound is the gradient norm ‖(0, 8, 2)‖ ≈ 8.25 at p0
+        # ⟨s, y⟩ / ‖s‖² = 10 exceeds the bound, so the pair is added
+        st.sk = [0.0, 1.0, 0.0]
+        st.yk = [0.0, 10.0, 0.0]
+        update_hessian!(cha, mp, st, p0, 1)
+        @test length(ha.qn_du.memory_s) == 1
+        @test ha.current_scale ≈ 10.0
+        # ⟨s, y⟩ / ‖s‖² = 1 is below the bound, so the pair is skipped, but the compact
+        # representation is recomputed from the stored pairs, here a modified one
+        st.sk = [1.0, 0.0, 0.0]
+        st.yk = [1.0, 0.0, 0.0]
+        ha.qn_du.memory_y[1] .*= 2
+        update_hessian!(cha, mp, st, p0, 2)
+        @test length(ha.qn_du.memory_s) == 1
+        @test ha.qn_du.ρ[1] ≈ 1 / 20
+        @test ha.current_scale ≈ 20.0
+        # the direction is the one of the box update, and so is its maximal step size
+        st.X = grad_f(M, p0)
+        η = cha(mp, st)
+        @test η ≈ ha(mp, st)
+        @test Manopt.get_parameter(cha, :max_stepsize) == Manopt.get_parameter(ha, :max_stepsize)
+        ha.last_gcd_result = :found_limited
+        ha.last_gcd_stepsize = 0.5
+        @test Manopt.get_parameter(cha, :max_stepsize) == 0.5
     end
 end
 

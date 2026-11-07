@@ -408,9 +408,6 @@ function quasi_Newton!(
             sy_tol = sy_tol,
         )
         if has_anisotropic_max_stepsize(M)
-            cautious_update && error(
-                "`cautious_update=true` is not supported on manifolds with an anisotropic maximal step size such as $(M).",
-            )
             local_dir_upd = QuasiNewtonLimitedMemoryBoxDirectionUpdate(
                 local_dir_upd; model_decrease_factor = model_decrease_factor
             )
@@ -898,9 +895,11 @@ function update_hessian!(
     return d
 end
 
-# all Cautious Limited Memory
+# all Cautious Limited Memory, with or without box constraints
 function update_hessian!(
-        d::QuasiNewtonCautiousDirectionUpdate{<:QuasiNewtonLimitedMemoryDirectionUpdate},
+        d::QuasiNewtonCautiousDirectionUpdate{
+            <:Union{QuasiNewtonLimitedMemoryDirectionUpdate, QuasiNewtonLimitedMemoryBoxDirectionUpdate},
+        },
         mp::AbstractManoptProblem, st::AbstractManoptSolverState, p_old, iter,
     )
     # computing the bound used in the decision rule
@@ -913,16 +912,24 @@ function update_hessian!(
         update_hessian!(d.update, mp, st, p_old, iter)
     else
         # the stored vectors are just transported to the new tangent space; `sk` and `yk` are not added
-        for i in 1:length(d.update.memory_s)
-            vector_transport_to!(
-                M, d.update.memory_s[i], p_old, d.update.memory_s[i], p, d.update.vector_transport_method,
-            )
-            vector_transport_to!(
-                M, d.update.memory_y[i], p_old, d.update.memory_y[i], p, d.update.vector_transport_method,
-            )
-            fill_rho_i!(M, p, d.update, i)
-        end
+        _transport_memory!(d.update, M, p_old, p)
     end
+    return d
+end
+
+function _transport_memory!(d::QuasiNewtonLimitedMemoryDirectionUpdate, M::AbstractManifold, p_old, p)
+    for i in 1:length(d.memory_s)
+        vector_transport_to!(M, d.memory_s[i], p_old, d.memory_s[i], p, d.vector_transport_method)
+        vector_transport_to!(M, d.memory_y[i], p_old, d.memory_y[i], p, d.vector_transport_method)
+        fill_rho_i!(M, p, d, i)
+    end
+    return d
+end
+function _transport_memory!(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p_old, p)
+    _transport_memory!(d.qn_du, M, p_old, p)
+    # the inner products of the transported pairs may have changed, so the compact
+    # representation of the Hessian approximation is recomputed at `p`
+    update_current_scale!(M, p, d)
     return d
 end
 

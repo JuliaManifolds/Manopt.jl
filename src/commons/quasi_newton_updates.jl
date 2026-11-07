@@ -791,103 +791,6 @@ function show(io::IO, qns::QuasiNewtonLimitedMemoryDirectionUpdate)
 end
 
 
-@doc """
-    QuasiNewtonCautiousDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
-
-These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule,
-which are based on the idea of a so-called cautious update. The search direction is calculated
-as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref),
-but the update then is only executed if
-
-```math
-$(_tex(:frac, "g_{p_{k+1}}(y_k,s_k)", "$(_tex(:norm, "s_k"; index = "p_{k+1}"))^{2}")) ≥ θ$(_tex(:bigl))($(_tex(:norm, "$(_tex(:grad))f(p_k)"; index = "p_k"))$(_tex(:bigr))),
-```
-
-is satisfied, where ``θ`` is a monotone increasing function satisfying ``θ(0) = 0``
-and ``θ`` is strictly increasing at ``0``. If this is not the case, the corresponding
-update is skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@ref)
-the matrix ``H_k`` or ``B_k`` is not updated.
-The basis ``$(_math(:Sequence, "b", "i", "1", "n"))`` is nevertheless transported into the upcoming tangent
-space ``T_{p_{k+1}} $(_math(:Manifold))``, and for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
-neither the oldest vector pair ``$(_tex(:widetilde, "s"))_{k-m}``, ``$(_tex(:widetilde, "y"))_{k-m}`` is
-discarded nor the newest vector pair ``$(_tex(:widetilde, "s"))_k, $(_tex(:widetilde, "y"))_k`` is added
-into storage, but all stored vector pairs ``$(_tex(:set, "$(_tex(:widetilde, "s"))_i, $(_tex(:widetilde, "y"))_i"))_{i=k-m}^{k-1}``
-are transported into the tangent space ``T_{p_{k+1}} $(_math(:Manifold))``.
-If [`InverseBFGS`](@ref) is chosen as update — either within a [`QuasiNewtonMatrixDirectionUpdate`](@ref)
-or a [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) — then the resulting
-method follows the method of [HuangAbsilGallivan:2018](@cite),
-taking into account that the corresponding step size is chosen.
-
-# Provided functors
-
-* `(mp::AbstractManoptProblem, st::QuasiNewtonState) -> η` to compute the update direction
-* `(η, mp::AbstractManoptProblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
-
-# Fields
-
-* `update`: an [`AbstractQuasiNewtonDirectionUpdate`](@ref)
-* `θ`:      a monotone increasing function satisfying ``θ(0) = 0`` and ``θ`` is strictly increasing at ``0``.
-
-# Constructor
-
-    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonMatrixDirectionUpdate; θ = identity)
-    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonLimitedMemoryDirectionUpdate; θ = identity)
-
-Generate a cautious update for either a matrix based or a limited memory based update rule.
-
-# See also
-
-[`QuasiNewtonMatrixDirectionUpdate`](@ref)
-[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
-"""
-mutable struct QuasiNewtonCautiousDirectionUpdate{
-        U <: Union{QuasiNewtonMatrixDirectionUpdate, QuasiNewtonLimitedMemoryDirectionUpdate},
-        Tθ,
-    } <: AbstractQuasiNewtonDirectionUpdate
-    update::U
-    θ::Tθ
-end
-function QuasiNewtonCautiousDirectionUpdate(
-        update::U; θ::Function = identity
-    ) where {U <: Union{QuasiNewtonMatrixDirectionUpdate, QuasiNewtonLimitedMemoryDirectionUpdate}}
-    return QuasiNewtonCautiousDirectionUpdate{U, typeof(θ)}(update, θ)
-end
-function status_summary(d::QuasiNewtonCautiousDirectionUpdate; context::Symbol = :default)
-    (context === :short) && return repr(d)
-    (context === :inline) &&
-        return "A cautious direction update with θ = $(d.θ); internally: $(status_summary(d.update; context = :inline))"
-    return """
-    A cautious quasi Newton direction update
-
-    ## Parameters
-    * θ: $(_MANOPT_INDENT)$(d.θ)
-
-    ## Internal direction update
-    $(_in_str(status_summary(d.update; context = context); indent = 1, headers = 1))
-    """
-end
-function show(io::IO, d::QuasiNewtonCautiousDirectionUpdate)
-    print(io, "QuasiNewtonCautiousDirectionUpdate with θ = $(d.θ) and internal state:\n")
-    return print(io, d.update)
-end
-(d::QuasiNewtonCautiousDirectionUpdate)(mp::AbstractManoptProblem, st) = d.update(mp, st)
-function (d::QuasiNewtonCautiousDirectionUpdate)(r, mp::AbstractManoptProblem, st)
-    return d.update(r, mp, st)
-end
-
-# access the inner vector transport method
-function get_update_vector_transport(u::AbstractQuasiNewtonDirectionUpdate)
-    return u.vector_transport_method
-end
-function get_update_vector_transport(u::QuasiNewtonCautiousDirectionUpdate)
-    return get_update_vector_transport(u.update)
-end
-get_message(d::QuasiNewtonCautiousDirectionUpdate) = get_message(d.update)
-function initialize_update!(d::QuasiNewtonCautiousDirectionUpdate)
-    initialize_update!(d.update)
-    return d
-end
-
 #
 #
 # ---
@@ -1157,6 +1060,124 @@ end
 
 get_update_vector_transport(u::QuasiNewtonLimitedMemoryBoxDirectionUpdate) = get_update_vector_transport(u.qn_du)
 get_message(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate) = get_message(d.qn_du)
+
+@doc """
+    QuasiNewtonCautiousDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
+
+These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule,
+which are based on the idea of a so-called cautious update. The search direction is calculated
+as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref), [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
+or [`QuasiNewtonLimitedMemoryBoxDirectionUpdate`](@ref), but the update then is only executed if
+
+```math
+$(_tex(:frac, "g_{p_{k+1}}(y_k,s_k)", "$(_tex(:norm, "s_k"; index = "p_{k+1}"))^{2}")) ≥ θ$(_tex(:bigl))($(_tex(:norm, "$(_tex(:grad))f(p_k)"; index = "p_k"))$(_tex(:bigr))),
+```
+
+is satisfied, where ``θ`` is a monotone increasing function satisfying ``θ(0) = 0``
+and ``θ`` is strictly increasing at ``0``. If this is not the case, the corresponding
+update is skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@ref)
+the matrix ``H_k`` or ``B_k`` is not updated.
+The basis ``$(_math(:Sequence, "b", "i", "1", "n"))`` is nevertheless transported into the upcoming tangent
+space ``T_{p_{k+1}} $(_math(:Manifold))``, and for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
+neither the oldest vector pair ``$(_tex(:widetilde, "s"))_{k-m}``, ``$(_tex(:widetilde, "y"))_{k-m}`` is
+discarded nor the newest vector pair ``$(_tex(:widetilde, "s"))_k, $(_tex(:widetilde, "y"))_k`` is added
+into storage, but all stored vector pairs ``$(_tex(:set, "$(_tex(:widetilde, "s"))_i, $(_tex(:widetilde, "y"))_i"))_{i=k-m}^{k-1}``
+are transported into the tangent space ``T_{p_{k+1}} $(_math(:Manifold))``.
+For [`QuasiNewtonLimitedMemoryBoxDirectionUpdate`](@ref) the stored vector pairs of its
+internal limited memory update are treated the same way, and the compact representation of the
+Hessian approximation is recomputed from the transported pairs in either case.
+The maximal step size reported by the generalized Cauchy direction search of the wrapped update,
+see [`get_parameter`](@ref), is passed on.
+If [`InverseBFGS`](@ref) is chosen as update — either within a [`QuasiNewtonMatrixDirectionUpdate`](@ref)
+or a [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) — then the resulting
+method follows the method of [HuangAbsilGallivan:2018](@cite),
+taking into account that the corresponding step size is chosen.
+
+# Provided functors
+
+* `(mp::AbstractManoptProblem, st::QuasiNewtonState) -> η` to compute the update direction
+* `(η, mp::AbstractManoptProblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
+
+# Fields
+
+* `update`: an [`AbstractQuasiNewtonDirectionUpdate`](@ref)
+* `θ`:      a monotone increasing function satisfying ``θ(0) = 0`` and ``θ`` is strictly increasing at ``0``.
+
+# Constructor
+
+    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonMatrixDirectionUpdate; θ = identity)
+    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonLimitedMemoryDirectionUpdate; θ = identity)
+    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonLimitedMemoryBoxDirectionUpdate; θ = identity)
+
+Generate a cautious update for a matrix based, a limited memory based, or a limited memory
+based update rule with support for box constraints.
+
+# See also
+
+[`QuasiNewtonMatrixDirectionUpdate`](@ref)
+[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
+[`QuasiNewtonLimitedMemoryBoxDirectionUpdate`](@ref)
+"""
+mutable struct QuasiNewtonCautiousDirectionUpdate{
+        U <: Union{
+            QuasiNewtonMatrixDirectionUpdate,
+            QuasiNewtonLimitedMemoryDirectionUpdate,
+            QuasiNewtonLimitedMemoryBoxDirectionUpdate,
+        },
+        Tθ,
+    } <: AbstractQuasiNewtonDirectionUpdate
+    update::U
+    θ::Tθ
+end
+function QuasiNewtonCautiousDirectionUpdate(
+        update::U; θ::Function = identity
+    ) where {
+        U <: Union{
+            QuasiNewtonMatrixDirectionUpdate,
+            QuasiNewtonLimitedMemoryDirectionUpdate,
+            QuasiNewtonLimitedMemoryBoxDirectionUpdate,
+        },
+    }
+    return QuasiNewtonCautiousDirectionUpdate{U, typeof(θ)}(update, θ)
+end
+function status_summary(d::QuasiNewtonCautiousDirectionUpdate; context::Symbol = :default)
+    (context === :short) && return repr(d)
+    (context === :inline) &&
+        return "A cautious direction update with θ = $(d.θ); internally: $(status_summary(d.update; context = :inline))"
+    return """
+    A cautious quasi Newton direction update
+
+    ## Parameters
+    * θ: $(_MANOPT_INDENT)$(d.θ)
+
+    ## Internal direction update
+    $(_in_str(status_summary(d.update; context = context); indent = 1, headers = 1))
+    """
+end
+function show(io::IO, d::QuasiNewtonCautiousDirectionUpdate)
+    print(io, "QuasiNewtonCautiousDirectionUpdate with θ = $(d.θ) and internal state:\n")
+    return print(io, d.update)
+end
+(d::QuasiNewtonCautiousDirectionUpdate)(mp::AbstractManoptProblem, st) = d.update(mp, st)
+function (d::QuasiNewtonCautiousDirectionUpdate)(r, mp::AbstractManoptProblem, st)
+    return d.update(r, mp, st)
+end
+
+# access the inner vector transport method
+function get_update_vector_transport(u::AbstractQuasiNewtonDirectionUpdate)
+    return u.vector_transport_method
+end
+function get_update_vector_transport(u::QuasiNewtonCautiousDirectionUpdate)
+    return get_update_vector_transport(u.update)
+end
+get_message(d::QuasiNewtonCautiousDirectionUpdate) = get_message(d.update)
+function get_parameter(d::QuasiNewtonCautiousDirectionUpdate, v::Val{:max_stepsize})
+    return get_parameter(d.update, v)
+end
+function initialize_update!(d::QuasiNewtonCautiousDirectionUpdate)
+    initialize_update!(d.update)
+    return d
+end
 
 function get_at_bound_index(M::ProductManifold, X, b::Tuple{Int, Any})
     return get_at_bound_index(M.manifolds[b[1]], submanifold_component(M, X, b[1]), b[2])
