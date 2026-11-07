@@ -1,5 +1,5 @@
 using Manopt, Manifolds, Test
-using LinearAlgebra: I, eigvecs, eigvals, tr, Diagonal, dot, norm, Symmetric
+using LinearAlgebra: I, eigen, eigvecs, eigvals, tr, Diagonal, dot, norm, Symmetric
 
 using RecursiveArrayTools
 
@@ -444,6 +444,83 @@ using RecursiveArrayTools
             ),
             "model decrease factor",
         )
+    end
+
+    @testset "Projected quasi-Newton path with a tiny model decrease" begin
+        # D = [0, ∞) and the Euclidean ℝ² at p = 0 with gradient (1; 1, 0). The first entry of
+        # -B g points out of the box at the active bound, and the remaining path is a descent
+        # direction with a model decrease of only 3/2 η² + O(η³), although the projected
+        # gradient has norm 1, even for the exact inverse Hessian B of a quadratic.
+        M = Hyperrectangle([0.0], [Inf]) × Euclidean(2)
+        p = ArrayPartition([0.0], [0.0, 0.0])
+        g = [1.0, 1.0, 0.0]
+        to_tangent(v) = ArrayPartition(v[1:1], v[2:3])
+        for (η, κ, rejected) in ((1.0e-3, 1.0e-4, true), (1.0e-3, 0.0, false), (1.0e-1, 1.0e-4, false))
+            B = [2.0 -1.0 -0.5; -1.0 (1 + η) 0.0; -0.5 0.0 1.0]
+            H = inv(B)
+            f(M, q) = dot(g, vcat(q.x...)) + dot(vcat(q.x...), H * vcat(q.x...)) / 2
+            grad_f(M, q) = to_tangent(g + H * vcat(q.x...))
+            mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            ha = QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+                QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 3);
+                model_decrease_factor = κ,
+            )
+            st = QuasiNewtonState(
+                M; p = copy(M, p), X = to_tangent(g), direction_update = ha,
+                stepsize = Manopt.ArmijoLinesearchStepsize(
+                    M; initial_guess = Manopt.ConstantInitialGuess(1.0), stop_increasing_at_step = 0,
+                ),
+            )
+            # the eigenpairs of H are H-conjugate, so the limited memory reproduces H exactly
+            F = eigen(Symmetric(H))
+            for i in 1:3
+                st.sk = to_tangent(F.vectors[:, i])
+                st.yk = to_tangent(H * F.vectors[:, i])
+                update_hessian!(ha, mp, st, p, i)
+            end
+            r = zero_vector(M, p)
+            ha.qn_du(r, mp, st)
+            @test r ≈ to_tangent(-B * g)
+            d = ha(mp, st)
+            @test ha.last_gcd_result === (rejected ? :insufficient_decrease : :found_unlimited)
+            @test ha.insufficient_decrease_count == rejected
+            if !rejected
+                # the direction stays on the bound, is a descent direction and its model
+                # decrease is 3/2 η² + O(η³)
+                @test d.x[1] == [0.0]
+                @test inner(M, p, to_tangent(g), d) < 0
+                model_decrease = -(inner(M, p, to_tangent(g), d) + Manopt.hessian_value_diag(ha, M, p, d) / 2)
+                @test isapprox(model_decrease, 3 / 2 * η^2; rtol = 0.2)
+            end
+            # one solver step: a rejected direction resets the memory, and the step follows
+            # the generalized Cauchy point (0; -1, 0) for the identity
+            step_solver!(mp, st, 1)
+            if rejected
+                @test ha.insufficient_decrease_count == 2
+                @test length(ha.qn_du.memory_s) == 1
+                @test st.p.x[1] == [0.0] && st.p.x[2][1] < 0 && st.p.x[2][2] == 0
+                @test f(M, p) - f(M, st.p) > 0.1
+            elseif η < 0.01
+                @test f(M, p) - f(M, st.p) < 2 * η^2
+            end
+        end
+    end
+
+    @testset "Default stopping criterion with box constraints" begin
+        M = Hyperrectangle([0.0, 0.0], [1.0, 1.0])
+        f(M, p) = sum((p .- 2) .^ 2)
+        grad_f(M, p) = 2 .* (p .- 2)
+        # the gradient (-2, -2) does not vanish at the solution (1, 1)
+        s = quasi_Newton(M, f, grad_f, [0.5, 0.5]; return_state = true)
+        sc = get_state(s).stop
+        @test any(c -> c isa StopWhenProjectedNegativeGradientNormLess, sc.criteria)
+        @test !any(c -> c isa StopWhenGradientNormLess, sc.criteria)
+        @test get_count(get_state(s), :Iterations) < 10
+        @test get_solver_result(s) ≈ [1.0, 1.0]
+        s = quasi_Newton(M, f, grad_f, [0.5, 0.5]; linesearch_failure_behavior = :restart, return_state = true)
+        @test any(c -> c isa StopWhenProjectedNegativeGradientNormLess, get_state(s).stop.criteria)
+        @test any(c -> c isa StopWhenProjectedNegativeGradientNormLess, QuasiNewtonState(M; p = [0.5, 0.5]).stop.criteria)
+        @test any(c -> c isa StopWhenGradientNormLess, QuasiNewtonState(Euclidean(2); p = [0.5, 0.5]).stop.criteria)
     end
 
     @testset "has_anisotropic_max_stepsize" begin

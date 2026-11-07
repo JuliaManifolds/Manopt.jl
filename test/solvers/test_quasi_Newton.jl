@@ -604,6 +604,69 @@ end
         r = quasi_Newton(Ne, fe, grad_fe, [1.0, 1.0]; count = [:Gradient], return_objective = true, stopping_criterion = StopAfterIteration(0))
         @test get_count(r[1], :Gradient) == 1
     end
+    @testset "The cautious update evaluates no additional gradients" begin
+        Ne = Euclidean(2)
+        fe(M, q) = sum(abs2, q) + q[1]^4
+        grad_fe(M, q) = 2q + [4 * q[1]^3, 0.0]
+        for (cautious_update, memory_size) in Iterators.product((false, true), (2, -1))
+            r = quasi_Newton(
+                Ne, fe, grad_fe, [1.0, 1.0];
+                cautious_update = cautious_update, memory_size = memory_size,
+                stepsize = Manopt.ConstantStepsize(Ne, 0.1),
+                count = [:Gradient], return_objective = true, return_state = true,
+                stopping_criterion = StopAfterIteration(5),
+            )
+            # one evaluation at the start and one per iteration
+            @test get_count(r[1], :Gradient) == 6
+        end
+        # the decision rule uses the gradient norm at the point the direction was computed at
+        mp = DefaultManoptProblem(Ne, ManifoldGradientObjective(fe, grad_fe))
+        p = [1.0, 1.0]
+        dc = QuasiNewtonCautiousDirectionUpdate(
+            QuasiNewtonLimitedMemoryDirectionUpdate(Ne, p, InverseBFGS(), 2); θ = identity
+        )
+        @test isnan(dc.gradient_norm)
+        st = QuasiNewtonState(Ne; p = copy(p), X = grad_fe(Ne, p), direction_update = dc)
+        dc(mp, st)
+        @test dc.gradient_norm ≈ norm(grad_fe(Ne, p))
+        # the recorded norm is used once; without it the gradient at `p_old` is evaluated
+        st.sk = [1.0, 0.0]
+        st.yk = [10.0, 0.0]
+        update_hessian!(dc, mp, st, p, 1)
+        @test isnan(dc.gradient_norm)
+        @test length(dc.update.memory_s) == 1
+        dc.gradient_norm = 20.0 # pretend a large gradient was recorded: the pair is skipped
+        update_hessian!(dc, mp, st, p, 2)
+        @test length(dc.update.memory_s) == 1
+        update_hessian!(dc, mp, st, p, 3) # evaluates ‖grad f(p)‖ ≈ 7.2 < 10: added
+        @test length(dc.update.memory_s) == 2
+        # the type of the recorded norm follows the numbers stored in the wrapped update
+        @test dc.gradient_norm isa Float64
+        p32 = Float32[1.0, 1.0]
+        for u in (
+                QuasiNewtonLimitedMemoryDirectionUpdate(Ne, p32, InverseBFGS(), 2; initial_scale = 1.0f0),
+                QuasiNewtonMatrixDirectionUpdate(Ne, InverseBFGS(), DefaultOrthonormalBasis(), Matrix{Float32}(I, 2, 2)),
+                QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+                    QuasiNewtonLimitedMemoryDirectionUpdate(
+                        Hyperrectangle(Float32[0, 0], Float32[2, 2]), p32, InverseBFGS(), 2; initial_scale = 1.0f0
+                    )
+                ),
+            )
+            dc32 = QuasiNewtonCautiousDirectionUpdate(u)
+            @test dc32.gradient_norm isa Float32
+            @test isnan(dc32.gradient_norm)
+        end
+        dc32 = QuasiNewtonCautiousDirectionUpdate(
+            QuasiNewtonLimitedMemoryDirectionUpdate(Ne, p32, InverseBFGS(), 2; initial_scale = 1.0f0)
+        )
+        st32 = QuasiNewtonState(Ne; p = copy(p32), X = Float32[2.0, 0.0], direction_update = dc32)
+        dc32(mp, st32)
+        @test dc32.gradient_norm === 2.0f0
+        # reinitializing the update discards the recorded norm
+        Manopt.initialize_update!(dc32)
+        @test isnan(dc32.gradient_norm)
+        @test dc32.gradient_norm isa Float32
+    end
     @testset "Byrd's rule on a complex manifold" begin
         Mc = Euclidean(2; field = ℂ)
         Ac = [2 im; -im 2]

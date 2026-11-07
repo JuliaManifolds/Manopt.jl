@@ -1102,6 +1102,11 @@ taking into account that the corresponding step size is chosen.
 
 * `update`: an [`AbstractQuasiNewtonDirectionUpdate`](@ref)
 * `θ`:      a monotone increasing function satisfying ``θ(0) = 0`` and ``θ`` is strictly increasing at ``0``.
+* `gradient_norm`: the norm ``$(_tex(:norm, "$(_tex(:grad))f(p_k)"; index = "p_k"))`` of the gradient at the
+  point where the direction was last computed, used in the decision rule of the next update,
+  so that the gradient is not evaluated again. Its type is the real floating point type of
+  the numbers stored in `update`. It is `NaN` if no direction was computed since
+  the last update; then the update evaluates the gradient at ``p_k``.
 
 # Constructor
 
@@ -1125,9 +1130,11 @@ mutable struct QuasiNewtonCautiousDirectionUpdate{
             QuasiNewtonLimitedMemoryBoxDirectionUpdate,
         },
         Tθ,
+        R <: Real,
     } <: AbstractQuasiNewtonDirectionUpdate
     update::U
     θ::Tθ
+    gradient_norm::R
 end
 function QuasiNewtonCautiousDirectionUpdate(
         update::U; θ::Function = identity
@@ -1138,8 +1145,18 @@ function QuasiNewtonCautiousDirectionUpdate(
             QuasiNewtonLimitedMemoryBoxDirectionUpdate,
         },
     }
-    return QuasiNewtonCautiousDirectionUpdate{U, typeof(θ)}(update, θ)
+    R = _real_number_type(update)
+    return QuasiNewtonCautiousDirectionUpdate{U, typeof(θ), R}(update, θ, R(NaN))
 end
+
+# the real floating point type of the numbers stored in a direction update
+_real_number_type(d::QuasiNewtonMatrixDirectionUpdate) = real(float(eltype(d.matrix)))
+function _real_number_type(
+        ::QuasiNewtonLimitedMemoryDirectionUpdate{<:AbstractQuasiNewtonUpdateRule, T, F}
+    ) where {T, F}
+    return real(float(F))
+end
+_real_number_type(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate) = _real_number_type(d.qn_du)
 function status_summary(d::QuasiNewtonCautiousDirectionUpdate; context::Symbol = :default)
     (context === :short) && return repr(d)
     (context === :inline) &&
@@ -1158,8 +1175,17 @@ function show(io::IO, d::QuasiNewtonCautiousDirectionUpdate)
     print(io, "QuasiNewtonCautiousDirectionUpdate with θ = $(d.θ) and internal state:\n")
     return print(io, d.update)
 end
-(d::QuasiNewtonCautiousDirectionUpdate)(mp::AbstractManoptProblem, st) = d.update(mp, st)
+# record the gradient norm at the current iterate for the decision rule of the next update
+function _record_gradient_norm!(d::QuasiNewtonCautiousDirectionUpdate, mp::AbstractManoptProblem, st)
+    d.gradient_norm = norm(get_manifold(mp), get_iterate(st), get_gradient(st))
+    return d
+end
+function (d::QuasiNewtonCautiousDirectionUpdate)(mp::AbstractManoptProblem, st)
+    _record_gradient_norm!(d, mp, st)
+    return d.update(mp, st)
+end
 function (d::QuasiNewtonCautiousDirectionUpdate)(r, mp::AbstractManoptProblem, st)
+    _record_gradient_norm!(d, mp, st)
     return d.update(r, mp, st)
 end
 
@@ -1176,6 +1202,7 @@ function get_parameter(d::QuasiNewtonCautiousDirectionUpdate, v::Val{:max_stepsi
 end
 function initialize_update!(d::QuasiNewtonCautiousDirectionUpdate)
     initialize_update!(d.update)
+    d.gradient_norm = NaN
     return d
 end
 
