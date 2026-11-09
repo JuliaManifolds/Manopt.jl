@@ -770,7 +770,7 @@ end
             )
             qns = Manopt.get_state(st)
             @test qns.linesearch_failure_behavior === :accept
-            @test !any(c -> c isa StopWhenLinesearchFailed, get_stopping_criteria(qns.stop))
+            @test !any(c -> c isa StopWhenStuck, get_stopping_criteria(qns.stop))
             # and the behavior step by step: the first failed line search is accepted
             mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
             qns = QuasiNewtonState(
@@ -793,7 +793,7 @@ end
             @test occursin("last trial step was accepted", Manopt.get_message(qns))
         end
         @testset "restart" begin
-            # the default stopping criterion for :restart includes StopWhenLinesearchFailed
+            # the default stopping criterion for :restart includes StopWhenStuck
             st = quasi_Newton(
                 M, f, grad_f, p0;
                 stepsize = HagerZhangLinesearch(; max_function_evaluations = 3),
@@ -808,8 +808,8 @@ end
             # the second failure in a row stops
             @test qns.linesearch_status === :failure_after_restart
             @test qns.direction_update_reset
-            @test any(c -> c isa StopWhenLinesearchFailed && Manopt.is_active_stopping_criterion(c), get_stopping_criteria(qns.stop))
-            @test occursin("line search failed", get_reason(st))
+            @test any(c -> c isa StopWhenStuck && Manopt.is_active_stopping_criterion(c), get_stopping_criteria(qns.stop))
+            @test occursin("got stuck", get_reason(st))
             @test occursin("just been reinitialized", Manopt.get_message(qns))
             # the cost from the line search is the one at the (unchanged) iterate
             mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
@@ -822,7 +822,7 @@ end
                 linesearch_failure_behavior = :restart, stopping_criterion = sc, return_state = true,
             )
             qns = Manopt.get_state(st)
-            @test !any(c -> c isa StopWhenLinesearchFailed, get_stopping_criteria(qns.stop))
+            @test !any(c -> c isa StopWhenStuck, get_stopping_criteria(qns.stop))
             # without it the solver keeps retrying from the same iterate
             @test qns.linesearch_status === :failure_after_restart
             @test get_count(st, :Iterations) == 200
@@ -855,15 +855,15 @@ end
             @test qns.direction_update_reset
             @test isempty(qns.direction_update.memory_s)
             @test occursin("step was rejected", Manopt.get_message(qns))
-            c = StopWhenLinesearchFailed()
+            c = StopWhenStuck()
             @test !c(mp, qns, k)
-            @test !Manopt.has_terminal_linesearch_failure(qns)
+            @test !Manopt.is_stuck(qns)
             # states that do not report line search failures
-            @test !Manopt.has_terminal_linesearch_failure(GradientDescentState(M; p = copy(p0)))
+            @test !Manopt.is_stuck(GradientDescentState(M; p = copy(p0)))
             # a terminal failure, also seen through a decorated state
             qns.linesearch_status = :failure_after_restart
             dqns = DebugSolverState(qns, DebugMessages(:Info, :Always))
-            @test Manopt.has_terminal_linesearch_failure(dqns)
+            @test Manopt.is_stuck(dqns)
             @test c(mp, dqns, k)
             @test occursin("could not recover", get_reason(c))
             @test endswith(Manopt.status_summary(c; context = :inline), " reached")
@@ -871,11 +871,11 @@ end
             @test get_reason(c) == ""
             qns.linesearch_status = :failure_restarted
             @test get_reason(c) == ""
-            @test repr(c) == "StopWhenLinesearchFailed()"
+            @test repr(c) == "StopWhenStuck()"
             @test !Manopt.indicates_convergence(c)
             @test Manopt.status_summary(c; context = :short) == repr(c)
             @test endswith(Manopt.status_summary(c; context = :inline), "not reached")
-            @test startswith(Manopt.status_summary(c), "A stopping criterion to stop when the line search fails")
+            @test startswith(Manopt.status_summary(c), "A stopping criterion to stop when the solver is stuck")
             @test occursin("line search failure:     restart", Manopt.status_summary(qns))
             @test occursin("linesearch_failure_behavior = restart", repr(qns))
         end

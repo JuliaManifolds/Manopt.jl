@@ -1429,20 +1429,21 @@ requires_update(::Type{<:StopWhenLagrangeMultiplierLess}) = false
 #
 # ---
 @doc """
-    StopWhenLinesearchFailed <: StoppingCriterion
+    StopWhenStuck <: StoppingCriterion
 
-A stopping criterion that indicates to stop when the solver reports a line search failure
-it cannot recover from, see [`has_terminal_linesearch_failure`](@ref Manopt.has_terminal_linesearch_failure).
+A stopping criterion that indicates to stop when the solver reports that it is stuck,
+i.e. it cannot make further progress and cannot recover from this situation,
+see [`is_stuck`](@ref Manopt.is_stuck).
 
 For example the [`quasi_Newton`](@ref) solver with `linesearch_failure_behavior=:restart`
-reports such a failure when the line search fails, see [`has_failed`](@ref Manopt.has_failed),
+reports being stuck when the line search fails, see [`has_failed`](@ref Manopt.has_failed),
 although the direction update held no curvature information, i.e. directly after
 a (re)initialization of the direction update.
 This corresponds to the termination of L-BFGS-B when the line search fails along the
 steepest descent direction after a restart, see [ZhuByrdLuNocedal:1997; Section 4](@cite).
 The iterate is then the last one with an accepted step.
 
-For solver states that do not report such failures, this criterion never indicates to stop.
+For solver states that do not report being stuck, this criterion never indicates to stop.
 
 # Fields
 
@@ -1450,58 +1451,61 @@ $(_fields(:at_iteration))
 
 # Constructor
 
-    StopWhenLinesearchFailed()
+    StopWhenStuck()
 """
-mutable struct StopWhenLinesearchFailed <: StoppingCriterion
+mutable struct StopWhenStuck <: StoppingCriterion
     at_iteration::Int
 end
-StopWhenLinesearchFailed() = StopWhenLinesearchFailed(-1)
-function (c::StopWhenLinesearchFailed)(
+StopWhenStuck() = StopWhenStuck(-1)
+function (c::StopWhenStuck)(
         ::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
     )
     if k == 0 # reset on init
         c.at_iteration = -1
     end
-    if k > 0 && has_terminal_linesearch_failure(s)
+    if k > 0 && is_stuck(s)
         c.at_iteration = k
         return true
     end
     return false
 end
-indicates_convergence(::StopWhenLinesearchFailed) = false
-function get_reason(c::StopWhenLinesearchFailed)
+indicates_convergence(::StopWhenStuck) = false
+function get_reason(c::StopWhenStuck)
     if c.at_iteration >= 0
-        return "The line search failed at iteration $(c.at_iteration) and the solver could not recover from this failure.\n"
+        return "The solver got stuck at iteration $(c.at_iteration), i.e. it could not make further progress and could not recover.\n"
     end
     return ""
 end
-function status_summary(c::StopWhenLinesearchFailed; context::Symbol = :default)
+function status_summary(c::StopWhenStuck; context::Symbol = :default)
     (context === :short) && (return repr(c))
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
-    (context === :inline) && (return "Line search failed terminally:$(_MANOPT_INDENT)$s")
-    return "A stopping criterion to stop when the line search fails and the solver cannot recover\n$(_MANOPT_INDENT)$s"
+    (context === :inline) && (return "Solver is stuck:$(_MANOPT_INDENT)$s")
+    return "A stopping criterion to stop when the solver is stuck and cannot recover\n$(_MANOPT_INDENT)$s"
 end
-function Base.show(io::IO, ::StopWhenLinesearchFailed)
-    return print(io, "StopWhenLinesearchFailed()")
+function Base.show(io::IO, ::StopWhenStuck)
+    return print(io, "StopWhenStuck()")
 end
-requires_update(::Type{<:StopWhenLinesearchFailed}) = false
+requires_update(::Type{<:StopWhenStuck}) = false
 
 @doc """
-    has_terminal_linesearch_failure(s::AbstractManoptSolverState)
+    is_stuck(s::AbstractManoptSolverState)
 
-Return `true` if the last line search of the solver with state `s` failed and the solver
-cannot recover from this failure, for example by a restart. This is used by
-[`StopWhenLinesearchFailed`](@ref).
+Return `true` if the solver with state `s` is stuck, that is, it cannot make further
+progress and also cannot recover from this situation, for example by a restart.
+
+An example is a line search based solver whose line search failed even directly after
+a restart, cf. [`StopWhenStuck`](@ref), which uses this function.
+Other solvers, for example trust region methods, could report being stuck in a similar way.
 
 This method takes into account that `s` might be decorated. By default, `false` is returned;
-solvers that can detect such failures implement this function for their state.
+solvers that can detect such situations implement this function for their state.
 """
-function has_terminal_linesearch_failure(s::AbstractManoptSolverState)
-    return _has_terminal_linesearch_failure(s, dispatch_state_decorator(s))
+function is_stuck(s::AbstractManoptSolverState)
+    return _is_stuck(s, dispatch_state_decorator(s))
 end
-_has_terminal_linesearch_failure(s::AbstractManoptSolverState, ::Val{true}) = has_terminal_linesearch_failure(s.state)
-_has_terminal_linesearch_failure(::AbstractManoptSolverState, ::Val{false}) = false
+_is_stuck(s::AbstractManoptSolverState, ::Val{true}) = is_stuck(s.state)
+_is_stuck(::AbstractManoptSolverState, ::Val{false}) = false
 
 #
 #

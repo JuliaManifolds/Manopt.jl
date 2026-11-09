@@ -223,7 +223,7 @@ function set_gradient!(qns::QuasiNewtonState, M, p, X)
 end
 # the line search failed although the direction update held no curvature information,
 # which can only happen for `linesearch_failure_behavior=:restart`
-has_terminal_linesearch_failure(qns::QuasiNewtonState) = qns.linesearch_status === :failure_after_restart
+is_stuck(qns::QuasiNewtonState) = qns.linesearch_status === :failure_after_restart
 
 function default_stepsize(M::AbstractManifold, ::Type{QuasiNewtonState}; p = rand(M), kwargs...)
     R = real(float(number_eltype(p)))
@@ -287,7 +287,7 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
     iterate is kept, and the direction update is reinitialized, so the next iteration starts
     from the same point with no curvature information.
     If the line search fails again before any curvature information was gathered,
-    the step is rejected and [`StopWhenLinesearchFailed`](@ref) indicates to stop.
+    the step is rejected and [`StopWhenStuck`](@ref) indicates to stop.
     This criterion is part of the default `stopping_criterion=` for this behavior;
     include it when specifying a custom stopping criterion, since otherwise the solver
     keeps retrying from the same iterate until the custom criterion indicates to stop.
@@ -317,7 +317,7 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`WolfePowellLinesearch`](@ref)`(; retraction_method=retraction_method, vector_transport_method=vector_transport_method, stop_when_stepsize_less=1e-10)"))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`, for `linesearch_failure_behavior=:restart` additionally `$(_sc(:Any))[`StopWhenLinesearchFailed`](@ref)`()"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`, for `linesearch_failure_behavior=:restart` additionally `$(_sc(:Any))[`StopWhenStuck`](@ref)`()"))
   On manifolds with box constraints, i.e. an anisotropic maximal step size like a
   [`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`), [`StopWhenGradientNormLess`](@ref) is
   replaced by [`StopWhenProjectedNegativeGradientNormLess`](@ref)`(1e-6)`, since the norm of the
@@ -398,7 +398,7 @@ function quasi_Newton!(
         linesearch_failure_behavior::Symbol = :accept,
         stopping_criterion::StoppingCriterion = if linesearch_failure_behavior === :restart
             StopAfterIteration(max(1000, memory_size)) | _default_qn_stationarity_criterion(M, 1.0e-6) |
-                StopWhenLinesearchFailed()
+                StopWhenStuck()
         else
             StopAfterIteration(max(1000, memory_size)) | _default_qn_stationarity_criterion(M, 1.0e-6)
         end,
