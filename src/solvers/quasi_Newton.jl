@@ -268,7 +268,9 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
    which wraps the `direction_update`.
 * `cautious_function=(x) -> x * 1e-4`:
   a monotone increasing function for the cautious update that is zero at ``x=0``
-  and strictly increasing at ``0``
+  and strictly increasing at ``0``. It is evaluated at the norm of the projected negative
+  gradient, which is the norm of the gradient on manifolds without box constraints,
+  see [`QuasiNewtonCautiousDirectionUpdate`](@ref)
 $(_kwargs(:differential))
 * `direction_update=`[`InverseBFGS`](@ref)`()`:
   the [`AbstractQuasiNewtonUpdateRule`](@ref) to use.
@@ -777,16 +779,16 @@ function update_basis!(
     return b
 end
 
-# the norm of the gradient at `p_old`, recorded when the direction was computed there;
-# evaluate the gradient only if no norm was recorded since the last update
-function _cautious_gradient_norm!(d::QuasiNewtonCautiousDirectionUpdate, mp::AbstractManoptProblem, p_old)
-    g_norm = if isnan(d.gradient_norm)
-        norm(get_manifold(mp), p_old, get_gradient(mp, p_old))
+# the norm of the projected negative gradient at `p_old`, recorded when the direction was
+# computed there; evaluate the gradient only if no norm was recorded since the last update
+function _cautious_projected_gradient_norm!(d::QuasiNewtonCautiousDirectionUpdate, mp::AbstractManoptProblem, p_old)
+    h = if isnan(d.projected_gradient_norm)
+        _projected_gradient_norm(get_manifold(mp), p_old, get_gradient(mp, p_old))
     else
-        d.gradient_norm
+        d.projected_gradient_norm
     end
-    d.gradient_norm = NaN
-    return g_norm
+    d.projected_gradient_norm = NaN
+    return h
 end
 
 # Cautious update
@@ -797,7 +799,7 @@ function update_hessian!(
     M = get_manifold(mp)
     p = get_iterate(st)
     # computing the bound used in the decision rule
-    bound = d.θ(_cautious_gradient_norm!(d, mp, p_old))
+    bound = d.θ(_cautious_projected_gradient_norm!(d, mp, p_old))
     sk_normsq = norm(M, p, st.sk)^2
     if sk_normsq != 0 && real(inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
         update_hessian!(d.update, mp, st, p_old, iter)
@@ -931,7 +933,7 @@ function update_hessian!(
     # computing the bound used in the decision rule
     M = get_manifold(mp)
     p = get_iterate(st)
-    bound = d.θ(_cautious_gradient_norm!(d, mp, p_old))
+    bound = d.θ(_cautious_projected_gradient_norm!(d, mp, p_old))
     sk_normsq = norm(M, p, st.sk)^2
     # if the decision rule is fulfilled, the new `sk` and `yk` are added
     if sk_normsq != 0 && real(inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
@@ -973,7 +975,7 @@ function get_cost(
         # if no evaluation was performed, we need to compute the cost
         return get_cost(mp, s.p)
     else
-        # we can reuse the stored function value from the linesearch
-        return hzls.triples[hzls.last_evaluation_index].f
+        # we can reuse the stored function value at the returned step from the linesearch
+        return hzls.last_cost
     end
 end

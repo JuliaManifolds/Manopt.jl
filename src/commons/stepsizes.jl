@@ -2739,7 +2739,7 @@ introducing customizable norms for points and tangent vectors and a maximum step
 
 ## Keyword arguments
 
-* `ψ0=0.01`, `ψ1=0.01`, `ψ2=2.0`
+* `ψ0=0.01`, `ψ1=0.1`, `ψ2=2.0`
 * `constant_guess=NaN`
 * `quadstep=true`
 * `point_distance=`[`default_point_distance`](@ref)
@@ -2762,7 +2762,7 @@ end
 HagerZhangInitialGuess() = HagerZhangInitialGuess{Float64}()
 function HagerZhangInitialGuess{TF}(;
         ψ0::TF = 0.01,
-        ψ1::TF = 0.01,
+        ψ1::TF = 0.1,
         ψ2::TF = 2.0,
         constant_guess::TF = NaN,
         quadstep::Bool = true,
@@ -2869,16 +2869,17 @@ $(_fields(:vector_transport_method))
 * `Qₖ`, `Cₖ`: to keep track of the parameters of the Wolfe condition when in adaptive mode
 * `current_mode`: to keep track of the current Wolfe condition mode when in adaptive mode
 * `last_stepsize`: last stepsize computed since reset
-* `last_cost`: last cost value computed since reset
-* `ϵₖ`: the current ϵ parameter used in the approximate Wolfe condition and bracketing
+* `last_cost`: the cost at the last returned stepsize
+* `ϵₖ`: the current estimate ``ϵ_k = ϵ C_k`` of the error in the cost, used in the approximate
+  Wolfe condition and bracketing
 * `last_termination`: why the last line search terminated, one of
   * `:not_searched` before the first line search,
   * `:wolfe` if the (standard or approximate) Wolfe conditions are satisfied,
   * `:max_stepsize` if the maximal step size was reached with a decrease in cost,
     see `allow_early_maxstep_termination`,
   * `:evaluation_limit` if `max_function_evaluations` was reached first. The returned
-    step size is then the last trial step and [`has_failed`](@ref Manopt.has_failed)
-    returns `true`.
+    step size is then the trial step with the smallest cost and
+    [`has_failed`](@ref Manopt.has_failed) returns `true`.
 * `messages::NamedTuple`: a named tuple of [`StepsizeMessage`](@ref)s about the last line search,
   reporting a non-descent direction (`:non_descent_direction`), an initial guess exceeding the
   step size limit (`:stepsize_exceeds`) and reaching the maximal number of function evaluations
@@ -3350,6 +3351,8 @@ function (hzls::HagerZhangLinesearchStepsize)(
     # update Qₖ, Cₖ
     hzls.Qₖ = 1 + hzls.Qₖ * hzls.Δ
     hzls.Cₖ += (abs(fp) - hzls.Cₖ) / hzls.Qₖ
+    # estimate of the error in the cost, Eq. (28) in HagerZhang:2006:2
+    hzls.ϵₖ = hzls.ϵ * hzls.Cₖ
 
     if hzls.wolfe_condition_mode == :adaptive
         # Checking the V3 condition
@@ -3416,8 +3419,15 @@ function (hzls::HagerZhangLinesearchStepsize)(
     else
         :evaluation_limit
     end
-    hzls.last_stepsize = hzls.triples[hzls.last_evaluation_index].t
-    hzls.last_cost = hzls.triples[hzls.last_evaluation_index].f
+    i_return = hzls.last_evaluation_index
+    if hzls.last_termination === :evaluation_limit
+        # no trial step is acceptable, return the one with the smallest cost
+        for i in 2:hzls.last_evaluation_index
+            (hzls.triples[i].f < hzls.triples[i_return].f) && (i_return = i)
+        end
+    end
+    hzls.last_stepsize = hzls.triples[i_return].t
+    hzls.last_cost = hzls.triples[i_return].f
     if hzls.last_termination === :evaluation_limit
         set_message!(
             hzls.messages, :evaluation_limit;
@@ -3481,7 +3491,9 @@ The following changes were made to the original algorithm from the paper:
    behavior of the original paper. For example a static initial stepsize equal to 1.0 could
    benefit from having this parameter increased.
 3. The paper isn't entirely clear on what the final stepsize to return is. This
-   implementation returns the last evaluated stepsize.
+   implementation returns the last evaluated stepsize. If the maximal number of function
+   evaluations is reached, which the paper does not consider, the evaluated stepsize with the
+   smallest cost is returned instead.
 4. The original algorithm doesn't specify what to do when the maximum stepsize is reached
    during the bracketing phase with a negative slope and an improvement over the initial
    point. This implementation allows for an early termination in this case, which seems
@@ -3510,8 +3522,10 @@ $(_kwargs(:vector_transport_method))
   the maximum stepsize is reached with negative slope and an improvement over the initial point.
 * `wolfe_condition_mode::Symbol = :adaptive`: one of `:standard`, `:approximate`, or `:adaptive`.
   Selects between (T1) and (T2) conditions in [HagerZhang:2006:2](@cite).
-* `ϵ::Real = 1.0e-6`: initial allowed increase in function value in termination condition (T2).
-  Allowed range: `ϵ >= 0`.
+* `ϵ::Real = 1.0e-6`: relative error in the cost. The cost may increase by at most
+  ``ϵ_k = ϵ C_k`` in termination condition (T2) and is considered decreased in the bracketing
+  and update rules if it increases by at most ``ϵ_k``, where ``C_k`` is the weighted average of
+  the absolute values of the cost at the previous iterates, see `Δ`. Allowed range: `ϵ >= 0`.
 * `δ::Real = 0.1`: parameter for approximate Wolfe condition.
   Allowed range: `0 < δ < 0.5` and `δ <= σ`.
 * `σ::Real = 0.9`: curvature condition parameter. Allowed range: `δ <= σ < 1`.
@@ -3521,7 +3535,8 @@ $(_kwargs(:vector_transport_method))
 * `γ::Real = 0.66`: determines when a bisection step is performed instead of secant.
   Allowed range: `0 < γ < 1`.
 * `ρ::Real = 5.0`: bracketing expansion factor. Allowed range: `ρ > 1`.
-* `Δ::Real = 0.7`: Parameter controlling the rate of change of Qₖ.
+* `Δ::Real = 0.7`: Parameter controlling the rate of change of Qₖ, i.e. the weights of
+  the average ``C_k`` of the absolute values of the cost.
   Allowed range: `0 <= Δ <= 1`.
 * `secant_acceptance_ratio::Real = 1.0e-8`: minimum relative interval length
   for accepting secant step. Allowed range: `secant_acceptance_ratio >= 0`.

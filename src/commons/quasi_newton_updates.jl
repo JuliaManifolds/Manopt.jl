@@ -723,10 +723,20 @@ end
 function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
         r, mp::AbstractManoptProblem, st
     )
+    M = get_manifold(mp)
+    copyto!(M, r, get_iterate(st), get_gradient(st))
+    return _apply_inverse_hessian!(d, r, mp, st)
+end
+
+# Overwrite `r` with `-H r`, where `H` is the inverse Hessian approximation stored in `d`,
+# using the two-loop recursion. Used with the gradient `r` from the state, and with a
+# modified gradient by `QuasiNewtonLimitedMemoryBoxDirectionUpdate`.
+function _apply_inverse_hessian!(
+        d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS}, r, mp::AbstractManoptProblem, st
+    )
     isempty(d.message) || (d.message = "") # reset message
     M = get_manifold(mp)
     p = get_iterate(st)
-    copyto!(M, r, p, get_gradient(st))
     m = length(d.memory_s)
     if m == 0
         st.preconditioner(r, mp, st)
@@ -955,10 +965,19 @@ end
 function (d::QuasiNewtonLimitedMemoryBoxDirectionUpdate)(
         r, mp::AbstractManoptProblem, st
     )
-    d.qn_du(r, mp, st)
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
+    # Restrict the quasi-Newton direction to the variables that are not held at their bounds
+    # by the gradient. Otherwise the gradient elements of the held variables, which do not
+    # vanish at stationary points, leak into the direction of the free variables through the
+    # off-diagonal entries of the inverse Hessian approximation, and the held variables can
+    # be moved into the box against their gradient. The tangent cone projection in the
+    # generalized Cauchy direction search only removes elements that point out of the box.
+    copyto!(M, r, p, X)
+    zero_at_active_bounds!(M, r, p, X)
+    _apply_inverse_hessian!(d.qn_du, r, mp, st)
+    zero_at_active_bounds!(M, r, p, X)
     gcd = GeneralizedCauchyDirectionSubsolver(M, p, d)
     d.last_gcd_result, d.last_gcd_stepsize = find_generalized_cauchy_direction!(M, gcd, r, p, r, X)
     # With an empty memory, `r` is the generalized Cauchy direction along the projected
@@ -1070,11 +1089,18 @@ as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref), [`QuasiNewtonLimitedMemo
 or [`QuasiNewtonLimitedMemoryBoxDirectionUpdate`](@ref), but the update then is only executed if
 
 ```math
-$(_tex(:frac, "g_{p_{k+1}}(y_k,s_k)", "$(_tex(:norm, "s_k"; index = "p_{k+1}"))^{2}")) ≥ θ$(_tex(:bigl))($(_tex(:norm, "$(_tex(:grad))f(p_k)"; index = "p_k"))$(_tex(:bigr))),
+$(_tex(:frac, "g_{p_{k+1}}(y_k,s_k)", "$(_tex(:norm, "s_k"; index = "p_{k+1}"))^{2}")) ≥ θ(h_k),
 ```
 
 is satisfied, where ``θ`` is a monotone increasing function satisfying ``θ(0) = 0``
-and ``θ`` is strictly increasing at ``0``. If this is not the case, the corresponding
+and ``θ`` is strictly increasing at ``0``.
+Here ``h_k`` is the norm of the projected negative gradient
+[`project_truncate`](@ref Manopt.project_truncate)`(M, p_k, -X_k)` for the gradient ``X_k``
+at ``p_k``, as measured by [`StopWhenProjectedNegativeGradientNormLess`](@ref).
+On manifolds without box constraints, ``h_k = $(_tex(:norm, "$(_tex(:grad))f(p_k)"; index = "p_k"))``,
+which is the rule of [HuangAbsilGallivan:2018](@cite).
+With box constraints, the norm of the gradient does not vanish at stationary points with
+active bounds, so ``h_k`` is used instead. If this is not the case, the corresponding
 update is skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@ref)
 the matrix ``H_k`` or ``B_k`` is not updated.
 The basis ``$(_math(:Sequence, "b", "i", "1", "n"))`` is nevertheless transported into the upcoming tangent
@@ -1102,7 +1128,7 @@ taking into account that the corresponding step size is chosen.
 
 * `update`: an [`AbstractQuasiNewtonDirectionUpdate`](@ref)
 * `θ`:      a monotone increasing function satisfying ``θ(0) = 0`` and ``θ`` is strictly increasing at ``0``.
-* `gradient_norm`: the norm ``$(_tex(:norm, "$(_tex(:grad))f(p_k)"; index = "p_k"))`` of the gradient at the
+* `projected_gradient_norm`: the norm ``h_k`` of the projected negative gradient at the
   point where the direction was last computed, used in the decision rule of the next update,
   so that the gradient is not evaluated again. Its type is the real floating point type of
   the numbers stored in `update`. It is `NaN` if no direction was computed since
@@ -1134,7 +1160,7 @@ mutable struct QuasiNewtonCautiousDirectionUpdate{
     } <: AbstractQuasiNewtonDirectionUpdate
     update::U
     θ::Tθ
-    gradient_norm::R
+    projected_gradient_norm::R
 end
 function QuasiNewtonCautiousDirectionUpdate(
         update::U; θ::Function = identity
@@ -1175,17 +1201,26 @@ function show(io::IO, d::QuasiNewtonCautiousDirectionUpdate)
     print(io, "QuasiNewtonCautiousDirectionUpdate with θ = $(d.θ) and internal state:\n")
     return print(io, d.update)
 end
-# record the gradient norm at the current iterate for the decision rule of the next update
-function _record_gradient_norm!(d::QuasiNewtonCautiousDirectionUpdate, mp::AbstractManoptProblem, st)
-    d.gradient_norm = norm(get_manifold(mp), get_iterate(st), get_gradient(st))
+# the norm of the projected negative gradient `project_truncate(M, p, -X)` for the gradient `X`
+# at `p`; on manifolds without box constraints it is the norm of `X`, computed without allocating
+function _projected_gradient_norm(M::AbstractManifold, p, X)
+    has_anisotropic_max_stepsize(M) || return norm(M, p, X)
+    Y = copy(M, p, X)
+    Y .*= -1
+    project_truncate!(M, Y, p, Y)
+    return norm(M, p, Y)
+end
+# record the projected gradient norm at the current iterate for the decision rule of the next update
+function _record_projected_gradient_norm!(d::QuasiNewtonCautiousDirectionUpdate, mp::AbstractManoptProblem, st)
+    d.projected_gradient_norm = _projected_gradient_norm(get_manifold(mp), get_iterate(st), get_gradient(st))
     return d
 end
 function (d::QuasiNewtonCautiousDirectionUpdate)(mp::AbstractManoptProblem, st)
-    _record_gradient_norm!(d, mp, st)
+    _record_projected_gradient_norm!(d, mp, st)
     return d.update(mp, st)
 end
 function (d::QuasiNewtonCautiousDirectionUpdate)(r, mp::AbstractManoptProblem, st)
-    _record_gradient_norm!(d, mp, st)
+    _record_projected_gradient_norm!(d, mp, st)
     return d.update(r, mp, st)
 end
 
@@ -1202,7 +1237,7 @@ function get_parameter(d::QuasiNewtonCautiousDirectionUpdate, v::Val{:max_stepsi
 end
 function initialize_update!(d::QuasiNewtonCautiousDirectionUpdate)
     initialize_update!(d.update)
-    d.gradient_norm = NaN
+    d.projected_gradient_norm = NaN
     return d
 end
 
@@ -1669,6 +1704,30 @@ function set_zero_at_index!(M::ProductManifold, d, i::Tuple{Int, Any})
     i1, i2 = i
     set_zero_at_index!(M.manifolds[i1], submanifold_component(M, d, i1), i2)
     return d
+end
+
+@doc raw"""
+    zero_at_active_bounds!(M::AbstractManifold, Y, p, X)
+
+Set the elements of the tangent vector `Y` at `p` to zero that belong to variables held at
+their bounds according to the gradient `X` at `p`, that is variables at a lower bound with
+a positive element of `X` or at an upper bound with a negative element of `X`. The negative
+gradient points out of the box for these variables. Variables with equal lower and upper
+bounds are hence always held, unless their element of `X` vanishes.
+`Y` may alias `X`.
+
+By default `Y` is not modified, since most manifolds don't have box constraints.
+"""
+zero_at_active_bounds!(::AbstractManifold, Y, p, X) = Y
+function zero_at_active_bounds!(M::ProductManifold, Y, p, X)
+    map(
+        zero_at_active_bounds!,
+        M.manifolds,
+        submanifold_components(M, Y),
+        submanifold_components(M, p),
+        submanifold_components(M, X),
+    )
+    return Y
 end
 
 """

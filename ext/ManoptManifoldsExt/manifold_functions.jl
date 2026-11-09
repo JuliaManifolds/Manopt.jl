@@ -176,6 +176,22 @@ function Manopt.set_zero_at_index!(::Hyperrectangle, d, i)
 end
 
 """
+    Manopt.zero_at_active_bounds!(M::Hyperrectangle, Y, p, X)
+
+Set the elements `Y[i]` of the tangent vector `Y` at `p` on
+[`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M` to zero, for which
+`p[i] ≤ M.lb[i]` and `X[i] > 0`, or `p[i] ≥ M.ub[i]` and `X[i] < 0`.
+"""
+function Manopt.zero_at_active_bounds!(M::Hyperrectangle, Y, p, X)
+    for i in eachindex(Y, p, X, M.lb, M.ub)
+        if (p[i] <= M.lb[i] && X[i] > 0) || (p[i] >= M.ub[i] && X[i] < 0)
+            Y[i] = 0
+        end
+    end
+    return Y
+end
+
+"""
     Manopt.set_stepsize_bound!(M::Hyperrectangle, d_out, p, d, t_current::Real)
 
 Limit the per-component stepsize in `d_out` to the bound imposed by the box constraints.

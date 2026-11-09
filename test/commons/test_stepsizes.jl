@@ -732,8 +732,12 @@ end
                 M; initial_guess = Manopt.ConstantInitialGuess(1.0), max_function_evaluations = 3
             )
             α = hzls_u2(dmp, gs, 1, η)
-            # the step and the number of evaluations this branch produces
-            @test α == 0.5
+            # the number of evaluations this branch produces; the evaluation limit is reached,
+            # so the trial step with the smallest cost, 1.0 with cost 0 instead of the last
+            # trial step 0.5 with cost 10, is returned
+            @test α == 1.0
+            @test hzls_u2.last_cost == 0.0
+            @test hzls_u2.last_termination === :evaluation_limit
             @test hzls_u2.last_evaluation_index == 3
         end
         @testset "U3 trigger test" begin
@@ -1049,6 +1053,23 @@ end
             @test hzls.Qₖ == 0.0
             @test hzls.Cₖ == 0.0
             @test hzls.current_mode == :standard
+        end
+        @testset "Hager-Zhang relative error estimate and initial guess defaults" begin
+            @test Manopt.HagerZhangInitialGuess().ψ1 == 0.1
+            M1 = Euclidean(1)
+            f_off(M, q) = 1.0e9 + (q[1] - 1)^2
+            grad_f_off(M, q) = 2 .* (q .- 1)
+            dmp_off = DefaultManoptProblem(M1, ManifoldGradientObjective(f_off, grad_f_off))
+            hzls = HagerZhangLinesearch()(M1)
+            gs = GradientDescentState(M1; p = [0.0])
+            hzls(dmp_off, gs, 1, [1.0])
+            # C₀ = |f(p₀)|, ϵ₀ = ϵ C₀
+            @test hzls.Cₖ == f_off(M1, [0.0])
+            @test hzls.ϵₖ == hzls.ϵ * hzls.Cₖ
+            gs.p .= [0.5]
+            hzls(dmp_off, gs, 2, [1.0])
+            @test hzls.Cₖ ≈ f_off(M1, [0.0]) + (f_off(M1, [0.5]) - f_off(M1, [0.0])) / (1 + hzls.Δ)
+            @test hzls.ϵₖ == hzls.ϵ * hzls.Cₖ
         end
 
     end

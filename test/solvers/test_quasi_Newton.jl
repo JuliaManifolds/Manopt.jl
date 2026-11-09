@@ -619,29 +619,30 @@ end
             # one evaluation at the start and one per iteration
             @test get_count(r[1], :Gradient) == 6
         end
-        # the decision rule uses the gradient norm at the point the direction was computed at
+        # the decision rule uses the gradient norm at the point the direction was computed at,
+        # which is the projected gradient norm without box constraints
         mp = DefaultManoptProblem(Ne, ManifoldGradientObjective(fe, grad_fe))
         p = [1.0, 1.0]
         dc = QuasiNewtonCautiousDirectionUpdate(
             QuasiNewtonLimitedMemoryDirectionUpdate(Ne, p, InverseBFGS(), 2); θ = identity
         )
-        @test isnan(dc.gradient_norm)
+        @test isnan(dc.projected_gradient_norm)
         st = QuasiNewtonState(Ne; p = copy(p), X = grad_fe(Ne, p), direction_update = dc)
         dc(mp, st)
-        @test dc.gradient_norm ≈ norm(grad_fe(Ne, p))
+        @test dc.projected_gradient_norm ≈ norm(grad_fe(Ne, p))
         # the recorded norm is used once; without it the gradient at `p_old` is evaluated
         st.sk = [1.0, 0.0]
         st.yk = [10.0, 0.0]
         update_hessian!(dc, mp, st, p, 1)
-        @test isnan(dc.gradient_norm)
+        @test isnan(dc.projected_gradient_norm)
         @test length(dc.update.memory_s) == 1
-        dc.gradient_norm = 20.0 # pretend a large gradient was recorded: the pair is skipped
+        dc.projected_gradient_norm = 20.0 # pretend a large gradient was recorded: the pair is skipped
         update_hessian!(dc, mp, st, p, 2)
         @test length(dc.update.memory_s) == 1
         update_hessian!(dc, mp, st, p, 3) # evaluates ‖grad f(p)‖ ≈ 7.2 < 10: added
         @test length(dc.update.memory_s) == 2
         # the type of the recorded norm follows the numbers stored in the wrapped update
-        @test dc.gradient_norm isa Float64
+        @test dc.projected_gradient_norm isa Float64
         p32 = Float32[1.0, 1.0]
         for u in (
                 QuasiNewtonLimitedMemoryDirectionUpdate(Ne, p32, InverseBFGS(), 2; initial_scale = 1.0f0),
@@ -653,19 +654,19 @@ end
                 ),
             )
             dc32 = QuasiNewtonCautiousDirectionUpdate(u)
-            @test dc32.gradient_norm isa Float32
-            @test isnan(dc32.gradient_norm)
+            @test dc32.projected_gradient_norm isa Float32
+            @test isnan(dc32.projected_gradient_norm)
         end
         dc32 = QuasiNewtonCautiousDirectionUpdate(
             QuasiNewtonLimitedMemoryDirectionUpdate(Ne, p32, InverseBFGS(), 2; initial_scale = 1.0f0)
         )
         st32 = QuasiNewtonState(Ne; p = copy(p32), X = Float32[2.0, 0.0], direction_update = dc32)
         dc32(mp, st32)
-        @test dc32.gradient_norm === 2.0f0
+        @test dc32.projected_gradient_norm === 2.0f0
         # reinitializing the update discards the recorded norm
         Manopt.initialize_update!(dc32)
-        @test isnan(dc32.gradient_norm)
-        @test dc32.gradient_norm isa Float32
+        @test isnan(dc32.projected_gradient_norm)
+        @test dc32.projected_gradient_norm isa Float32
     end
     @testset "Byrd's rule on a complex manifold" begin
         Mc = Euclidean(2; field = ℂ)

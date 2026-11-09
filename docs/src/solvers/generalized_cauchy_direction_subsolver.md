@@ -66,6 +66,7 @@ Manopt.get_stepsize_bound
 Manopt.get_at_bound_index
 Manopt.set_stepsize_bound!
 Manopt.set_zero_at_index!
+Manopt.zero_at_active_bounds!
 Manopt.isotropic_max_stepsize
 Manopt.project_truncate
 Manopt.project_truncate!
