@@ -241,6 +241,20 @@ function get_message(::Val{:stepsize_less}, k::Int = -1, value::Real = NaN, boun
     b_str = isnan(bound) ? "" : "($bound)"
     return (k >= 0) ? "At $s: Minimal stepsize less than bound $b_str reached.$s_str" : ""
 end
+"""
+    get_message(:evaluation_limit, k::Int=-1, step::Real = NaN, bound::Int = -1)
+
+Display a message string for a line search reaching its maximal number of function evaluations
+`bound` at iteration `k` without satisfying its acceptance conditions, and the step size
+`step` used instead.
+"""
+function get_message(::Val{:evaluation_limit}, k::Int = -1, value::Real = NaN, bound::Int = -1)
+    (k < 0) && (return "")
+    s = (k == 0) ? "the beginning" : "iteration #$k"
+    b_str = (bound < 0) ? "" : " ($bound)"
+    v_str = isnan(value) ? "" : " Continuing with the last trial stepsize of $value."
+    return "At $s: Maximal number of function evaluations$b_str reached without satisfying the Wolfe conditions.$v_str"
+end
 
 #
 #
@@ -2865,6 +2879,10 @@ $(_fields(:vector_transport_method))
   * `:evaluation_limit` if `max_function_evaluations` was reached first. The returned
     step size is then the last trial step and [`has_failed`](@ref Manopt.has_failed)
     returns `true`.
+* `messages::NamedTuple`: a named tuple of [`StepsizeMessage`](@ref)s about the last line search,
+  reporting a non-descent direction (`:non_descent_direction`), an initial guess exceeding the
+  step size limit (`:stepsize_exceeds`) and reaching the maximal number of function evaluations
+  (`:evaluation_limit`), see [`get_message`](@ref).
 
 # Constructor
 
@@ -2912,6 +2930,10 @@ mutable struct HagerZhangLinesearchStepsize{
     last_cost::TF
     ϵₖ::TF
     last_termination::Symbol
+    messages::NamedTuple{
+        (:non_descent_direction, :stepsize_exceeds, :evaluation_limit),
+        Tuple{StepsizeMessage{TF, TF}, StepsizeMessage{TF, TF}, StepsizeMessage{Int, TF}},
+    }
     function HagerZhangLinesearchStepsize(
             M::AbstractManifold;
             initial_guess::TIG = HagerZhangInitialGuess(),
@@ -2976,6 +2998,11 @@ mutable struct HagerZhangLinesearchStepsize{
         triples = Vector{UnivariateTriple{TF}}(undef, max_function_evaluations)
 
         initial_wolfe_mode = wolfe_condition_mode == :adaptive ? :standard : wolfe_condition_mode
+        msgs = (;
+            non_descent_direction = StepsizeMessage{TF, TF}(),
+            stepsize_exceeds = StepsizeMessage{TF, TF}(),
+            evaluation_limit = StepsizeMessage{Int, TF}(),
+        )
 
         return new{TF, TIG, TRM, TVTM, typeof(candidate_point), typeof(candidate_direction)}(
             initial_guess, retraction_method, vector_transport_method, stepsize_limit,
@@ -2986,7 +3013,7 @@ mutable struct HagerZhangLinesearchStepsize{
             triples, 0,
             0.0, 0.0, # Qₖ, Cₖ
             initial_wolfe_mode,
-            initial_last_stepsize, initial_last_cost, ϵ, :not_searched,
+            initial_last_stepsize, initial_last_cost, ϵ, :not_searched, msgs,
         )
     end
 end
@@ -3003,6 +3030,7 @@ function initialize_stepsize!(hzls::HagerZhangLinesearchStepsize)
     end
     hzls.last_evaluation_index = 0
     hzls.last_termination = :not_searched
+    reset_messages!(hzls.messages)
     return hzls
 end
 
@@ -3308,12 +3336,14 @@ function (hzls::HagerZhangLinesearchStepsize)(
     )
     M = get_manifold(mp)
     p = get_iterate(s)
+    reset_messages!(hzls.messages)
 
     dphi_0 = if !isnothing(gradient)
         real(inner(M, p, η, gradient))
     else
         get_differential(mp, p, η; gradient = hzls.temporary_tangent)
     end
+    (dphi_0 >= 0) && set_message!(hzls.messages, :non_descent_direction, at = k, value = dphi_0)
     hzls.triples[1] = UnivariateTriple(0.0, fp, dphi_0)
     hzls.last_evaluation_index = 1
 
@@ -3342,7 +3372,10 @@ function (hzls::HagerZhangLinesearchStepsize)(
     α0 = hzls.initial_guess(mp, s, k, hzls.last_stepsize, η; lf0 = fp, Dlf0 = dphi_0, stop_when_stepsize_exceeds = max_alpha, retraction_method = hzls.retraction_method)
 
     # in case initial_guess does not take into account the stepsize limit, we enforce it here
-    α0 = min(α0, max_alpha)
+    if α0 > max_alpha
+        set_message!(hzls.messages, :stepsize_exceeds, at = k, bound = max_alpha, value = max_alpha)
+        α0 = max_alpha
+    end
 
     # L0, bracket(c)
     local i_a_j, i_b_j, f_eval, f_wolfe # COV_EXCL_LINE
@@ -3385,10 +3418,20 @@ function (hzls::HagerZhangLinesearchStepsize)(
     end
     hzls.last_stepsize = hzls.triples[hzls.last_evaluation_index].t
     hzls.last_cost = hzls.triples[hzls.last_evaluation_index].f
+    if hzls.last_termination === :evaluation_limit
+        set_message!(
+            hzls.messages, :evaluation_limit;
+            at = k, bound = length(hzls.triples), value = hzls.last_stepsize,
+        )
+    end
     return hzls.last_stepsize
 end
 get_last_stepsize(hzls::HagerZhangLinesearchStepsize, ::Any...) = hzls.last_stepsize
 has_failed(hzls::HagerZhangLinesearchStepsize) = hzls.last_termination === :evaluation_limit
+function get_message(hzls::HagerZhangLinesearchStepsize)
+    s = [get_message(kv[1], kv[2]) for kv in pairs(hzls.messages)]
+    return join([m for m in s if length(m) > 0], "\n")
+end
 
 function Base.show(io::IO, hzls::HagerZhangLinesearchStepsize)
     return print(

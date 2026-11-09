@@ -586,6 +586,30 @@ end
             α_eval = hzls_eval(dmp, gs, 1, η)
             @test α_eval > 0
             @test hzls_eval.last_evaluation_index == length(hzls_eval.triples)
+            @test Manopt.has_failed(hzls_eval)
+            msg_eval = Manopt.get_message(hzls_eval)
+            @test startswith(msg_eval, "At iteration #1: Maximal number of function evaluations (2) reached")
+            @test occursin("stepsize of $(α_eval)", msg_eval)
+            # messages are reset on the next search and on initialization
+            hzls_eval(dmp, gs, 2, η)
+            @test startswith(Manopt.get_message(hzls_eval), "At iteration #2:")
+            Manopt.initialize_stepsize!(hzls_eval)
+            @test Manopt.get_message(hzls_eval) == ""
+            @test Manopt.get_message(:evaluation_limit, -1) == ""
+            @test Manopt.get_message(:evaluation_limit, 0) ==
+                "At the beginning: Maximal number of function evaluations reached without satisfying the Wolfe conditions."
+        end
+        @testset "messages" begin
+            hzls_m = Manopt.HagerZhangLinesearchStepsize(
+                M; initial_guess = Manopt.ConstantInitialGuess(1.0), stepsize_limit = 0.05,
+            )
+            hzls_m(dmp, gs, 3, η)
+            @test !Manopt.has_failed(hzls_m)
+            @test Manopt.get_message(hzls_m) ==
+                "At iteration #3: Maximal step size bound (0.05) exceeded. Reducing to 0.05."
+            hzls_nd = Manopt.HagerZhangLinesearchStepsize(M)
+            hzls_nd(dmp, gs, 4, -η)
+            @test occursin("At iteration #4: Non-descent direction η encountered", Manopt.get_message(hzls_nd))
         end
         @testset "B1 bracketing test" begin
             M = Euclidean(1)
