@@ -1249,6 +1249,113 @@ end
         wpls(dmp, gs, 2, -0.0001 * grad_f(M, p))
         @test wpls.messages[:stop_increasing].at_iteration > 0
     end
+    @testset "has_failed" begin
+        M = Euclidean(2)
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 .* p
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        p = [2.0, 2.0]
+        X = grad_f(M, p)
+        gs = GradientDescentState(M; p = p, X = X)
+        # the default reports no failures
+        @test !Manopt.has_failed(ConstantLength()(M))
+        @testset "linesearch_backtrack reports safeguards only on failure" begin
+            msgs = (;
+                stop_decreasing = Manopt.StepsizeMessage{Int, Float64}(),
+                stepsize_less = Manopt.StepsizeMessage{Float64, Float64}(),
+            )
+            # the decrease condition holds at s = 0.5, i.e. exactly at the last allowed step
+            s = Manopt.linesearch_backtrack(
+                M, f, p, 1.0, 1.0e-4, 0.5, -X; gradient = X, stop_decreasing_at_step = 1,
+                stop_when_stepsize_less = 0.75, report_messages_in = msgs,
+            )
+            @test s == 0.5
+            @test !Manopt._backtracking_failed(msgs)
+            # along an ascent direction the decrease condition never holds
+            s = Manopt.linesearch_backtrack(
+                M, f, p, 1.0, 1.0e-4, 0.5, X; gradient = X, stop_decreasing_at_step = 3,
+                report_messages_in = msgs,
+            )
+            @test s == 0.125
+            @test msgs.stop_decreasing.at_iteration == 3
+            @test Manopt._backtracking_failed(msgs)
+        end
+        @testset "Armijo" begin
+            a = ArmijoLinesearch(; stop_decreasing_at_step = 3)(M)
+            a(dmp, gs, 1, -X)
+            @test !Manopt.has_failed(a)
+            a(dmp, gs, 2, X)
+            @test Manopt.has_failed(a)
+            a(dmp, gs, 3, -X)
+            @test !Manopt.has_failed(a)
+        end
+        @testset "Nonmonotone" begin
+            nls = Manopt.NonmonotoneLinesearchStepsize(M; p = copy(p), stop_decreasing_at_step = 3)
+            nls(dmp, gs, 1, -X; gradient = X)
+            @test !Manopt.has_failed(nls)
+            nls(dmp, gs, 2, X; gradient = X)
+            @test Manopt.has_failed(nls)
+        end
+        @testset "WolfePowell" begin
+            wpls = WolfePowellLinesearch(; stop_decreasing_at_step = 1)(M)
+            @test !Manopt.has_failed(wpls)
+            # the decrease safeguard is reached, but the conditions hold at the last step
+            wpls(dmp, gs, 1, -X)
+            @test wpls.messages[:stop_decreasing].at_iteration > 0
+            @test !Manopt.has_failed(wpls)
+            wpls(dmp, gs, 2, X)
+            @test Manopt.has_failed(wpls)
+            # along η = -0.02X the cost is 8(1 - 0.04t)^2, minimal at t = 25, so for these
+            # parameters the curvature condition holds for t ≥ 25, the sufficient decrease
+            # condition for t ≤ 27.5, the increase stops at [16, 32] and the bisection tests
+            # 24 (on [24, 32]), 28 (on [24, 28]) and 26, where both conditions hold.
+            η = -0.02 * X
+            wp(tol) = WolfePowellLinesearch(;
+                sufficient_decrease = 0.45, sufficient_curvature = 1.0e-12, stop_when_stepsize_less = tol,
+            )(M)
+            wpls = wp(0.0)
+            @test wpls(dmp, gs, 1, η) == 26.0
+            @test !Manopt.has_failed(wpls)
+            # the bisection stops at its minimal interval width on [24, 28]
+            wpls = wp(6.0)
+            @test wpls(dmp, gs, 1, η) == 24.0
+            @test wpls.messages[:stepsize_less].at_iteration > 0
+            @test Manopt.has_failed(wpls)
+            # the interval width [26, 28] reaches the minimal width, but the conditions hold at 26
+            wpls = wp(3.0)
+            @test wpls(dmp, gs, 1, η) == 26.0
+            @test wpls.messages[:stepsize_less].at_iteration < 0
+            @test !Manopt.has_failed(wpls)
+            # the increase stops at the maximal step size, which is accepted
+            wpls = WolfePowellLinesearch(; sufficient_curvature = 1.0e-12)(M)
+            @test wpls(dmp, gs, 1, η; stop_when_stepsize_exceeds = 20.0) == 20.0
+            @test !Manopt.has_failed(wpls)
+            # the increase stops at a maximal step size without sufficient decrease, so the
+            # bisection starts from the last step with sufficient decrease, 16, instead of 15
+            wpls = wp(0.0)
+            α = wpls(dmp, gs, 1, η; stop_when_stepsize_exceeds = 30.0)
+            @test 25 ≤ α ≤ 27.5
+            @test !Manopt.has_failed(wpls)
+        end
+        @testset "WolfePowellBinary" begin
+            wpb = WolfePowellBinaryLinesearch(; stop_when_stepsize_less = 1.0e-3)(M)
+            @test !Manopt.has_failed(wpb)
+            wpb(dmp, gs, 1, -X)
+            @test !Manopt.has_failed(wpb)
+            wpb(dmp, gs, 2, X)
+            @test Manopt.has_failed(wpb)
+        end
+        @testset "CubicBracketing" begin
+            cbls = CubicBracketingLinesearch()(M)
+            @test !Manopt.has_failed(cbls)
+            cbls(dmp, gs, 1, -X)
+            @test !Manopt.has_failed(cbls)
+            # without iterations, the first trial step does not fulfill the curvature condition
+            cbls0 = CubicBracketingLinesearch(; max_iterations = 0)(M)
+            cbls0(dmp, gs, 1, -X)
+            @test Manopt.has_failed(cbls0)
+        end
+    end
     @testset "Nonmonotone linesearch stays inside the injectivity radius" begin
         M = Sphere(2)
         f(M, p) = 1 - p[1]

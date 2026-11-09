@@ -57,6 +57,12 @@ function reset_messages!(messages::NamedTuple)
     return messages
 end
 
+# whether a backtracking with these messages stopped at one of its safeguards
+# before the step size fulfilled the decrease conditions, see `linesearch_backtrack!`
+function _backtracking_failed(messages::NamedTuple)
+    return messages.stop_decreasing.at_iteration >= 0 || messages.stepsize_less.at_iteration >= 0
+end
+
 """
     set_message!(messages::NamedTuple, key::Symbol; at=nothing, bound=nothing, value=nothing)
 
@@ -395,6 +401,7 @@ get_initial_stepsize(a::ArmijoLinesearchStepsize) = a.initial_stepsize
 function get_last_stepsize(step::ArmijoLinesearchStepsize, ::Any...)
     return step.last_stepsize
 end
+has_failed(a::ArmijoLinesearchStepsize) = _backtracking_failed(a.messages)
 function Base.show(io::IO, a_ls::ArmijoLinesearchStepsize)
     print(io, "ArmijoLinesearch(; additional_decrease_condition = ", a_ls.additional_decrease_condition)
     print(io, ", additional_increase_condition = ", a_ls.additional_increase_condition)
@@ -1041,6 +1048,8 @@ $(_fields(:retraction_method))
 * `min_bracket_width::R`: minimal size of the bracket ``[a,b]``
 * `hybrid::Bool`: use the hybrid strategy
 * `max_stepsize::R`: maximal stepsize
+* `last_failed::Bool`: whether the last line search stopped at its iteration limit or minimal
+  bracket width without fulfilling the curvature condition, see [`has_failed`](@ref Manopt.has_failed)
 $(_fields(:vector_transport_method))
 
 # Constructor
@@ -1087,6 +1096,7 @@ mutable struct CubicBracketingLinesearchStepsize{
     hybrid::Bool
     vector_transport_method::VTM
     max_stepsize::R
+    last_failed::Bool
     function CubicBracketingLinesearchStepsize(
             M::AbstractManifold;
             candidate_point::P = allocate_result(M, rand),
@@ -1110,7 +1120,7 @@ mutable struct CubicBracketingLinesearchStepsize{
         p = maybe_wrap_variable(candidate_point)
         X = maybe_wrap_variable(candidate_direction)
         Y = maybe_wrap_variable(temporary_tangent)
-        return new{R, I, TRM, VTM, typeof(p), typeof(X), IG}(X, p, Y, initial_stepsize, initial_guess, initial_stepsize, retraction_method, stepsize_increase, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsize)
+        return new{R, I, TRM, VTM, typeof(p), typeof(X), IG}(X, p, Y, initial_stepsize, initial_guess, initial_stepsize, retraction_method, stepsize_increase, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsize, false)
     end
 end
 function CubicBracketingLinesearchStepsize(M::AbstractManifold, p; kwargs...)
@@ -1299,6 +1309,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
         max_step = min(max_step, kwargs[:stop_when_stepsize_exceeds])
     end
     t = min(cbls.initial_guess(mp, s, k, cbls.last_stepsize, η), max_step)
+    cbls.last_failed = false
     c_old = init
     c = get_univariate_triple!(mp, cbls, p, η, t)
     a, b = c_old, c
@@ -1333,7 +1344,10 @@ function (cbls::CubicBracketingLinesearchStepsize)(
         if (cbls.hybrid)
             while ((n_iter += 1) <= cbls.max_iterations)
                 # Step 2
-                abs(a.t - b.t) < cbls.min_bracket_width && return t
+                if abs(a.t - b.t) < cbls.min_bracket_width
+                    cbls.last_failed = !check_curvature(c)
+                    return t
+                end
                 l = l / 2
                 abs(a_old.t - t) > l && break
                 # Step 3
@@ -1354,8 +1368,11 @@ function (cbls::CubicBracketingLinesearchStepsize)(
             a, b = update_bracket(a, b, c)
         end
     end
+    # `c` is the triple at `t`, so this is a failure exactly if a safeguard stopped the search
+    cbls.last_failed = !check_curvature(c)
     return t
 end
+has_failed(cbls::CubicBracketingLinesearchStepsize) = cbls.last_failed
 get_initial_stepsize(cbls::CubicBracketingLinesearchStepsize) = cbls.initial_stepsize
 get_last_stepsize(cbls::CubicBracketingLinesearchStepsize, ::Any...) = cbls.last_stepsize
 function initialize_stepsize!(cbls::CubicBracketingLinesearchStepsize)
@@ -1992,6 +2009,7 @@ function (a::NonmonotoneLinesearchStepsize)(
     return a.last_stepsize
 end
 get_last_stepsize(nls::NonmonotoneLinesearchStepsize, ::Any...) = nls.last_stepsize
+has_failed(nls::NonmonotoneLinesearchStepsize) = _backtracking_failed(nls.messages)
 function initialize_stepsize!(nls::NonmonotoneLinesearchStepsize{P, T, R}) where {P, T, R}
     initialize_stepsize!(nls.bb_stepsize)
     nls.last_stepsize = one(R)
@@ -2181,6 +2199,10 @@ $(_fields(:vector_transport_method))
 * `stop_increasing_at_step::I`: last step to increase the stepsize
 * `stop_decreasing_at_step::I`: last step to decrease the stepsize
 * `messages::TMSG`: a named tuple of [`StepsizeMessage`](@ref)s about the stepsize search
+* `last_failed::Bool`: whether the last line search was stopped by one of its safeguards
+  and the returned step does not fulfill both conditions, see [`has_failed`](@ref Manopt.has_failed).
+  Stopping at the maximal step size with the sufficient decrease condition fulfilled is not
+  considered a failure.
 
 # Constructor
 
@@ -2218,6 +2240,7 @@ mutable struct WolfePowellLinesearchStepsize{
     stop_increasing_at_step::I
     stop_decreasing_at_step::I
     messages::TMSG
+    last_failed::Bool
     function WolfePowellLinesearchStepsize(;
             sufficient_decrease::R, sufficient_curvature::R, candidate_direction::T, candidate_point::P,
             last_stepsize::R, initial_guess::IG, max_stepsize::R, retraction_method::TRM, stop_when_stepsize_less::R,
@@ -2229,7 +2252,8 @@ mutable struct WolfePowellLinesearchStepsize{
         return new{R, TRM, VTM, typeof(p_), typeof(X_), I, TMSG, IG}(
             sufficient_decrease, sufficient_curvature,
             X_, p_, last_stepsize, initial_guess, max_stepsize, retraction_method,
-            stop_when_stepsize_less, vector_transport_method, stop_increasing_at_step, stop_decreasing_at_step, messages
+            stop_when_stepsize_less, vector_transport_method, stop_increasing_at_step, stop_decreasing_at_step, messages,
+            false,
         )
     end
     function WolfePowellLinesearchStepsize(
@@ -2301,6 +2325,7 @@ function (a::WolfePowellLinesearchStepsize)(
     s_minus = step
     # clear messages
     reset_messages!(a.messages)
+    a.last_failed = false
 
     f0 = get_cost(mp, p)
     ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
@@ -2321,13 +2346,17 @@ function (a::WolfePowellLinesearchStepsize)(
                 break
             end
         end
+        # the decrease was stopped by a safeguard before the sufficient decrease condition held
+        a.last_failed = fNew > f0 + a.sufficient_decrease * step * l
         s_plus = min(2 * s_minus, max_step_increase)
     else
         vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
         if get_differential(mp, a.candidate_point, a.candidate_direction; gradient = Y) < a.sufficient_curvature * l
             i = 0
+            # `s_minus` is always the last trial step that fulfilled the sufficient decrease condition
             while fNew <= f0 + a.sufficient_decrease * step * l && (s_plus < max_step_increase)
                 # increase
+                s_minus = s_plus
                 s_plus = min(2 * s_plus, max_step_increase)
                 step = s_plus
                 ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
@@ -2338,28 +2367,51 @@ function (a::WolfePowellLinesearchStepsize)(
                     break
                 end
             end
-            s_minus = s_plus / 2
+            # the sufficient decrease condition holds at the maximal step size, so we accept that,
+            # since only the bound prevents a larger step fulfilling the curvature condition
+            if (s_plus == max_step_increase) && (fNew <= f0 + a.sufficient_decrease * s_plus * l)
+                s_minus = s_plus
+            end
         end
     end
-    ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
-    vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
-    while get_differential(mp, a.candidate_point, a.candidate_direction; gradient = Y) < a.sufficient_curvature * l
-        step = (s_minus + s_plus) / 2
-        # the bisection interval collapsed to two adjacent floats, so it cannot shrink further
-        ((step == s_minus) || (step == s_plus)) && break
-        ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
-        fNew = get_cost(mp, a.candidate_point)
-        if fNew <= f0 + a.sufficient_decrease * step * l
-            s_minus = step
-        else
-            s_plus = step
-        end
-        if abs(s_plus - s_minus) <= a.stop_when_stepsize_less
-            set_message!(a.messages, :stepsize_less, at = k, bound = a.stop_when_stepsize_less, value = step)
-            break
-        end
+    # Bisect on the curvature condition only if there is an interval [s_minus, s_plus] to bisect.
+    # After the increase branch, s_minus == s_plus in two cases: either the initial step fulfills
+    # both conditions, so no increase was needed, or the sufficient decrease condition holds at
+    # the maximal step size, which is then accepted. In both cases s_minus is returned as it is.
+    # The decrease branch sets s_plus = min(2s_minus, max_step_increase) > s_minus, unless the
+    # initial step was already below the decrease threshold and equal to the maximal step,
+    # in which case that step fails the sufficient decrease condition and is reported as failure.
+    if s_minus < s_plus
         ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
         vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
+        i = 0
+        # the safeguards are checked after the curvature condition failed at `s_minus`,
+        # so that a failure is reported exactly if the returned step does not fulfill it
+        while get_differential(mp, a.candidate_point, a.candidate_direction; gradient = Y) < a.sufficient_curvature * l
+            if i > 0 && abs(s_plus - s_minus) <= a.stop_when_stepsize_less
+                set_message!(a.messages, :stepsize_less, at = k, bound = a.stop_when_stepsize_less, value = s_minus)
+                a.last_failed = true
+                break
+            end
+            step = (s_minus + s_plus) / 2
+            # the bisection interval collapsed to two adjacent floats, so it cannot shrink further
+            if (step == s_minus) || (step == s_plus)
+                a.last_failed = true
+                break
+            end
+            i += 1
+            ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
+            fNew = get_cost(mp, a.candidate_point)
+            if fNew <= f0 + a.sufficient_decrease * step * l
+                s_minus = step
+                # this covers a failed decrease, since `s_minus` now fulfills that condition
+                a.last_failed = false
+            else
+                s_plus = step
+            end
+            ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
+            vector_transport_to!(M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method)
+        end
     end
     step = s_minus
     a.last_stepsize = step
@@ -2368,6 +2420,7 @@ end
 function get_last_stepsize(step::WolfePowellLinesearchStepsize, ::Any...)
     return step.last_stepsize
 end
+has_failed(a::WolfePowellLinesearchStepsize) = a.last_failed
 function Base.show(io::IO, a::WolfePowellLinesearchStepsize)
     print(io, "WolfePowellLinesearchStepsize(; sufficient_decrease = ", a.sufficient_decrease)
     print(io, ", sufficient_curvature = ", a.sufficient_curvature, ", candidate_direction = ", a.candidate_direction, ", candidate_point = ", a.candidate_point)
@@ -2452,6 +2505,9 @@ $(_fields(:initial_guess))
 $(_fields(:retraction_method))
 * `stop_when_stepsize_less::F`: a safeguard to stop when the stepsize gets too small
 $(_fields(:vector_transport_method))
+* `last_failed::Bool`: whether the last line search stopped without fulfilling both conditions,
+  see [`has_failed`](@ref Manopt.has_failed). Stopping at the maximal step size with the
+  sufficient decrease condition fulfilled is not considered a failure.
 
 # Constructor
 
@@ -2478,6 +2534,7 @@ mutable struct WolfePowellBinaryLinesearchStepsize{
     last_stepsize::F
     initial_guess::IG
     stop_when_stepsize_less::F
+    last_failed::Bool
     function WolfePowellBinaryLinesearchStepsize(
             M::AbstractManifold;
             sufficient_decrease::Real = 10.0^(-4),
@@ -2492,7 +2549,7 @@ mutable struct WolfePowellBinaryLinesearchStepsize{
         return new{RTM, VTM, F, IG}(
             retraction_method, vector_transport_method,
             convert(F, sufficient_decrease), convert(F, sufficient_curvature),
-            convert(F, last_stepsize), initial_guess, convert(F, stop_when_stepsize_less),
+            convert(F, last_stepsize), initial_guess, convert(F, stop_when_stepsize_less), false,
         )
     end
 end
@@ -2541,9 +2598,11 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
             get_differential(amp, xNew, η_xNew; gradient = X_tmp) <
             a.sufficient_curvature * d_p
     end
+    a.last_failed = nAt || (nWt && t < max_step)
     a.last_stepsize = t
     return t
 end
+has_failed(a::WolfePowellBinaryLinesearchStepsize) = a.last_failed
 function get_last_stepsize(step::WolfePowellBinaryLinesearchStepsize, ::Any...)
     return step.last_stepsize
 end
@@ -2804,7 +2863,7 @@ $(_fields(:vector_transport_method))
   * `:max_stepsize` if the maximal step size was reached with a decrease in cost,
     see `allow_early_maxstep_termination`,
   * `:evaluation_limit` if `max_function_evaluations` was reached first. The returned
-    step size is then the last trial step and [`linesearch_failed`](@ref Manopt.linesearch_failed)
+    step size is then the last trial step and [`has_failed`](@ref Manopt.has_failed)
     returns `true`.
 
 # Constructor
@@ -3329,7 +3388,7 @@ function (hzls::HagerZhangLinesearchStepsize)(
     return hzls.last_stepsize
 end
 get_last_stepsize(hzls::HagerZhangLinesearchStepsize, ::Any...) = hzls.last_stepsize
-linesearch_failed(hzls::HagerZhangLinesearchStepsize) = hzls.last_termination === :evaluation_limit
+has_failed(hzls::HagerZhangLinesearchStepsize) = hzls.last_termination === :evaluation_limit
 
 function Base.show(io::IO, hzls::HagerZhangLinesearchStepsize)
     return print(

@@ -755,10 +755,10 @@ end
         p0 = [-1.2, 1.0]
         sc = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-8)
         # by default step sizes do not report failures
-        @test !Manopt.linesearch_failed(Manopt.ConstantStepsize(M))
+        @test !Manopt.has_failed(Manopt.ConstantStepsize(M))
         hz = HagerZhangLinesearch(; max_function_evaluations = 3)(M)
         @test hz.last_termination === :not_searched
-        @test !Manopt.linesearch_failed(hz)
+        @test !Manopt.has_failed(hz)
         @test_throws ArgumentError QuasiNewtonState(M; p = copy(p0), linesearch_failure_behavior = :foo)
         @testset "accept" begin
             # accepting failed line searches makes the iterates sensitive to rounding,
@@ -784,7 +784,7 @@ end
                 step_solver!(mp, qns, k)
             end
             @test qns.linesearch_status === :failure_accepted
-            @test Manopt.linesearch_failed(qns.stepsize)
+            @test Manopt.has_failed(qns.stepsize)
             @test qns.stepsize.last_termination === :evaluation_limit
             # the iterate moved by the last trial step α η (η is scaled by α after the step)
             @test qns.p ≈ qns.p_old + qns.η

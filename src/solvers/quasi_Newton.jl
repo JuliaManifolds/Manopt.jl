@@ -280,7 +280,7 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
 * `initial_scale=1.0`: the scale `s` in $(_doc_QN_init_scaling) of the initial Hessian approximation,
   see also `initial_operator`. Set to `nothing` by default when using a `preconditioner`.
 * `linesearch_failure_behavior=:accept`: how to proceed when the line search reports a failure,
-  see [`linesearch_failed`](@ref Manopt.linesearch_failed), for example when
+  see [`has_failed`](@ref Manopt.has_failed), for example when
   [`HagerZhangLinesearch`](@ref) reaches its limit on function evaluations. This can be
   * `:accept`: the last trial step of the line search is accepted and the iteration continues.
   * `:restart`: as in L-BFGS-B [ByrdLuNocedalZhu:1995](@cite), the step is rejected, i.e. the
@@ -515,7 +515,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
         α = qns.stepsize(mp, qns, k, qns.η; gradient = qns.X, stop_when_stepsize_exceeds = current_max_stepsize)
     end
     callback(:Stepsize, mp, qns, k)
-    if linesearch_failed(qns.stepsize)
+    if has_failed(qns.stepsize)
         if qns.linesearch_failure_behavior === :restart
             # as in L-BFGS-B: reject the step, keep the iterate and its gradient and restart
             # without curvature information; failing again directly after a restart stops.

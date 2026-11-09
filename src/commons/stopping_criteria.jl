@@ -1435,10 +1435,11 @@ A stopping criterion that indicates to stop when the solver reports a line searc
 it cannot recover from, see [`has_terminal_linesearch_failure`](@ref Manopt.has_terminal_linesearch_failure).
 
 For example the [`quasi_Newton`](@ref) solver with `linesearch_failure_behavior=:restart`
-reports such a failure when the line search fails, see [`linesearch_failed`](@ref Manopt.linesearch_failed),
+reports such a failure when the line search fails, see [`has_failed`](@ref Manopt.has_failed),
 although the direction update held no curvature information, i.e. directly after
 a (re)initialization of the direction update.
-This corresponds to the abnormal termination in the line search of L-BFGS-B [ByrdLuNocedalZhu:1995](@cite).
+This corresponds to the termination of L-BFGS-B when the line search fails along the
+steepest descent direction after a restart, see [ZhuByrdLuNocedal:1997; Section 4](@cite).
 The iterate is then the last one with an accepted step.
 
 For solver states that do not report such failures, this criterion never indicates to stop.

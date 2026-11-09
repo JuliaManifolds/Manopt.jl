@@ -105,18 +105,19 @@ If no last step size is stored, this returns `NaN`.
 get_last_stepsize(::Stepsize, ::Any...) = NaN
 
 @doc """
-    linesearch_failed(s::Stepsize)
+    has_failed(s::Stepsize)
 
 Return `true` if the last call of the step size `s` terminated without finding a step size
-that satisfies its acceptance conditions, for example because an evaluation limit was
-reached. The step size returned by such a call is then the last trial step.
+that satisfies its acceptance conditions, for example the sufficient decrease (Armijo)
+condition or the Wolfe conditions, because a safeguard like an evaluation limit or a minimal
+step size was reached. The step size returned by such a call is then the last trial step.
 
 Solvers can use this to decide how to proceed, see for example the
 `linesearch_failure_behavior=` keyword of [`quasi_Newton`](@ref).
 The default returns `false`, i.e. step sizes that do not report failures are always
 considered successful.
 """
-linesearch_failed(::Stepsize) = false
+has_failed(::Stepsize) = false
 
 @doc """
     get_initial_stepsize(::Stepsize)
@@ -313,6 +314,8 @@ $(_kwargs(:retraction_method))
 # Return value
 
 The stepsize `s`; safeguard messages are reported into `report_messages_in`.
+The messages `:stop_decreasing` and `:stepsize_less` are only reported if the returned
+step size does not fulfill the decrease conditions.
 """
 
 @doc "$_doc_linesearch_backtrack"
@@ -366,20 +369,22 @@ function linesearch_backtrack!(
     end
     i = 0
     # Ensure that both the original condition and the additional one are fulfilled afterwards
+    # the safeguards are checked only while the conditions still fail, so that a message
+    # is reported exactly if the returned step size does not fulfill the conditions
     while (f_q > lf0 + decrease * s * Dlf0) ||
             (!additional_decrease_condition(M, q))
+        if i > 0 && i == stop_decreasing_at_step
+            set_message!(report_messages_in, :stop_decreasing, at = i, bound = stop_decreasing_at_step, value = s)
+            break
+        end
+        if i > 0 && s < stop_when_stepsize_less
+            set_message!(report_messages_in, :stepsize_less, at = i, bound = stop_when_stepsize_less, value = s)
+            break
+        end
         i = i + 1
         s = contract * s
         ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
         f_q = f(M, q)
-        if i == stop_decreasing_at_step
-            set_message!(report_messages_in, :stop_decreasing, at = i, bound = stop_decreasing_at_step, value = s)
-            break
-        end
-        if s < stop_when_stepsize_less
-            set_message!(report_messages_in, :stepsize_less, at = i, bound = stop_when_stepsize_less, value = s)
-            break
-        end
     end
     return s
 end
