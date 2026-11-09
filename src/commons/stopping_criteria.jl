@@ -1429,6 +1429,88 @@ requires_update(::Type{<:StopWhenLagrangeMultiplierLess}) = false
 #
 # ---
 @doc """
+    StopWhenStuck <: StoppingCriterion
+
+A stopping criterion that indicates to stop when the solver reports that it is stuck,
+i.e. it cannot make further progress and cannot recover from this situation,
+see [`is_stuck`](@ref Manopt.is_stuck).
+
+For example the [`quasi_Newton`](@ref) solver with `linesearch_failure_behavior=:restart`
+reports being stuck when the line search fails, see [`has_failed`](@ref Manopt.has_failed),
+although the direction update held no curvature information, i.e. directly after
+a (re)initialization of the direction update.
+This corresponds to the termination of L-BFGS-B when the line search fails along the
+steepest descent direction after a restart, see [ZhuByrdLuNocedal:1997; Section 4](@cite).
+The iterate is then the last one with an accepted step.
+
+For solver states that do not report being stuck, this criterion never indicates to stop.
+
+# Fields
+
+$(_fields(:at_iteration))
+
+# Constructor
+
+    StopWhenStuck()
+"""
+mutable struct StopWhenStuck <: StoppingCriterion
+    at_iteration::Int
+end
+StopWhenStuck() = StopWhenStuck(-1)
+function (c::StopWhenStuck)(
+        ::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+    )
+    if k == 0 # reset on init
+        c.at_iteration = -1
+    end
+    if k > 0 && is_stuck(s)
+        c.at_iteration = k
+        return true
+    end
+    return false
+end
+indicates_convergence(::StopWhenStuck) = false
+function get_reason(c::StopWhenStuck)
+    if c.at_iteration >= 0
+        return "The solver got stuck at iteration $(c.at_iteration), i.e. it could not make further progress and could not recover.\n"
+    end
+    return ""
+end
+function status_summary(c::StopWhenStuck; context::Symbol = :default)
+    (context === :short) && (return repr(c))
+    has_stopped = is_active_stopping_criterion(c)
+    s = has_stopped ? "reached" : "not reached"
+    (context === :inline) && (return "Solver is stuck:$(_MANOPT_INDENT)$s")
+    return "A stopping criterion to stop when the solver is stuck and cannot recover\n$(_MANOPT_INDENT)$s"
+end
+function Base.show(io::IO, ::StopWhenStuck)
+    return print(io, "StopWhenStuck()")
+end
+requires_update(::Type{<:StopWhenStuck}) = false
+
+@doc """
+    is_stuck(s::AbstractManoptSolverState)
+
+Return `true` if the solver with state `s` is stuck, that is, it cannot make further
+progress and also cannot recover from this situation, for example by a restart.
+
+An example is a line search based solver whose line search failed even directly after
+a restart, cf. [`StopWhenStuck`](@ref), which uses this function.
+Other solvers, for example trust region methods, could report being stuck in a similar way.
+
+This method takes into account that `s` might be decorated. By default, `false` is returned;
+solvers that can detect such situations implement this function for their state.
+"""
+function is_stuck(s::AbstractManoptSolverState)
+    return _is_stuck(s, dispatch_state_decorator(s))
+end
+_is_stuck(s::AbstractManoptSolverState, ::Val{true}) = is_stuck(s.state)
+_is_stuck(::AbstractManoptSolverState, ::Val{false}) = false
+
+#
+#
+# ---
+@doc """
     StopWhenRepeated <: StoppingCriterion
 
 A stopping criterion that indicates to stop when the (internal) stopping criterion it wraps
@@ -1546,8 +1628,11 @@ end
     StopWhenProjectedNegativeGradientNormLess <: StoppingCriterion
 
 A stopping criterion similar to [`StopWhenGradientNormLess`](@ref), although it checks the
-norm of the projected negative gradient. It is primarily useful for optimization involving
-[`Hyperrectangle`](@extref Manifolds.Hyperrectangle).
+norm of the projected negative gradient ``P(p - X) - p``, where ``X`` is the gradient at the
+current iterate ``p`` and ``P`` is the projection onto the box constraints, computed by
+[`project_truncate`](@ref Manopt.project_truncate)`(M, p, -X)`. This is the
+convention of L-BFGS-B [ByrdLuNocedalZhu:1995](@cite). It is primarily useful for
+optimization involving [`Hyperrectangle`](@extref Manifolds.Hyperrectangle).
 
 # Fields
 
@@ -1562,6 +1647,10 @@ On manifolds with boundary and manifolds with corners, for a tangent vector ``X`
 ``f(x)=x^2`` on the interval ``[1, 2]``. Its gradient at 1 is equal to 2, but because the
 point 1 is at the boundary of the interval, the projected negative gradient is equal to 0
 because we can't go in the negative direction.
+Close to the boundary, at ``x = 1 + δ`` for ``0 < δ < 1``, the projected negative gradient
+equals ``-δ``. Its norm hence tends to zero as the iterates approach the solution ``x = 1``.
+This would not be the case for the projection of ``-X`` onto the tangent cone at ``x``,
+which is ``-2(1 + δ)``.
 
 # Constructor
 
@@ -1594,7 +1683,7 @@ function (sc::StopWhenProjectedNegativeGradientNormLess)(
         r = (has_components(M) && !ismissing(sc.outer_norm)) ? (sc.outer_norm,) : ()
         p = get_iterate(s)
         mpg = -get_gradient(s)
-        embed_project!(M, mpg, p, mpg)
+        project_truncate!(M, mpg, p, mpg)
         sc.last_change = sc.norm(M, p, mpg, r...)
         if sc.last_change < sc.threshold
             sc.at_iteration = k

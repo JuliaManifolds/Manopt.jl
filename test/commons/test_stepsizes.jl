@@ -586,6 +586,30 @@ end
             α_eval = hzls_eval(dmp, gs, 1, η)
             @test α_eval > 0
             @test hzls_eval.last_evaluation_index == length(hzls_eval.triples)
+            @test Manopt.has_failed(hzls_eval)
+            msg_eval = Manopt.get_message(hzls_eval)
+            @test startswith(msg_eval, "At iteration #1: Maximal number of function evaluations (2) reached")
+            @test occursin("stepsize of $(α_eval)", msg_eval)
+            # messages are reset on the next search and on initialization
+            hzls_eval(dmp, gs, 2, η)
+            @test startswith(Manopt.get_message(hzls_eval), "At iteration #2:")
+            Manopt.initialize_stepsize!(hzls_eval)
+            @test Manopt.get_message(hzls_eval) == ""
+            @test Manopt.get_message(:evaluation_limit, -1) == ""
+            @test Manopt.get_message(:evaluation_limit, 0) ==
+                "At the beginning: Maximal number of function evaluations reached without satisfying the Wolfe conditions."
+        end
+        @testset "messages" begin
+            hzls_m = Manopt.HagerZhangLinesearchStepsize(
+                M; initial_guess = Manopt.ConstantInitialGuess(1.0), stepsize_limit = 0.05,
+            )
+            hzls_m(dmp, gs, 3, η)
+            @test !Manopt.has_failed(hzls_m)
+            @test Manopt.get_message(hzls_m) ==
+                "At iteration #3: Maximal step size bound (0.05) exceeded. Reducing to 0.05."
+            hzls_nd = Manopt.HagerZhangLinesearchStepsize(M)
+            hzls_nd(dmp, gs, 4, -η)
+            @test occursin("At iteration #4: Non-descent direction η encountered", Manopt.get_message(hzls_nd))
         end
         @testset "B1 bracketing test" begin
             M = Euclidean(1)
@@ -708,8 +732,12 @@ end
                 M; initial_guess = Manopt.ConstantInitialGuess(1.0), max_function_evaluations = 3
             )
             α = hzls_u2(dmp, gs, 1, η)
-            # the step and the number of evaluations this branch produces
-            @test α == 0.5
+            # the number of evaluations this branch produces; the evaluation limit is reached,
+            # so the trial step with the smallest cost, 1.0 with cost 0 instead of the last
+            # trial step 0.5 with cost 10, is returned
+            @test α == 1.0
+            @test hzls_u2.last_cost == 0.0
+            @test hzls_u2.last_termination === :evaluation_limit
             @test hzls_u2.last_evaluation_index == 3
         end
         @testset "U3 trigger test" begin
@@ -1026,6 +1054,23 @@ end
             @test hzls.Cₖ == 0.0
             @test hzls.current_mode == :standard
         end
+        @testset "Hager-Zhang relative error estimate and initial guess defaults" begin
+            @test Manopt.HagerZhangInitialGuess().ψ1 == 0.1
+            M1 = Euclidean(1)
+            f_off(M, q) = 1.0e9 + (q[1] - 1)^2
+            grad_f_off(M, q) = 2 .* (q .- 1)
+            dmp_off = DefaultManoptProblem(M1, ManifoldGradientObjective(f_off, grad_f_off))
+            hzls = HagerZhangLinesearch()(M1)
+            gs = GradientDescentState(M1; p = [0.0])
+            hzls(dmp_off, gs, 1, [1.0])
+            # C₀ = |f(p₀)|, ϵ₀ = ϵ C₀
+            @test hzls.Cₖ == f_off(M1, [0.0])
+            @test hzls.ϵₖ == hzls.ϵ * hzls.Cₖ
+            gs.p .= [0.5]
+            hzls(dmp_off, gs, 2, [1.0])
+            @test hzls.Cₖ ≈ f_off(M1, [0.0]) + (f_off(M1, [0.5]) - f_off(M1, [0.0])) / (1 + hzls.Δ)
+            @test hzls.ϵₖ == hzls.ϵ * hzls.Cₖ
+        end
 
     end
     @testset "Distance over Gradients Stepsize" begin
@@ -1248,6 +1293,113 @@ end
         wpls.sufficient_curvature = 0.2
         wpls(dmp, gs, 2, -0.0001 * grad_f(M, p))
         @test wpls.messages[:stop_increasing].at_iteration > 0
+    end
+    @testset "has_failed" begin
+        M = Euclidean(2)
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 .* p
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        p = [2.0, 2.0]
+        X = grad_f(M, p)
+        gs = GradientDescentState(M; p = p, X = X)
+        # the default reports no failures
+        @test !Manopt.has_failed(ConstantLength()(M))
+        @testset "linesearch_backtrack reports safeguards only on failure" begin
+            msgs = (;
+                stop_decreasing = Manopt.StepsizeMessage{Int, Float64}(),
+                stepsize_less = Manopt.StepsizeMessage{Float64, Float64}(),
+            )
+            # the decrease condition holds at s = 0.5, i.e. exactly at the last allowed step
+            s = Manopt.linesearch_backtrack(
+                M, f, p, 1.0, 1.0e-4, 0.5, -X; gradient = X, stop_decreasing_at_step = 1,
+                stop_when_stepsize_less = 0.75, report_messages_in = msgs,
+            )
+            @test s == 0.5
+            @test !Manopt._backtracking_failed(msgs)
+            # along an ascent direction the decrease condition never holds
+            s = Manopt.linesearch_backtrack(
+                M, f, p, 1.0, 1.0e-4, 0.5, X; gradient = X, stop_decreasing_at_step = 3,
+                report_messages_in = msgs,
+            )
+            @test s == 0.125
+            @test msgs.stop_decreasing.at_iteration == 3
+            @test Manopt._backtracking_failed(msgs)
+        end
+        @testset "Armijo" begin
+            a = ArmijoLinesearch(; stop_decreasing_at_step = 3)(M)
+            a(dmp, gs, 1, -X)
+            @test !Manopt.has_failed(a)
+            a(dmp, gs, 2, X)
+            @test Manopt.has_failed(a)
+            a(dmp, gs, 3, -X)
+            @test !Manopt.has_failed(a)
+        end
+        @testset "Nonmonotone" begin
+            nls = Manopt.NonmonotoneLinesearchStepsize(M; p = copy(p), stop_decreasing_at_step = 3)
+            nls(dmp, gs, 1, -X; gradient = X)
+            @test !Manopt.has_failed(nls)
+            nls(dmp, gs, 2, X; gradient = X)
+            @test Manopt.has_failed(nls)
+        end
+        @testset "WolfePowell" begin
+            wpls = WolfePowellLinesearch(; stop_decreasing_at_step = 1)(M)
+            @test !Manopt.has_failed(wpls)
+            # the decrease safeguard is reached, but the conditions hold at the last step
+            wpls(dmp, gs, 1, -X)
+            @test wpls.messages[:stop_decreasing].at_iteration > 0
+            @test !Manopt.has_failed(wpls)
+            wpls(dmp, gs, 2, X)
+            @test Manopt.has_failed(wpls)
+            # along η = -0.02X the cost is 8(1 - 0.04t)^2, minimal at t = 25, so for these
+            # parameters the curvature condition holds for t ≥ 25, the sufficient decrease
+            # condition for t ≤ 27.5, the increase stops at [16, 32] and the bisection tests
+            # 24 (on [24, 32]), 28 (on [24, 28]) and 26, where both conditions hold.
+            η = -0.02 * X
+            wp(tol) = WolfePowellLinesearch(;
+                sufficient_decrease = 0.45, sufficient_curvature = 1.0e-12, stop_when_stepsize_less = tol,
+            )(M)
+            wpls = wp(0.0)
+            @test wpls(dmp, gs, 1, η) == 26.0
+            @test !Manopt.has_failed(wpls)
+            # the bisection stops at its minimal interval width on [24, 28]
+            wpls = wp(6.0)
+            @test wpls(dmp, gs, 1, η) == 24.0
+            @test wpls.messages[:stepsize_less].at_iteration > 0
+            @test Manopt.has_failed(wpls)
+            # the interval width [26, 28] reaches the minimal width, but the conditions hold at 26
+            wpls = wp(3.0)
+            @test wpls(dmp, gs, 1, η) == 26.0
+            @test wpls.messages[:stepsize_less].at_iteration < 0
+            @test !Manopt.has_failed(wpls)
+            # the increase stops at the maximal step size, which is accepted
+            wpls = WolfePowellLinesearch(; sufficient_curvature = 1.0e-12)(M)
+            @test wpls(dmp, gs, 1, η; stop_when_stepsize_exceeds = 20.0) == 20.0
+            @test !Manopt.has_failed(wpls)
+            # the increase stops at a maximal step size without sufficient decrease, so the
+            # bisection starts from the last step with sufficient decrease, 16, instead of 15
+            wpls = wp(0.0)
+            α = wpls(dmp, gs, 1, η; stop_when_stepsize_exceeds = 30.0)
+            @test 25 ≤ α ≤ 27.5
+            @test !Manopt.has_failed(wpls)
+        end
+        @testset "WolfePowellBinary" begin
+            wpb = WolfePowellBinaryLinesearch(; stop_when_stepsize_less = 1.0e-3)(M)
+            @test !Manopt.has_failed(wpb)
+            wpb(dmp, gs, 1, -X)
+            @test !Manopt.has_failed(wpb)
+            wpb(dmp, gs, 2, X)
+            @test Manopt.has_failed(wpb)
+        end
+        @testset "CubicBracketing" begin
+            cbls = CubicBracketingLinesearch()(M)
+            @test !Manopt.has_failed(cbls)
+            cbls(dmp, gs, 1, -X)
+            @test !Manopt.has_failed(cbls)
+            # without iterations, the first trial step does not fulfill the curvature condition
+            cbls0 = CubicBracketingLinesearch(; max_iterations = 0)(M)
+            cbls0(dmp, gs, 1, -X)
+            @test Manopt.has_failed(cbls0)
+        end
     end
     @testset "Nonmonotone linesearch stays inside the injectivity radius" begin
         M = Sphere(2)

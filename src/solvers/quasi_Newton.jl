@@ -1,3 +1,13 @@
+# the gradient norm does not vanish at stationary points with active bounds,
+# so on manifolds with box constraints the projected negative gradient is used instead
+function _default_qn_stationarity_criterion(M::AbstractManifold, ε::Real)
+    if has_anisotropic_max_stepsize(M)
+        return StopWhenProjectedNegativeGradientNormLess(ε)
+    else
+        return StopWhenGradientNormLess(ε)
+    end
+end
+
 @doc """
     QuasiNewtonState <: AbstractManoptSolverState
 
@@ -9,6 +19,12 @@ all necessary fields.
 $(_fields(:callbacks; add_properties = [:as_dict]))
 * `direction_update`:              an [`AbstractQuasiNewtonDirectionUpdate`](@ref) rule.
 * `η`:                             the current update direction
+* `direction_update_reset`:        whether the direction update holds no curvature information,
+  i.e. it was (re)initialized and [`update_hessian!`](@ref) has not been called since
+* `linesearch_failure_behavior`:   a `Symbol` to specify how to handle a failed line search,
+  see [`quasi_Newton`](@ref)
+* `linesearch_status`:             the outcome of the last line search, one of `:not_searched`, `:success`,
+  `:failure_accepted`, `:failure_restarted`, or `:failure_after_restart`
 * `nondescent_direction_behavior`: a `Symbol` to specify how to handle directions that are not descent ones.
 * `nondescent_direction_value`:    the value from the last inner product from checking for descent directions
 $(_fields(:p; add_properties = [:as_Iterate]))
@@ -33,8 +49,9 @@ Generate the Quasi Newton state on the manifold `M`.
 
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), memory_size; vector_transport_method=vector_transport_method, initial_scale=initial_scale)`
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`, where [`StopWhenProjectedNegativeGradientNormLess`](@ref)`(1e-6)` replaces the gradient norm criterion on manifolds with box constraints, see [`has_anisotropic_max_stepsize`](@ref Manopt.has_anisotropic_max_stepsize)"))
 * `initial_scale=1.0`: a relative initial scale. By default deactivated when using a preconditioner.
+* `linesearch_failure_behavior=:accept`: how to handle a failed line search, see [`quasi_Newton`](@ref)
 * `memory_size=20`: a shortcut to set the memory in the default direction update
 * `nondescent_direction_behavior=:reinitialize_direction_update`: how to handle a direction that is not a descent direction, see [`quasi_Newton`](@ref)
 $(_kwargs(:p; add_properties = [:as_Initial]))
@@ -57,7 +74,10 @@ mutable struct QuasiNewtonState{
     } <: AbstractGradientSolverState
     callbacks::C
     direction_update::D
+    direction_update_reset::Bool
     η::T
+    linesearch_failure_behavior::Symbol
+    linesearch_status::Symbol
     nondescent_direction_behavior::Symbol
     nondescent_direction_value::R
     p::P
@@ -85,7 +105,7 @@ mutable struct QuasiNewtonState{
                 M, p, InverseBFGS(), memory_size;
                 vector_transport_method = vector_transport_method, initial_scale = initial_scale,
             ),
-            stopping_criterion::SC = StopAfterIteration(1000) | StopWhenGradientNormLess(1.0e-6),
+            stopping_criterion::SC = StopAfterIteration(1000) | _default_qn_stationarity_criterion(M, 1.0e-6),
             retraction_method::RM = default_retraction_method(M, typeof(p)),
             stepsize::S = default_stepsize(
                 M, QuasiNewtonState;
@@ -93,6 +113,7 @@ mutable struct QuasiNewtonState{
                 retraction_method = retraction_method, vector_transport_method = vector_transport_method,
             ),
             nondescent_direction_behavior::Symbol = :reinitialize_direction_update,
+            linesearch_failure_behavior::Symbol = :accept,
             kwargs...,
         ) where {
             P, T, D <: AbstractQuasiNewtonDirectionUpdate, C <: AbstractDict{Symbol},
@@ -104,21 +125,31 @@ mutable struct QuasiNewtonState{
             callbacks = callbacks, direction_update = direction_update, preconditioner = precon,
             retraction_method = retraction_method, stepsize = stepsize, stopping_criterion = stopping_criterion,
             X_old = copy(M, p, X), vector_transport_method = vector_transport_method,
-            nondescent_direction_behavior = nondescent_direction_behavior, nondescent_direction_value = 0.0
+            nondescent_direction_behavior = nondescent_direction_behavior, nondescent_direction_value = 0.0,
+            linesearch_failure_behavior = linesearch_failure_behavior,
         )
     end
     function QuasiNewtonState(;
             callbacks::C,
             p::P, p_old::P, η::T, X::T, sk::T, yk::T, direction_update::D, preconditioner::TP,
             retraction_method::RTR, stepsize::S, stopping_criterion::SC, X_old::T, vector_transport_method::VTM,
-            nondescent_direction_behavior::Symbol, nondescent_direction_value::R
+            nondescent_direction_behavior::Symbol, nondescent_direction_value::R,
+            linesearch_failure_behavior::Symbol = :accept,
         ) where {
             P, T, D <: AbstractQuasiNewtonDirectionUpdate, C <: AbstractDict{Symbol},
             SC <: StoppingCriterion, S <: Stepsize,
             RTR <: AbstractRetractionMethod, VTM <: AbstractVectorTransportMethod, R, TP <: QuasiNewtonPreconditioner,
         }
+        if !(linesearch_failure_behavior in (:accept, :restart))
+            throw(
+                ArgumentError(
+                    "Unknown linesearch_failure_behavior=:$(linesearch_failure_behavior), expected :accept or :restart."
+                )
+            )
+        end
         return new{P, T, D, C, SC, S, RTR, VTM, R, TP}(
-            callbacks, direction_update, η, nondescent_direction_behavior, nondescent_direction_value,
+            callbacks, direction_update, true, η, linesearch_failure_behavior, :not_searched,
+            nondescent_direction_behavior, nondescent_direction_value,
             p, p_old, preconditioner, sk, retraction_method, stepsize, stopping_criterion,
             vector_transport_method, yk, X, X_old
         )
@@ -133,13 +164,21 @@ function get_message(qns::QuasiNewtonState)
     msg1 = get_message(qns.direction_update)
     msg2 = get_message(qns.stepsize)
     msg3 = ""
+    if qns.linesearch_status === :failure_accepted
+        msg3 = "The line search failed; the last trial step was accepted."
+    elseif qns.linesearch_status === :failure_restarted
+        msg3 = "The line search failed; the step was rejected and the direction update was reinitialized."
+    elseif qns.linesearch_status === :failure_after_restart
+        msg3 = "The line search failed although the direction update had just been reinitialized; the step was rejected."
+    end
+    msg4 = ""
     if qns.nondescent_direction_value > 0
-        msg3 = "Computed direction is not a descent direction. The inner product evaluated to $(qns.nondescent_direction_value)."
+        msg4 = "Computed direction is not a descent direction. The inner product evaluated to $(qns.nondescent_direction_value)."
         if qns.nondescent_direction_behavior === :step_towards_negative_gradient
-            msg3 = "$(msg3) Resetting to negative gradient."
+            msg4 = "$(msg4) Resetting to negative gradient."
         end
     end
-    return join(filter(!isempty, [msg1, msg2, msg3]), "\n")
+    return join(filter(!isempty, [msg1, msg2, msg3, msg4]), "\n")
 end
 additional_callbacks(::Type{<:QuasiNewtonState}) = [:Stepsize, :DirectionUpdate]
 function Base.show(io::IO, qns::QuasiNewtonState)
@@ -147,6 +186,7 @@ function Base.show(io::IO, qns::QuasiNewtonState)
     print(io, "callbacks = ", qns.callbacks, ", ")
     print(io, "direction_update = ", qns.direction_update, ", p = ", qns.p, ", p_old = ", qns.p_old)
     print(io, ", η = ", qns.η, ", X = ", qns.X, ", sk = ", qns.sk, ", yk = ", qns.yk, ", ")
+    print(io, "linesearch_failure_behavior = ", qns.linesearch_failure_behavior, ", ")
     print(io, "nondescent_direction_behavior = ", qns.nondescent_direction_behavior, ", nondescent_direction_value = ", qns.nondescent_direction_value, ", ")
     print(io, "preconditioner = ", qns.preconditioner, ", retraction_method = ", qns.retraction_method, ", stepsize = ", qns.stepsize, ", ")
     print(io, "stopping_criterion = ", qns.stop, ", X_old = ", qns.X_old, ", vector_transport_method = ", qns.vector_transport_method)
@@ -161,6 +201,7 @@ function status_summary(qns::QuasiNewtonState; context::Symbol = :default)
     $(_iterations_str(qns))
     ## Parameters$(as)
     * direction update:        $(status_summary(qns.direction_update; context = :inline))
+    * line search failure:     $(qns.linesearch_failure_behavior)
     * retraction method:       $(qns.retraction_method)
     * vector transport method: $(qns.vector_transport_method)
 
@@ -180,6 +221,10 @@ function set_gradient!(qns::QuasiNewtonState, M, p, X)
     copyto!(M, qns.X, p, X)
     return qns
 end
+# the line search failed although the direction update held no curvature information,
+# which can only happen for `linesearch_failure_behavior=:restart`
+is_stuck(qns::QuasiNewtonState) = qns.linesearch_status === :failure_after_restart
+
 function default_stepsize(M::AbstractManifold, ::Type{QuasiNewtonState}; p = rand(M), kwargs...)
     R = real(float(number_eltype(p)))
     return Manopt.WolfePowellLinesearchStepsize(
@@ -223,7 +268,9 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
    which wraps the `direction_update`.
 * `cautious_function=(x) -> x * 1e-4`:
   a monotone increasing function for the cautious update that is zero at ``x=0``
-  and strictly increasing at ``0``
+  and strictly increasing at ``0``. It is evaluated at the norm of the projected negative
+  gradient, which is the norm of the gradient on manifolds without box constraints,
+  see [`QuasiNewtonCautiousDirectionUpdate`](@ref)
 $(_kwargs(:differential))
 * `direction_update=`[`InverseBFGS`](@ref)`()`:
   the [`AbstractQuasiNewtonUpdateRule`](@ref) to use.
@@ -234,8 +281,26 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
    See also `initial_scale`.
 * `initial_scale=1.0`: the scale `s` in $(_doc_QN_init_scaling) of the initial Hessian approximation,
   see also `initial_operator`. Set to `nothing` by default when using a `preconditioner`.
+* `linesearch_failure_behavior=:accept`: how to proceed when the line search reports a failure,
+  see [`has_failed`](@ref Manopt.has_failed), for example when
+  [`HagerZhangLinesearch`](@ref) reaches its limit on function evaluations. This can be
+  * `:accept`: the last trial step of the line search is accepted and the iteration continues.
+  * `:restart`: as in L-BFGS-B [ByrdLuNocedalZhu:1995](@cite), the step is rejected, i.e. the
+    iterate is kept, and the direction update is reinitialized, so the next iteration starts
+    from the same point with no curvature information.
+    If the line search fails again before any curvature information was gathered,
+    the step is rejected and [`StopWhenStuck`](@ref) indicates to stop.
+    This criterion is part of the default `stopping_criterion=` for this behavior;
+    include it when specifying a custom stopping criterion, since otherwise the solver
+    keeps retrying from the same iterate until the custom criterion indicates to stop.
 * `memory_size::Int=min(manifold_dimension(M), 20)`: limited memory, number of ``s_k, y_k`` to store.
    Set to a negative value to use a full memory (matrix) representation
+* `model_decrease_factor=1e-4`: on manifolds with box constraints, i.e. an anisotropic maximal
+  step size like a [`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`), the generalized
+  Cauchy direction computed from the quasi-Newton direction is only used if it decreases the
+  quadratic model by at least `model_decrease_factor` times a reference value, see
+  [`QuasiNewtonLimitedMemoryBoxDirectionUpdate`](@ref). Otherwise it is treated as a
+  non-descent direction, see `nondescent_direction_behavior`. `0` deactivates this test.
 * `nondescent_direction_behavior=:reinitialize_direction_update`:
   specify how non-descent direction is handled. This can be
   * `:step_towards_negative_gradient`: the direction is replaced with negative gradient, a message is stored.
@@ -254,7 +319,11 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`WolfePowellLinesearch`](@ref)`(; retraction_method=retraction_method, vector_transport_method=vector_transport_method, stop_when_stepsize_less=1e-10)"))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`, for `linesearch_failure_behavior=:restart` additionally `$(_sc(:Any))[`StopWhenStuck`](@ref)`()"))
+  On manifolds with box constraints, i.e. an anisotropic maximal step size like a
+  [`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`), [`StopWhenGradientNormLess`](@ref) is
+  replaced by [`StopWhenProjectedNegativeGradientNormLess`](@ref)`(1e-6)`, since the norm of the
+  gradient does not vanish at stationary points with active bounds.
 * `sy_tol=1e-8`: the tolerance used by the `:byrd` variant of `nonpositive_curvature_behavior`, see [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref).
 $(_kwargs(:vector_transport_method))
 
@@ -328,11 +397,17 @@ function quasi_Newton!(
             retraction_method = retraction_method,
             vector_transport_method = vector_transport_method,
         ),
-        stopping_criterion::StoppingCriterion = StopAfterIteration(max(1000, memory_size)) |
-            StopWhenGradientNormLess(1.0e-6),
+        linesearch_failure_behavior::Symbol = :accept,
+        stopping_criterion::StoppingCriterion = if linesearch_failure_behavior === :restart
+            StopAfterIteration(max(1000, memory_size)) | _default_qn_stationarity_criterion(M, 1.0e-6) |
+                StopWhenStuck()
+        else
+            StopAfterIteration(max(1000, memory_size)) | _default_qn_stationarity_criterion(M, 1.0e-6)
+        end,
         nondescent_direction_behavior::Symbol = :reinitialize_direction_update,
         nonpositive_curvature_behavior::Symbol = :ignore,
         sy_tol::Real = 1.0e-8,
+        model_decrease_factor::Real = 1.0e-4,
         kwargs...,
     ) where {
         O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective},
@@ -349,10 +424,9 @@ function quasi_Newton!(
             sy_tol = sy_tol,
         )
         if has_anisotropic_max_stepsize(M)
-            cautious_update && error(
-                "`cautious_update=true` is not supported on manifolds with an anisotropic maximal step size such as $(M).",
+            local_dir_upd = QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+                local_dir_upd; model_decrease_factor = model_decrease_factor
             )
-            local_dir_upd = QuasiNewtonLimitedMemoryBoxDirectionUpdate(local_dir_upd)
         end
     else
         local_dir_upd = QuasiNewtonMatrixDirectionUpdate(
@@ -374,6 +448,7 @@ function quasi_Newton!(
         callbacks = process_callbacks_arg(callbacks, QuasiNewtonState),
         direction_update = local_dir_upd,
         nondescent_direction_behavior = nondescent_direction_behavior,
+        linesearch_failure_behavior = linesearch_failure_behavior,
         stopping_criterion = stopping_criterion,
         preconditioner = if preconditioner isa Function
             QuasiNewtonPreconditioner(preconditioner; evaluation = evaluation)
@@ -406,6 +481,8 @@ function initialize_solver!(amp::AbstractManoptProblem, qns::QuasiNewtonState)
     copyto!(M, qns.sk, qns.p, qns.X)
     copyto!(M, qns.yk, qns.p, qns.X)
     initialize_update!(qns.direction_update)
+    qns.direction_update_reset = true
+    qns.linesearch_status = :not_searched
     initialize_stepsize!(qns.stepsize)
     return qns
 end
@@ -425,6 +502,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
             end
             if qns.nondescent_direction_behavior === :reinitialize_direction_update
                 initialize_update!(qns.direction_update)
+                qns.direction_update_reset = true
                 # update direction after reinitialization to get a valid one
                 qns.direction_update(qns.η, mp, qns)
                 current_max_stepsize = _get_max_stepsize(M, qns)
@@ -439,6 +517,19 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
         α = qns.stepsize(mp, qns, k, qns.η; gradient = qns.X, stop_when_stepsize_exceeds = current_max_stepsize)
     end
     callback(:Stepsize, mp, qns, k)
+    if has_failed(qns.stepsize)
+        if qns.linesearch_failure_behavior === :restart
+            # as in L-BFGS-B: reject the step, keep the iterate and its gradient and restart
+            # without curvature information; failing again directly after a restart stops.
+            qns.linesearch_status = qns.direction_update_reset ? :failure_after_restart : :failure_restarted
+            initialize_update!(qns.direction_update)
+            qns.direction_update_reset = true
+            return qns
+        end
+        qns.linesearch_status = :failure_accepted
+    else
+        qns.linesearch_status = :success
+    end
     copyto!(M, qns.p_old, get_iterate(qns))
     ManifoldsBase.retract_fused!(M, qns.p, qns.p, qns.η, α, qns.retraction_method)
     qns.η .*= α
@@ -455,7 +546,10 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     get_gradient!(mp, qns.X, qns.p)
     qns.yk .= qns.X ./ β .- qns.X_old
     # a vanishing step carries no curvature information
-    (!step_vanishes) && update_hessian!(qns.direction_update, mp, qns, qns.p_old, k)
+    if !step_vanishes
+        update_hessian!(qns.direction_update, mp, qns, qns.p_old, k)
+        qns.direction_update_reset = false
+    end
     return qns
 end
 
@@ -685,6 +779,18 @@ function update_basis!(
     return b
 end
 
+# the norm of the projected negative gradient at `p_old`, recorded when the direction was
+# computed there; evaluate the gradient only if no norm was recorded since the last update
+function _cautious_projected_gradient_norm!(d::QuasiNewtonCautiousDirectionUpdate, mp::AbstractManoptProblem, p_old)
+    h = if isnan(d.projected_gradient_norm)
+        _projected_gradient_norm(get_manifold(mp), p_old, get_gradient(mp, p_old))
+    else
+        d.projected_gradient_norm
+    end
+    d.projected_gradient_norm = NaN
+    return h
+end
+
 # Cautious update
 function update_hessian!(
         d::QuasiNewtonCautiousDirectionUpdate{U},
@@ -693,7 +799,7 @@ function update_hessian!(
     M = get_manifold(mp)
     p = get_iterate(st)
     # computing the bound used in the decision rule
-    bound = d.θ(norm(M, p_old, get_gradient(mp, p_old)))
+    bound = d.θ(_cautious_projected_gradient_norm!(d, mp, p_old))
     sk_normsq = norm(M, p, st.sk)^2
     if sk_normsq != 0 && real(inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
         update_hessian!(d.update, mp, st, p_old, iter)
@@ -817,31 +923,41 @@ function update_hessian!(
     return d
 end
 
-# all Cautious Limited Memory
+# all Cautious Limited Memory, with or without box constraints
 function update_hessian!(
-        d::QuasiNewtonCautiousDirectionUpdate{<:QuasiNewtonLimitedMemoryDirectionUpdate},
+        d::QuasiNewtonCautiousDirectionUpdate{
+            <:Union{QuasiNewtonLimitedMemoryDirectionUpdate, QuasiNewtonLimitedMemoryBoxDirectionUpdate},
+        },
         mp::AbstractManoptProblem, st::AbstractManoptSolverState, p_old, iter,
     )
     # computing the bound used in the decision rule
     M = get_manifold(mp)
     p = get_iterate(st)
-    bound = d.θ(norm(M, p_old, get_gradient(mp, p_old)))
+    bound = d.θ(_cautious_projected_gradient_norm!(d, mp, p_old))
     sk_normsq = norm(M, p, st.sk)^2
     # if the decision rule is fulfilled, the new `sk` and `yk` are added
     if sk_normsq != 0 && real(inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
         update_hessian!(d.update, mp, st, p_old, iter)
     else
         # the stored vectors are just transported to the new tangent space; `sk` and `yk` are not added
-        for i in 1:length(d.update.memory_s)
-            vector_transport_to!(
-                M, d.update.memory_s[i], p_old, d.update.memory_s[i], p, d.update.vector_transport_method,
-            )
-            vector_transport_to!(
-                M, d.update.memory_y[i], p_old, d.update.memory_y[i], p, d.update.vector_transport_method,
-            )
-            fill_rho_i!(M, p, d.update, i)
-        end
+        _transport_memory!(d.update, M, p_old, p)
     end
+    return d
+end
+
+function _transport_memory!(d::QuasiNewtonLimitedMemoryDirectionUpdate, M::AbstractManifold, p_old, p)
+    for i in 1:length(d.memory_s)
+        vector_transport_to!(M, d.memory_s[i], p_old, d.memory_s[i], p, d.vector_transport_method)
+        vector_transport_to!(M, d.memory_y[i], p_old, d.memory_y[i], p, d.vector_transport_method)
+        fill_rho_i!(M, p, d, i)
+    end
+    return d
+end
+function _transport_memory!(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p_old, p)
+    _transport_memory!(d.qn_du, M, p_old, p)
+    # the inner products of the transported pairs may have changed, so the compact
+    # representation of the Hessian approximation is recomputed at `p`
+    update_current_scale!(M, p, d)
     return d
 end
 
@@ -852,11 +968,14 @@ function get_cost(
     ) where {P, T}
 
     hzls = s.stepsize
-    if hzls.last_evaluation_index === 0
+    if s.linesearch_status in (:failure_restarted, :failure_after_restart)
+        # the step was rejected, so the iterate is the starting point of the line search
+        return hzls.triples[1].f
+    elseif hzls.last_evaluation_index === 0
         # if no evaluation was performed, we need to compute the cost
         return get_cost(mp, s.p)
     else
-        # we can reuse the stored function value from the linesearch
-        return hzls.triples[hzls.last_evaluation_index].f
+        # we can reuse the stored function value at the returned step from the linesearch
+        return hzls.last_cost
     end
 end
