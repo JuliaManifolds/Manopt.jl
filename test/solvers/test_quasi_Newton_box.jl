@@ -1,5 +1,5 @@
 using Manopt, Manifolds, Test
-using LinearAlgebra: I, eigvecs, tr, Diagonal, dot
+using LinearAlgebra: I, eigen, eigvecs, eigvals, tr, Diagonal, dot, norm, Symmetric
 
 using RecursiveArrayTools
 
@@ -21,6 +21,21 @@ using RecursiveArrayTools
         p = [0.0, 1.0]; d = [0.0, 0.0]
         @test Manopt.get_stepsize_bound(M, p, d, 1) ≈ Inf
         @test Manopt.get_stepsize_bound(M, p, d, 2) ≈ Inf
+    end
+
+    @testset "set_stepsize_bound!" begin
+        M = Hyperrectangle([0.0, 0.0], [2.0, 2.0])
+        # p[1] is at its lower bound and d[1] points outward: bound 0, entry is zeroed;
+        # d[2] reaches the upper bound at t = 0.5
+        p = [0.0, 1.0]; d = [-1.0, 2.0]
+        # t_current beyond the bound of entry 2: it is cut to the distance to the bound
+        d_out = copy(d)
+        @test Manopt.set_stepsize_bound!(M, d_out, p, d, 1.0) === d_out
+        @test d_out == [0.0, 1.0]
+        # t_current within the bound of entry 2: it is kept
+        d_out = copy(d)
+        Manopt.set_stepsize_bound!(M, d_out, p, d, 0.25)
+        @test d_out == [0.0, 2.0]
     end
 
     @testset "segment Hessian updater - basic d = -g" begin
@@ -150,6 +165,19 @@ using RecursiveArrayTools
             @test ha2.M_11 == fill(0.0, 0, 0)
             @test ha2.M_21 == fill(0.0, 0, 0)
             @test ha2.M_22 == fill(0.0, 0, 0)
+            # resetting the memory also resets the scale, so that the limited memory
+            # segment updater agrees with the generic one
+            ha2.current_scale = 5.0
+            Manopt.initialize_update!(ha2)
+            @test ha2.current_scale == inv(ha2.qn_du.initial_scale)
+            gupd2 = Manopt.GenericSegmentHessianUpdater(similar(d), similar(d))
+            Manopt.init_updater!(M, gupd2, p, d, ha2)
+            lmupd2 = Manopt.get_default_hessian_segment_updater(M, p, ha2)
+            Manopt.init_updater!(M, lmupd2, p, d, ha2)
+            @test all(
+                lmupd2(M, p, t_current, dt, b, db, ha2) .≈
+                    gupd2(M, p, t_current, dt, b, db, ha2)
+            )
         end
     end
 
@@ -193,6 +221,55 @@ using RecursiveArrayTools
 
         d_out = similar(p3)
         @test Manopt.find_generalized_cauchy_direction!(M2, gf3, d_out, p3, [1.0], [-10.0]) === (:found_limited, 90.0)
+    end
+
+    @testset "Zero breakpoints in GCD" begin
+        # x1 ≥ 0 is active and d points outwards in x1: that element has to be fixed from the
+        # start, otherwise the model is minimized along p + t d and the result is an ascent direction
+        M = Hyperrectangle([0.0, -Inf], [Inf, Inf])
+        p = [0.0, 0.0]
+        X = [10.0, 1.0]
+        B = [0.12 -0.2; -0.2 1.0]
+        ha = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), inv(B))
+        gf = Manopt.GeneralizedCauchyDirectionSubsolver(M, p, ha)
+        d = -B * X # descent direction, ⟨X, d⟩ = -9, but its projection (0, 1) is not
+        d_out = similar(d)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf, d_out, p, d, X) === (:not_found, NaN)
+        @test d_out == [0.0, 0.0]
+        # aliasing d_out and d, as done by the quasi-Newton direction update
+        d_alias = copy(d)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf, d_alias, p, d_alias, X) === (:not_found, NaN)
+        @test d_alias == [0.0, 0.0]
+        # projected gradient direction after a reset
+        ha_id = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [1.0 0.0; 0.0 1.0])
+        gf_id = Manopt.GeneralizedCauchyDirectionSubsolver(M, p, ha_id)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf_id, d_out, p, -X, X) === (:found_unlimited, Inf)
+        @test d_out ≈ [0.0, -1.0]
+
+        # a projected direction that is still a descent direction: the zero-breakpoint element
+        # must not influence the step along the remaining elements
+        ha2 = QuasiNewtonMatrixDirectionUpdate(M, BFGS(), DefaultOrthonormalBasis(), [1.0 0.5; 0.5 2.0])
+        gf2 = Manopt.GeneralizedCauchyDirectionSubsolver(M, p, ha2)
+        @test Manopt.find_generalized_cauchy_direction!(M, gf2, d_out, p, [-1.0, -1.0], [1.0, 1.0]) === (:found_unlimited, Inf)
+        @test d_out ≈ [0.0, -0.5] # minimizer of t ↦ -t + t^2 along (0, -1)
+
+        # every bounded variable at an active bound with d pointing outwards
+        M3 = Hyperrectangle([0.0, 0.0], [1.0, 1.0])
+        gf3 = Manopt.GeneralizedCauchyDirectionSubsolver(M3, p, ha_id)
+        @test Manopt.find_generalized_cauchy_direction!(M3, gf3, d_out, p, [-1.0, -0.05], [1.0, -0.1]) === (:not_found, NaN)
+        @test d_out == [0.0, 0.0]
+
+        # the same with an unbounded manifold factor without an isotropic stepsize limit
+        M4 = Hyperrectangle([0.0], [1.0]) × Euclidean(1)
+        p4 = ArrayPartition([0.0], [0.0])
+        ha4 = QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+            QuasiNewtonLimitedMemoryDirectionUpdate(M4, p4, InverseBFGS(), 2)
+        )
+        gf4 = Manopt.GeneralizedCauchyDirectionSubsolver(M4, p4, ha4)
+        d_out4 = zero_vector(M4, p4)
+        X4 = ArrayPartition([1.0], [1.0])
+        @test Manopt.find_generalized_cauchy_direction!(M4, gf4, d_out4, p4, -X4, X4) === (:found_unlimited, Inf)
+        @test d_out4 ≈ ArrayPartition([0.0], [-1.0])
     end
 
     @testset "Hitting multiple bounds at the same time in GCD" begin
@@ -242,10 +319,19 @@ using RecursiveArrayTools
         e1 = Manopt.UnitVector(1)
         @test Manopt.hessian_value_diag(u_s, M, p0, e1) ≈
             Manopt.hessian_value(u_s, M, p0, e1, [1.0, 0.0, 0.0])
-        # `cautious_update` can not be combined with the box update; report that clearly
-        @test_throws ErrorException quasi_Newton(
-            M, f, grad_f, p0; cautious_update = true, stopping_criterion = StopAfterIteration(3)
-        )
+        # `cautious_update` wraps the box update; the cautious function `x -> 1e3 * x`
+        # rejects every pair, so the memory stays empty
+        for (cautious_function, memory_length) in ((x -> 1.0e-4 * x, 2), (x -> 1.0e3 * x, 0))
+            st_c = quasi_Newton(
+                M, f, grad_f, p0;
+                cautious_update = true, cautious_function = cautious_function, return_state = true,
+                stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(10),
+            )
+            du_c = Manopt.get_state(st_c).direction_update
+            @test du_c isa QuasiNewtonCautiousDirectionUpdate{<:QuasiNewtonLimitedMemoryBoxDirectionUpdate}
+            @test length(du_c.update.qn_du.memory_s) == memory_length
+            @test get_solver_result(st_c) ≈ [0, 2, 0]
+        end
 
 
         f2(M, p) = sum(p .^ 4)
@@ -274,6 +360,217 @@ using RecursiveArrayTools
         p0 = [0.0, 4.0, 1.0]
         p_opt = quasi_Newton(MInf, f3, grad_f3, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test f3(MInf, p_opt) < 16.1
+    end
+
+    @testset "project_truncate" begin
+        M = Hyperrectangle([1.0, 1.0], [2.0, 2.0])
+        # at the lower bound with X pointing out of the box, and in the interior
+        @test Manopt.project_truncate(M, [1.0, 1.5], [-2.0, -0.1]) ≈ [0.0, -0.1]
+        # the step to P(p + X) is cut at the bounds
+        @test Manopt.project_truncate(M, [1.5, 1.5], [1.0, -0.2]) ≈ [0.5, -0.2]
+        # close to the bound, the result is small although X points into the box
+        Y = Manopt.project_truncate(M, [1.0 + 1.0e-9, 1.5], [-2.0, 0.0])
+        @test isapprox(Y, [-1.0e-9, 0.0]; atol = 1.0e-15)
+        # in place of X
+        Y = [-2.0, -0.1]
+        Manopt.project_truncate!(M, Y, [1.0, 1.5], Y)
+        @test Y ≈ [0.0, -0.1]
+        N = ProductManifold(M, Sphere(2))
+        p = ArrayPartition([1.0, 1.5], [1.0, 0.0, 0.0])
+        X = ArrayPartition([-2.0, -0.1], [0.0, -1.0, 2.0])
+        Y = Manopt.project_truncate(N, p, X)
+        @test Y.x[1] ≈ [0.0, -0.1]
+        @test Y.x[2] ≈ [0.0, -1.0, 2.0]
+        # without box constraints, X is only projected onto the tangent space
+        @test Manopt.project_truncate(Sphere(2), [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]) ≈
+            [0.0, 1.0, 0.0]
+        @test Manopt.project_truncate(Sphere(2), [1.0, 0.0, 0.0], [0.5, 1.0, 0.0]) ≈
+            [0.0, 1.0, 0.0]
+        @test Manopt.isotropic_max_stepsize(M, [1.5, 1.5]) == Inf
+        @test Manopt.isotropic_max_stepsize(N, p) ≈ Manopt.max_stepsize(Sphere(2), p.x[2])
+    end
+
+    @testset "zero_at_active_bounds!" begin
+        M = Hyperrectangle([1.0, 1.0, 1.0, 2.0], [2.0, 2.0, 2.0, 2.0])
+        p = [1.0, 2.0, 1.5, 2.0]
+        # held at the lower bound with X > 0, at the upper bound with X < 0 and the fixed
+        # variable; the gradient points into the box at the bounds or p is in the interior
+        X = [3.0, -1.0, 4.0, -5.0]
+        Y = [1.0, 2.0, 3.0, 4.0]
+        @test Manopt.zero_at_active_bounds!(M, Y, p, X) === Y
+        @test Y == [0.0, 0.0, 3.0, 0.0]
+        X = [-3.0, 1.0, -4.0, 5.0]
+        Y = [1.0, 2.0, 3.0, 4.0]
+        Manopt.zero_at_active_bounds!(M, Y, p, X)
+        @test Y == [1.0, 2.0, 3.0, 0.0]
+        # in place of X
+        X = [3.0, -1.0, 4.0, -5.0]
+        Manopt.zero_at_active_bounds!(M, X, p, X)
+        @test X == [0.0, 0.0, 4.0, 0.0]
+        N = ProductManifold(M, Sphere(2))
+        pN = ArrayPartition(p, [1.0, 0.0, 0.0])
+        XN = ArrayPartition([3.0, -1.0, 4.0, -5.0], [0.0, -1.0, 2.0])
+        YN = ArrayPartition([1.0, 2.0, 3.0, 4.0], [0.0, 1.0, 1.0])
+        Manopt.zero_at_active_bounds!(N, YN, pN, XN)
+        @test YN.x[1] == [0.0, 0.0, 3.0, 0.0]
+        @test YN.x[2] == [0.0, 1.0, 1.0]
+        # without box constraints, Y is not modified
+        Y = [0.0, 1.0, 0.0]
+        @test Manopt.zero_at_active_bounds!(Sphere(2), Y, [1.0, 0.0, 0.0], [0.0, -1.0, 0.0]) == [0.0, 1.0, 0.0]
+    end
+
+    @testset "Large gradient of a fixed variable" begin
+        # the last variable is fixed and its gradient element is large at the minimizer;
+        # it must not leak into the direction of the free variables
+        M = Hyperrectangle([-Inf, -Inf, -Inf, 2.0], [Inf, Inf, Inf, 2.0])
+        A = [4.0 1.0 0.5 2.0; 1.0 3.0 1.0 -1.5; 0.5 1.0 2.0 1.0; 2.0 -1.5 1.0 5.0]
+        b = [1.0, -2.0, 0.5, -20.0]
+        f(M, p) = 0.5 * dot(p, A * p) - dot(b, p)
+        grad_f(M, p) = A * p - b
+        p_opt = quasi_Newton(
+            M, f, grad_f, [0.0, 0.0, 0.0, 2.0];
+            memory_size = 5,
+            stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-10) |
+                StopAfterIteration(30),
+        )
+        p_star = [A[1:3, 1:3] \ (b[1:3] - 2.0 * A[1:3, 4]); 2.0]
+        @test p_opt ≈ p_star atol = 1.0e-8
+    end
+
+    @testset "Sufficient model decrease of the generalized Cauchy direction" begin
+        M = Hyperrectangle([-1.0, -1.0, -1.0], [1.0, 2.0, 2.0])
+        A = [4.0 1.0 0.0; 1.0 3.0 1.0; 0.0 1.0 2.0]
+        b = [1.0, -8.0, 3.0]
+        f(M, p) = 0.5 * dot(p, A * p) - dot(b, p)
+        grad_f(M, p) = A * p - b
+        p0 = [0.5, 0.5, 0.5]
+        pg_norm(p) = norm(Manopt.project_truncate(M, p, -grad_f(M, p)))
+
+        @test_throws DomainError Manopt.QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+            Manopt.QuasiNewtonLimitedMemoryDirectionUpdate(M, p0, InverseBFGS(), 2);
+            model_decrease_factor = -1.0,
+        )
+
+        # the bound on the norm of the Hessian approximation and the reference value
+        s = quasi_Newton(
+            M, f, grad_f, p0; memory_size = 3, nonpositive_curvature_behavior = :byrd,
+            stopping_criterion = StopAfterIteration(2), return_state = true,
+        )
+        qns = get_state(s)
+        du = qns.direction_update
+        p = get_iterate(qns)
+        X = grad_f(M, p)
+        @test any(!iszero, du.qn_du.ρ)
+        E = [[i == j ? 1.0 : 0.0 for i in 1:3] for j in 1:3]
+        H = [Manopt.hessian_value(du, M, p, Manopt.UnitVector(i), E[j]) for i in 1:3, j in 1:3]
+        λ = Manopt.hessian_norm_bound(du, M, p)
+        @test maximum(eigvals(Symmetric(H))) <= λ * (1 + 1.0e-12)
+        h = pg_norm(p)
+        @test Manopt.model_decrease_reference(du, M, p, X, zero_vector(M, p)) ≈
+            h^2 / norm(X) * h / max(1.0, λ)
+
+        # a huge factor rejects every direction computed with curvature information:
+        # the memory is then reset in each iteration and the solver still converges
+        for (κ, rejected) in ((1.0e8, true), (0.0, false))
+            s = quasi_Newton(
+                M, f, grad_f, p0; memory_size = 3, nonpositive_curvature_behavior = :byrd,
+                model_decrease_factor = κ, return_state = true,
+                stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-9) |
+                    StopAfterIteration(200),
+            )
+            qns = get_state(s)
+            @test pg_norm(get_iterate(qns)) < 1.0e-9
+            @test (qns.direction_update.insufficient_decrease_count > 0) == rejected
+            @test qns.direction_update.model_decrease_factor == κ
+        end
+        @test contains(
+            Manopt.status_summary(
+                Manopt.QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+                    Manopt.QuasiNewtonLimitedMemoryDirectionUpdate(M, p0, InverseBFGS(), 2)
+                )
+            ),
+            "model decrease factor",
+        )
+    end
+
+    @testset "Quasi-Newton direction restricted to the variables not held at their bounds" begin
+        # D = [0, ∞) and the Euclidean ℝ² at p = 0 with gradient (1; 1, 0), so the first
+        # variable is held at its bound. The first entry of -B g points out of the box, and
+        # projecting only -B g onto the tangent cone would leave a descent direction with a
+        # model decrease of only 3/2 η² + O(η³), although the projected gradient has norm 1,
+        # even for the exact inverse Hessian B of a quadratic. Restricting the gradient and
+        # -B g to the free variables avoids the leak of the gradient entry of the held variable,
+        # and the model decrease is of order 1 for all η. A large `model_decrease_factor` still
+        # rejects the direction.
+        M = Hyperrectangle([0.0], [Inf]) × Euclidean(2)
+        p = ArrayPartition([0.0], [0.0, 0.0])
+        g = [1.0, 1.0, 0.0]
+        to_tangent(v) = ArrayPartition(v[1:1], v[2:3])
+        for (η, κ, rejected) in ((1.0e-3, 1.0e-4, false), (1.0e-3, 0.0, false), (1.0e-1, 1.0e-4, false), (1.0e-3, 10.0, true))
+            B = [2.0 -1.0 -0.5; -1.0 (1 + η) 0.0; -0.5 0.0 1.0]
+            H = inv(B)
+            f(M, q) = dot(g, vcat(q.x...)) + dot(vcat(q.x...), H * vcat(q.x...)) / 2
+            grad_f(M, q) = to_tangent(g + H * vcat(q.x...))
+            mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            ha = QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+                QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 3);
+                model_decrease_factor = κ,
+            )
+            st = QuasiNewtonState(
+                M; p = copy(M, p), X = to_tangent(g), direction_update = ha,
+                stepsize = Manopt.ArmijoLinesearchStepsize(
+                    M; initial_guess = Manopt.ConstantInitialGuess(1.0), stop_increasing_at_step = 0,
+                ),
+            )
+            # the eigenpairs of H are H-conjugate, so the limited memory reproduces H exactly
+            F = eigen(Symmetric(H))
+            for i in 1:3
+                st.sk = to_tangent(F.vectors[:, i])
+                st.yk = to_tangent(H * F.vectors[:, i])
+                update_hessian!(ha, mp, st, p, i)
+            end
+            r = zero_vector(M, p)
+            ha.qn_du(r, mp, st)
+            @test r ≈ to_tangent(-B * g)
+            d = ha(mp, st)
+            @test ha.last_gcd_result === (rejected ? :insufficient_decrease : :found_unlimited)
+            @test ha.insufficient_decrease_count == rejected
+            if !rejected
+                # the direction stays on the bound, only moves the second variable, is a
+                # descent direction and its model decrease is of order 1
+                @test d.x[1] == [0.0]
+                @test isapprox(d.x[2][2], 0.0; atol = 1.0e-12)
+                @test inner(M, p, to_tangent(g), d) < 0
+                model_decrease = -(inner(M, p, to_tangent(g), d) + Manopt.hessian_value_diag(ha, M, p, d) / 2)
+                @test model_decrease > 0.2
+            end
+            # one solver step: a rejected direction resets the memory, and the step follows
+            # the generalized Cauchy point (0; -1, 0) for the identity
+            step_solver!(mp, st, 1)
+            if rejected
+                @test ha.insufficient_decrease_count == 2
+                @test length(ha.qn_du.memory_s) == 1
+                @test st.p.x[1] == [0.0] && st.p.x[2][1] < 0 && st.p.x[2][2] == 0
+            end
+            @test f(M, p) - f(M, st.p) > 0.1
+        end
+    end
+
+    @testset "Default stopping criterion with box constraints" begin
+        M = Hyperrectangle([0.0, 0.0], [1.0, 1.0])
+        f(M, p) = sum((p .- 2) .^ 2)
+        grad_f(M, p) = 2 .* (p .- 2)
+        # the gradient (-2, -2) does not vanish at the solution (1, 1)
+        s = quasi_Newton(M, f, grad_f, [0.5, 0.5]; return_state = true)
+        sc = get_state(s).stop
+        @test any(c -> c isa StopWhenProjectedNegativeGradientNormLess, sc.criteria)
+        @test !any(c -> c isa StopWhenGradientNormLess, sc.criteria)
+        @test get_count(get_state(s), :Iterations) < 10
+        @test get_solver_result(s) ≈ [1.0, 1.0]
+        s = quasi_Newton(M, f, grad_f, [0.5, 0.5]; linesearch_failure_behavior = :restart, return_state = true)
+        @test any(c -> c isa StopWhenProjectedNegativeGradientNormLess, get_state(s).stop.criteria)
+        @test any(c -> c isa StopWhenProjectedNegativeGradientNormLess, QuasiNewtonState(M; p = [0.5, 0.5]).stop.criteria)
+        @test any(c -> c isa StopWhenGradientNormLess, QuasiNewtonState(Euclidean(2); p = [0.5, 0.5]).stop.criteria)
     end
 
     @testset "has_anisotropic_max_stepsize" begin
@@ -346,6 +643,77 @@ using RecursiveArrayTools
 
         p_opt = quasi_Newton(M, f, grad_f, p0; stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100))
         @test distance(M, p_opt, ArrayPartition(px, [0 2; 0 0])) < 0.1
+        p_opt_c = quasi_Newton(
+            M, f, grad_f, p0; cautious_update = true,
+            stopping_criterion = StopWhenProjectedNegativeGradientNormLess(1.0e-6) | StopAfterIteration(100),
+        )
+        @test is_point(M, p_opt_c)
+        @test distance(M, p_opt_c, ArrayPartition(px, [0 2; 0 0])) < 0.1
+    end
+
+    @testset "Cautious update with box constraints" begin
+        M = Hyperrectangle([-1.0, 2.0, -Inf], [2.0, Inf, 2.0])
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = project(M, p, 2 .* p)
+        p0 = [0.0, 4.0, 1.0]
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        ha = QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+            QuasiNewtonLimitedMemoryDirectionUpdate(M, p0, InverseBFGS(), 2)
+        )
+        cha = QuasiNewtonCautiousDirectionUpdate(ha; θ = identity)
+        @test startswith(
+            repr(cha),
+            "QuasiNewtonCautiousDirectionUpdate with θ = identity and internal state:\nQuasiNewtonLimitedMemoryBoxDirectionUpdate",
+        )
+        st = QuasiNewtonState(M; p = copy(M, p0), direction_update = cha)
+        # with θ = identity the bound is the projected gradient norm at p0 with gradient
+        # (0, 8, 2): ‖P(p0 - X) - p0‖ = ‖(0, -2, -2)‖ ≈ 2.83 (the gradient norm is ≈ 8.25)
+        @test Manopt._projected_gradient_norm(M, p0, grad_f(M, p0)) ≈ sqrt(8)
+        # ⟨s, y⟩ / ‖s‖² = 10 exceeds the bound, so the pair is added
+        st.sk = [0.0, 1.0, 0.0]
+        st.yk = [0.0, 10.0, 0.0]
+        update_hessian!(cha, mp, st, p0, 1)
+        @test length(ha.qn_du.memory_s) == 1
+        @test ha.current_scale ≈ 10.0
+        # ⟨s, y⟩ / ‖s‖² = 1 is below the bound, so the pair is skipped, but the compact
+        # representation is recomputed from the stored pairs, here a modified one
+        st.sk = [1.0, 0.0, 0.0]
+        st.yk = [1.0, 0.0, 0.0]
+        ha.qn_du.memory_y[1] .*= 2
+        update_hessian!(cha, mp, st, p0, 2)
+        @test length(ha.qn_du.memory_s) == 1
+        @test ha.qn_du.ρ[1] ≈ 1 / 20
+        @test ha.current_scale ≈ 20.0
+        # the direction is the one of the box update, and so is its maximal step size
+        st.X = grad_f(M, p0)
+        η = cha(mp, st)
+        @test η ≈ ha(mp, st)
+        @test Manopt.get_parameter(cha, :max_stepsize) == Manopt.get_parameter(ha, :max_stepsize)
+        ha.last_gcd_result = :found_limited
+        ha.last_gcd_stepsize = 0.5
+        @test Manopt.get_parameter(cha, :max_stepsize) == 0.5
+        # at a stationary point with an active bound, the gradient (0, 4, 0) at (0, 2, 0) does
+        # not vanish, but the projected gradient does, so a pair with a small curvature is added
+        Manopt.initialize_update!(cha)
+        q = [0.0, 2.0, 0.0]
+        st.p = copy(M, q)
+        st.X = grad_f(M, q)
+        cha(mp, st)
+        @test cha.projected_gradient_norm == 0.0
+        st.sk = [1.0, 0.0, 0.0]
+        st.yk = [0.5, 0.0, 0.0]
+        update_hessian!(cha, mp, st, q, 3)
+        @test length(ha.qn_du.memory_s) == 1
+        # without a recorded norm, it is computed from the gradient at the previous iterate
+        Manopt.initialize_update!(cha)
+        update_hessian!(cha, mp, st, q, 4)
+        @test length(ha.qn_du.memory_s) == 1
+        # on a product with box constraints, only the box component is projected
+        N = M × Euclidean(2)
+        pN = ArrayPartition(q, [0.0, 0.0])
+        XN = ArrayPartition(grad_f(M, q), [3.0, 4.0])
+        @test Manopt._projected_gradient_norm(N, pN, XN) ≈ 5.0
+        @test Manopt._projected_gradient_norm(Euclidean(2), [0.0, 0.0], [3.0, 4.0]) == 5.0
     end
 end
 

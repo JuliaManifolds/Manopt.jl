@@ -81,6 +81,34 @@ The following breaking changes all stem from deprecated features.
 * `trust_regions` no longer accepts the keyword `ρ_prime = `. Use its new name `acceptance_rate = ` instead.
 * the abstract type `AbstractSubProblemSolverState` has been removed, use the trait `has_sub_problem` instead.
 
+## [0.6.12] November 9, 2026
+
+### Added
+
+* keyword `linesearch_failure_behavior=` for `quasi_Newton` (and a field in `QuasiNewtonState`): `:accept` (default) accepts the last trial step as before; `:restart` rejects it and reinitializes the direction update, as in L-BFGS-B.
+* stopping criterion `StopWhenStuck` and function `is_stuck(state)` (default `false`). `quasi_Newton` with `linesearch_failure_behavior=:restart` is stuck when the line search fails again before any curvature information was gathered; its default stopping criterion then includes `StopWhenStuck`.
+* function `has_failed(::Stepsize)` reporting whether the last line search stopped at a safeguard without satisfying its conditions. Implemented for `HagerZhangLinesearch` (with new field `last_termination`), `ArmijoLinesearch`, `NonmonotoneLinesearch`, `WolfePowellLinesearch`, `WolfePowellBinaryLinesearch` and `CubicBracketingLinesearch` (with new field `last_failed`).
+* `get_message` for `HagerZhangLinesearch` (new field `messages`), including the new message `:evaluation_limit`.
+* a sufficient model decrease test for the generalized Cauchy direction in `QuasiNewtonLimitedMemoryBoxDirectionUpdate`, controlled by the keyword `model_decrease_factor=1e-4`, using the new functions `model_decrease_reference`, `hessian_norm_bound` and `isotropic_max_stepsize`. Directions failing the test are treated as non-descent directions; the new field `insufficient_decrease_count` counts them.
+* `QuasiNewtonCautiousDirectionUpdate` can wrap `QuasiNewtonLimitedMemoryBoxDirectionUpdate`, so `cautious_update=true` works with box constraints.
+* function `project_truncate(M, p, X)` (and in-place variant) computing ``\log_p P(\exp_p X)`` with `P` the projection onto the box constraints. `project_truncate(M, p, -X)` is the projected negative gradient of L-BFGS-B.
+
+### Changed
+
+* `WolfePowellLinesearch` only returns step sizes for which sufficient decrease was checked, continues from the last step with sufficient decrease when reaching the maximal step size, and checks its bisection safeguards only after the curvature condition failed.
+* with box constraints, the default stopping criterion of `quasi_Newton` is `StopWhenProjectedNegativeGradientNormLess(1e-6)` instead of `StopWhenGradientNormLess(1e-6)`.
+* `QuasiNewtonCautiousDirectionUpdate` uses the norm of `project_truncate(M, p, -X)` instead of the gradient norm in its decision rule, and stores it in the new field `projected_gradient_norm`, saving one gradient evaluation per iteration.
+
+### Fixed
+
+* `HagerZhangLinesearch` uses the relative error estimate ``ϵ_k = ϵ C_k`` of Hager and Zhang (2006) instead of the absolute tolerance `ϵ`.
+* the default of `ψ1` in `HagerZhangInitialGuess` is `0.1` as in Hager and Zhang (2006) instead of `0.01`.
+* `HagerZhangLinesearch` returns the step size with the smallest cost instead of the last one when reaching its evaluation limit.
+* `QuasiNewtonLimitedMemoryBoxDirectionUpdate` zeroes gradient elements of variables held at their bounds (new function `zero_at_active_bounds!`) before and after applying the inverse Hessian approximation, so they no longer pollute the direction of the free variables.
+* `StopWhenProjectedNegativeGradientNormLess` measures `project_truncate(M, p, -X)` instead of the projection onto the tangent cone, which is discontinuous in `p`.
+* `initialize_update!` of `QuasiNewtonLimitedMemoryBoxDirectionUpdate` also resets `current_scale`.
+* `find_generalized_cauchy_direction!` zeroes direction elements pointing out of the box at active bounds, and returns `:not_found` with a zero direction when the projected direction is not a descent direction.
+
 ## [0.6.11] November 1, 2026
 
 ### Fixed

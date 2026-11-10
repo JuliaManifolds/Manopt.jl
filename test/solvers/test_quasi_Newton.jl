@@ -604,6 +604,70 @@ end
         r = quasi_Newton(Ne, fe, grad_fe, [1.0, 1.0]; count = [:Gradient], return_objective = true, stopping_criterion = StopAfterIteration(0))
         @test get_count(r[1], :Gradient) == 1
     end
+    @testset "The cautious update evaluates no additional gradients" begin
+        Ne = Euclidean(2)
+        fe(M, q) = sum(abs2, q) + q[1]^4
+        grad_fe(M, q) = 2q + [4 * q[1]^3, 0.0]
+        for (cautious_update, memory_size) in Iterators.product((false, true), (2, -1))
+            r = quasi_Newton(
+                Ne, fe, grad_fe, [1.0, 1.0];
+                cautious_update = cautious_update, memory_size = memory_size,
+                stepsize = Manopt.ConstantStepsize(Ne, 0.1),
+                count = [:Gradient], return_objective = true, return_state = true,
+                stopping_criterion = StopAfterIteration(5),
+            )
+            # one evaluation at the start and one per iteration
+            @test get_count(r[1], :Gradient) == 6
+        end
+        # the decision rule uses the gradient norm at the point the direction was computed at,
+        # which is the projected gradient norm without box constraints
+        mp = DefaultManoptProblem(Ne, ManifoldGradientObjective(fe, grad_fe))
+        p = [1.0, 1.0]
+        dc = QuasiNewtonCautiousDirectionUpdate(
+            QuasiNewtonLimitedMemoryDirectionUpdate(Ne, p, InverseBFGS(), 2); θ = identity
+        )
+        @test isnan(dc.projected_gradient_norm)
+        st = QuasiNewtonState(Ne; p = copy(p), X = grad_fe(Ne, p), direction_update = dc)
+        dc(mp, st)
+        @test dc.projected_gradient_norm ≈ norm(grad_fe(Ne, p))
+        # the recorded norm is used once; without it the gradient at `p_old` is evaluated
+        st.sk = [1.0, 0.0]
+        st.yk = [10.0, 0.0]
+        update_hessian!(dc, mp, st, p, 1)
+        @test isnan(dc.projected_gradient_norm)
+        @test length(dc.update.memory_s) == 1
+        dc.projected_gradient_norm = 20.0 # pretend a large gradient was recorded: the pair is skipped
+        update_hessian!(dc, mp, st, p, 2)
+        @test length(dc.update.memory_s) == 1
+        update_hessian!(dc, mp, st, p, 3) # evaluates ‖grad f(p)‖ ≈ 7.2 < 10: added
+        @test length(dc.update.memory_s) == 2
+        # the type of the recorded norm follows the numbers stored in the wrapped update
+        @test dc.projected_gradient_norm isa Float64
+        p32 = Float32[1.0, 1.0]
+        for u in (
+                QuasiNewtonLimitedMemoryDirectionUpdate(Ne, p32, InverseBFGS(), 2; initial_scale = 1.0f0),
+                QuasiNewtonMatrixDirectionUpdate(Ne, InverseBFGS(), DefaultOrthonormalBasis(), Matrix{Float32}(I, 2, 2)),
+                QuasiNewtonLimitedMemoryBoxDirectionUpdate(
+                    QuasiNewtonLimitedMemoryDirectionUpdate(
+                        Hyperrectangle(Float32[0, 0], Float32[2, 2]), p32, InverseBFGS(), 2; initial_scale = 1.0f0
+                    )
+                ),
+            )
+            dc32 = QuasiNewtonCautiousDirectionUpdate(u)
+            @test dc32.projected_gradient_norm isa Float32
+            @test isnan(dc32.projected_gradient_norm)
+        end
+        dc32 = QuasiNewtonCautiousDirectionUpdate(
+            QuasiNewtonLimitedMemoryDirectionUpdate(Ne, p32, InverseBFGS(), 2; initial_scale = 1.0f0)
+        )
+        st32 = QuasiNewtonState(Ne; p = copy(p32), X = Float32[2.0, 0.0], direction_update = dc32)
+        dc32(mp, st32)
+        @test dc32.projected_gradient_norm === 2.0f0
+        # reinitializing the update discards the recorded norm
+        Manopt.initialize_update!(dc32)
+        @test isnan(dc32.projected_gradient_norm)
+        @test dc32.projected_gradient_norm isa Float32
+    end
     @testset "Byrd's rule on a complex manifold" begin
         Mc = Euclidean(2; field = ℂ)
         Ac = [2 im; -im 2]
@@ -684,5 +748,137 @@ end
         zc = quasi_Newton(Mc, fc, grad_fc, z0; memory_size = -1, stopping_criterion = sc)
         xr = quasi_Newton(Mr, fr, grad_fr, tox(z0); memory_size = -1, stopping_criterion = sc)
         @test isapprox(Mc, zc, toz(xr))
+    end
+    @testset "Line search failure behavior" begin
+        M = Euclidean(2)
+        f(M, p) = 100 * (p[2] - p[1]^2)^2 + (1 - p[1])^2
+        grad_f(M, p) = [-400 * p[1] * (p[2] - p[1]^2) - 2 * (1 - p[1]), 200 * (p[2] - p[1]^2)]
+        p0 = [-1.2, 1.0]
+        sc = StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-8)
+        # by default step sizes do not report failures
+        @test !Manopt.has_failed(Manopt.ConstantStepsize(M))
+        hz = HagerZhangLinesearch(; max_function_evaluations = 3)(M)
+        @test hz.last_termination === :not_searched
+        @test !Manopt.has_failed(hz)
+        @test_throws ArgumentError QuasiNewtonState(M; p = copy(p0), linesearch_failure_behavior = :foo)
+        @testset "accept" begin
+            # accepting failed line searches makes the iterates sensitive to rounding,
+            # so only check the default stopping criterion of a full run
+            st = quasi_Newton(
+                M, f, grad_f, p0;
+                stepsize = HagerZhangLinesearch(; max_function_evaluations = 3),
+                linesearch_failure_behavior = :accept, return_state = true,
+            )
+            qns = Manopt.get_state(st)
+            @test qns.linesearch_failure_behavior === :accept
+            @test !any(c -> c isa StopWhenStuck, get_stopping_criteria(qns.stop))
+            # and the behavior step by step: the first failed line search is accepted
+            mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            qns = QuasiNewtonState(
+                M; p = copy(p0), linesearch_failure_behavior = :accept,
+                stepsize = HagerZhangLinesearch(; max_function_evaluations = 3)(M),
+            )
+            initialize_solver!(mp, qns)
+            k = 0
+            while qns.linesearch_status !== :failure_accepted && k < 50
+                k += 1
+                step_solver!(mp, qns, k)
+            end
+            @test qns.linesearch_status === :failure_accepted
+            @test Manopt.has_failed(qns.stepsize)
+            @test qns.stepsize.last_termination === :evaluation_limit
+            # the iterate moved by the last trial step α η (η is scaled by α after the step)
+            @test qns.p ≈ qns.p_old + qns.η
+            @test get_last_stepsize(qns.stepsize) == qns.stepsize.triples[3].t
+            @test !qns.direction_update_reset
+            @test occursin("last trial step was accepted", Manopt.get_message(qns))
+        end
+        @testset "restart" begin
+            # the default stopping criterion for :restart includes StopWhenStuck
+            st = quasi_Newton(
+                M, f, grad_f, p0;
+                stepsize = HagerZhangLinesearch(; max_function_evaluations = 3),
+                linesearch_failure_behavior = :restart,
+                record = [:Cost], return_state = true,
+            )
+            costs = [f(M, p0); get_record(st)]
+            qns = Manopt.get_state(st)
+            @test qns.linesearch_failure_behavior === :restart
+            # rejected steps keep the cost monotone, up to the tolerance of the approximate Wolfe conditions
+            @test all(diff(costs) .<= 1.0e-6 * maximum(abs, costs))
+            # the second failure in a row stops
+            @test qns.linesearch_status === :failure_after_restart
+            @test qns.direction_update_reset
+            @test any(c -> c isa StopWhenStuck && Manopt.is_active_stopping_criterion(c), get_stopping_criteria(qns.stop))
+            @test occursin("got stuck", get_reason(st))
+            @test occursin("just been reinitialized", Manopt.get_message(qns))
+            # the cost from the line search is the one at the (unchanged) iterate
+            mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            @test get_cost(mp, qns) == f(M, get_iterate(qns))
+        end
+        @testset "a custom stopping criterion is kept as is" begin
+            st = quasi_Newton(
+                M, f, grad_f, p0;
+                stepsize = HagerZhangLinesearch(; max_function_evaluations = 3),
+                linesearch_failure_behavior = :restart, stopping_criterion = sc, return_state = true,
+            )
+            qns = Manopt.get_state(st)
+            @test !any(c -> c isa StopWhenStuck, get_stopping_criteria(qns.stop))
+            # without it the solver keeps retrying from the same iterate
+            @test qns.linesearch_status === :failure_after_restart
+            @test get_count(st, :Iterations) == 200
+        end
+        @testset "same iterates without failures" begin
+            res = [
+                quasi_Newton(
+                    M, f, grad_f, p0;
+                    stepsize = HagerZhangLinesearch(), linesearch_failure_behavior = b, stopping_criterion = sc,
+                ) for b in (:accept, :restart)
+            ]
+            @test res[1] == res[2]
+        end
+        @testset "a single restart" begin
+            mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            qns = QuasiNewtonState(
+                M; p = copy(p0), linesearch_failure_behavior = :restart,
+                stepsize = HagerZhangLinesearch(; max_function_evaluations = 3)(M),
+            )
+            initialize_solver!(mp, qns)
+            # gather curvature information until a line search fails
+            k = 0
+            while qns.linesearch_status !== :failure_restarted && k < 50
+                k += 1
+                q = copy(M, qns.p)
+                step_solver!(mp, qns, k)
+                (qns.linesearch_status === :failure_restarted) && (@test qns.p == q)
+            end
+            @test qns.linesearch_status === :failure_restarted
+            @test qns.direction_update_reset
+            @test isempty(qns.direction_update.memory_s)
+            @test occursin("step was rejected", Manopt.get_message(qns))
+            c = StopWhenStuck()
+            @test !c(mp, qns, k)
+            @test !Manopt.is_stuck(qns)
+            # states that do not report line search failures
+            @test !Manopt.is_stuck(GradientDescentState(M; p = copy(p0)))
+            # a terminal failure, also seen through a decorated state
+            qns.linesearch_status = :failure_after_restart
+            dqns = DebugSolverState(qns, DebugMessages(:Info, :Always))
+            @test Manopt.is_stuck(dqns)
+            @test c(mp, dqns, k)
+            @test occursin("could not recover", get_reason(c))
+            @test endswith(Manopt.status_summary(c; context = :inline), " reached")
+            @test !c(mp, qns, 0) # reset on init
+            @test get_reason(c) == ""
+            qns.linesearch_status = :failure_restarted
+            @test get_reason(c) == ""
+            @test repr(c) == "StopWhenStuck()"
+            @test !Manopt.indicates_convergence(c)
+            @test Manopt.status_summary(c; context = :short) == repr(c)
+            @test endswith(Manopt.status_summary(c; context = :inline), "not reached")
+            @test startswith(Manopt.status_summary(c), "A stopping criterion to stop when the solver is stuck")
+            @test occursin("line search failure:     restart", Manopt.status_summary(qns))
+            @test occursin("linesearch_failure_behavior = restart", repr(qns))
+        end
     end
 end

@@ -511,6 +511,7 @@ export StopAfter, StopAfterIteration,
     StopWhenRepeated,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
+    StopWhenStuck,
     StopWhenSubgradientNormLess,
     StopWhenSwarmVelocityLess,
     StopWhenTrustRegionIsExceeded
