@@ -1148,7 +1148,7 @@ mutable struct CubicBracketingLinesearchStepsize{
         p = maybe_wrap_variable(candidate_point)
         X = maybe_wrap_variable(candidate_direction)
         Y = maybe_wrap_variable(temporary_tangent)
-        return new{R, I, TRM, VTM, typeof(p), typeof(X), IG}(X, p, Y, initial_stepsize, initial_guess, initial_stepsize, retraction_method, expansion_factor, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsiz, false)
+        return new{R, I, TRM, VTM, typeof(p), typeof(X), IG}(X, p, Y, initial_stepsize, initial_guess, initial_stepsize, retraction_method, expansion_factor, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsize, false)
     end
 end
 function CubicBracketingLinesearchStepsize(M::AbstractManifold, p; kwargs...)
@@ -2418,7 +2418,7 @@ function (a::WolfePowellLinesearchStepsize)(
     # After the increase branch, s_minus == s_plus in two cases: either the initial step fulfills
     # both conditions, so no increase was needed, or the sufficient decrease condition holds at
     # the maximal step size, which is then accepted. In both cases s_minus is returned as it is.
-    # The decrease branch sets s_plus = min(2s_minus, max_step_increase) > s_minus, unless the
+    # The decrease branch sets s_plus = min(expansion_factor * s_minus, max_step_increase) > s_minus, unless the
     # initial step was already below the decrease threshold and equal to the maximal step,
     # in which case that step fails the sufficient decrease condition and is reported as failure.
     if s_minus < s_plus
