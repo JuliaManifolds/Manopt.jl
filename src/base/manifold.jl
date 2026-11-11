@@ -48,6 +48,15 @@ with a standard manifold. Otherwise return `false`.
 has_anisotropic_max_stepsize(::AbstractManifold) = false
 has_anisotropic_max_stepsize(M::ProductManifold) = any(has_anisotropic_max_stepsize, M.manifolds)
 
+# whether the vector transport `m` is the parallel transport, on product manifolds in every
+# component; it is isometric, so for example the cautious quasi-Newton update does not need
+# to re-test its stored pairs
+_is_parallel_transport(::AbstractVectorTransportMethod) = false
+_is_parallel_transport(::ParallelTransport) = true
+function _is_parallel_transport(m::ManifoldsBase.ProductVectorTransport)
+    return all(_is_parallel_transport, m.methods)
+end
+
 _doc_project_truncate = raw"""
     project_truncate(M::AbstractManifold, p, X)
     project_truncate!(M::AbstractManifold, Y, p, X)
