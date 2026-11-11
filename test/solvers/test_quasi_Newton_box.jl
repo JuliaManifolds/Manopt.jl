@@ -684,6 +684,25 @@ using RecursiveArrayTools
         @test length(ha.qn_du.memory_s) == 1
         @test ha.qn_du.ρ[1] ≈ 1 / 20
         @test ha.current_scale ≈ 20.0
+        # the parallel transport on the `Hyperrectangle` is isometric, so the re-test is off by
+        # default; with it, a stored pair that violates the decision rule after the transport,
+        # here with ⟨s, y⟩ / ‖s‖² = 2, is removed, both when the new pair is added …
+        @test !cha.retest
+        cha.retest = true
+        ha.qn_du.memory_y[1] .= [0.0, 2.0, 0.0]
+        st.sk = [0.0, 1.0, 0.0]
+        st.yk = [0.0, 10.0, 0.0]
+        update_hessian!(cha, mp, st, p0, 3)
+        @test length(ha.qn_du.memory_s) == 1
+        @test ha.qn_du.memory_y[1] == [0.0, 10.0, 0.0]
+        @test ha.current_scale ≈ 10.0
+        # … and when it is skipped
+        ha.qn_du.memory_y[1] .= [0.0, 2.0, 0.0]
+        st.sk = [1.0, 0.0, 0.0]
+        st.yk = [1.0, 0.0, 0.0]
+        update_hessian!(cha, mp, st, p0, 4)
+        @test length(ha.qn_du.memory_s) == 0
+        @test ha.current_scale ≈ inv(Manopt._box_initial_scale(ha))
         # the direction is the one of the box update, and so is its maximal step size
         st.X = grad_f(M, p0)
         η = cha(mp, st)

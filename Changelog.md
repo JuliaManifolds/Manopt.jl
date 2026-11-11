@@ -6,6 +6,16 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.13] unreleased
+
+### Added
+
+* keyword `cautious_retest=` for `quasi_Newton` (field `retest` of `QuasiNewtonCautiousDirectionUpdate`): with a limited memory update, stored pairs that violate the decision rule after the vector transport are removed. Defaults to `true` unless the vector transport is `ParallelTransport`, which is isometric.
+
+### Fixed
+
+* the limited memory `QuasiNewtonCautiousDirectionUpdate` adds a new pair only if it also satisfies the curvature condition, and keeps the oldest pair otherwise. Pairs failing the `:byrd` curvature test are then removed instead of kept with `ρ = 0`.
+
 ## [0.6.12] November 9, 2026
 
 ### Added

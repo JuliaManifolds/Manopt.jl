@@ -271,6 +271,11 @@ $(_kwargs(:callbacks; add_properties = [:process_note]))
   and strictly increasing at ``0``. It is evaluated at the norm of the projected negative
   gradient, which is the norm of the gradient on manifolds without box constraints,
   see [`QuasiNewtonCautiousDirectionUpdate`](@ref)
+* `cautious_retest::Bool`: whether the cautious update of a limited memory update also tests the
+  stored pairs against its decision rule after each vector transport, see
+  [`QuasiNewtonCautiousDirectionUpdate`](@ref). The default is `false` if `vector_transport_method`
+  is the [`ParallelTransport`](@extref `ManifoldsBase.ParallelTransport`), which is isometric,
+  on product manifolds in every component, and `true` otherwise.
 $(_kwargs(:differential))
 * `direction_update=`[`InverseBFGS`](@ref)`()`:
   the [`AbstractQuasiNewtonUpdateRule`](@ref) to use.
@@ -377,6 +382,7 @@ function quasi_Newton!(
         vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(
             M, typeof(p)
         ),
+        cautious_retest::Bool = !_is_parallel_transport(vector_transport_method),
         basis::AbstractBasis = default_basis(M, typeof(p)),
         direction_update::AbstractQuasiNewtonUpdateRule = InverseBFGS(),
         memory_size::Int = min(manifold_dimension(M), 20),
@@ -437,7 +443,7 @@ function quasi_Newton!(
     end
     if cautious_update
         local_dir_upd = QuasiNewtonCautiousDirectionUpdate(
-            local_dir_upd; θ = cautious_function
+            local_dir_upd; θ = cautious_function, retest = cautious_retest
         )
     end
     dmgo = decorate_objective!(M, mgo; kwargs...)
@@ -835,7 +841,37 @@ function fill_rho_i!(M::AbstractManifold, p, d::QuasiNewtonLimitedMemoryDirectio
     return d
 end
 
-function _drop_zero_rho_vectors!(d::QuasiNewtonLimitedMemoryDirectionUpdate{U}) where {U <: InverseBFGS}
+# whether `s ≠ 0` and `y` satisfy the decision rule ⟨s, y⟩ / ‖s‖² ≥ bound of the cautious update
+function _cautious_condition(M::AbstractManifold, p, s, y, bound)
+    s_normsq = norm(M, p, s)^2
+    return s_normsq != 0 && real(inner(M, p, s, y) / s_normsq) >= bound
+end
+
+# whether `s` and `y` satisfy the curvature condition of `d`, that is, whether `fill_rho_i!`
+# would keep the pair
+function _curvature_condition(M::AbstractManifold, p, d::QuasiNewtonLimitedMemoryDirectionUpdate, s, y)
+    v = real(inner(M, p, s, y))
+    if d.nonpositive_curvature_behavior === :byrd
+        return v > real(d.sy_tol) * norm(M, p, y)^2
+    end
+    return !iszero(v)
+end
+
+# Remove the `i`th stored pair from the approximation by setting `ρ[i]` to zero if, after its
+# transport to `p`, it violates the decision rule of the cautious update with `bound`.
+# A vector transport that is not isometric changes inner products and norms, so a pair can
+# violate the rule after a transport even if it satisfied it when it was stored.
+# Returns whether the pair was removed.
+function _cautious_retest!(
+        M::AbstractManifold, p, d::QuasiNewtonLimitedMemoryDirectionUpdate, i::Int, bound
+    )
+    iszero(d.ρ[i]) && return false
+    _cautious_condition(M, p, d.memory_s[i], d.memory_y[i], bound) && return false
+    d.ρ[i] = zero(eltype(d.ρ))
+    return true
+end
+
+function _drop_zero_rho_vectors!(d::QuasiNewtonLimitedMemoryDirectionUpdate)
     T = eltype(d.memory_s)
     memory_size = capacity(d.memory_s)
     new_scb = CircularBuffer{T}(memory_size)
@@ -858,9 +894,13 @@ function _drop_zero_rho_vectors!(d::QuasiNewtonLimitedMemoryDirectionUpdate{U}) 
 end
 
 # Limited-memory update
+# With a `cautious_bound`, as passed by `QuasiNewtonCautiousDirectionUpdate`, the transported
+# pairs are also tested against the decision rule of the cautious update and removed if they
+# violate it, before the newest pair is added.
 function update_hessian!(
         d::QuasiNewtonLimitedMemoryDirectionUpdate{U},
-        mp::AbstractManoptProblem, st::AbstractManoptSolverState, p_old, ::Int,
+        mp::AbstractManoptProblem, st::AbstractManoptSolverState, p_old, ::Int;
+        cautious_bound = nothing,
     ) where {U <: InverseBFGS}
     (capacity(d.memory_s) == 0) && return d
     # only transport the first if it does not get overwritten at the end
@@ -880,7 +920,8 @@ function update_hessian!(
         # what if division by zero happened here, setting to zero ignores this in the next step
         # pre-compute in case inner is expensive
         fill_rho_i!(M, p, d, i)
-        if d.nonpositive_curvature_behavior === :byrd && iszero(d.ρ[i])
+        removed = !isnothing(cautious_bound) && _cautious_retest!(M, p, d, i, cautious_bound)
+        if removed || (d.nonpositive_curvature_behavior === :byrd && iszero(d.ρ[i]))
             reforming_required = true
         end
     end
@@ -896,6 +937,9 @@ function update_hessian!(
                 M, d.memory_y[1], p_old, d.memory_y[1], p, d.vector_transport_method
             )
             fill_rho_i!(M, p, d, 1)
+            if !isnothing(cautious_bound)
+                _cautious_retest!(M, p, d, 1, cautious_bound)
+            end
         end
         _drop_zero_rho_vectors!(d)
     end
@@ -934,27 +978,46 @@ function update_hessian!(
     M = get_manifold(mp)
     p = get_iterate(st)
     bound = d.θ(_cautious_projected_gradient_norm!(d, mp, p_old))
-    sk_normsq = norm(M, p, st.sk)^2
-    # if the decision rule is fulfilled, the new `sk` and `yk` are added
-    if sk_normsq != 0 && real(inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
-        update_hessian!(d.update, mp, st, p_old, iter)
+    lm = _limited_memory_update(d.update)
+    # in both cases the stored pairs are transported to the new tangent space, and those that
+    # violate the curvature condition or, if `d.retest`, the decision rule with `bound` there
+    # are removed
+    cautious_bound = d.retest ? bound : nothing
+    if _cautious_condition(M, p, st.sk, st.yk, bound) && _curvature_condition(M, p, lm, st.sk, st.yk)
+        # the new `sk` and `yk` are added, replacing the oldest pair if the memory is full
+        update_hessian!(d.update, mp, st, p_old, iter; cautious_bound = cautious_bound)
     else
-        # the stored vectors are just transported to the new tangent space; `sk` and `yk` are not added
-        _transport_memory!(d.update, M, p_old, p)
+        # `sk` and `yk` are not added, and the oldest pair is kept
+        _transport_memory!(d.update, M, p_old, p; cautious_bound = cautious_bound)
     end
     return d
 end
 
-function _transport_memory!(d::QuasiNewtonLimitedMemoryDirectionUpdate, M::AbstractManifold, p_old, p)
+_limited_memory_update(d::QuasiNewtonLimitedMemoryDirectionUpdate) = d
+_limited_memory_update(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate) = d.qn_du
+
+function _transport_memory!(
+        d::QuasiNewtonLimitedMemoryDirectionUpdate, M::AbstractManifold, p_old, p;
+        cautious_bound = nothing,
+    )
+    reforming_required = false
     for i in 1:length(d.memory_s)
         vector_transport_to!(M, d.memory_s[i], p_old, d.memory_s[i], p, d.vector_transport_method)
         vector_transport_to!(M, d.memory_y[i], p_old, d.memory_y[i], p, d.vector_transport_method)
         fill_rho_i!(M, p, d, i)
+        removed = !isnothing(cautious_bound) && _cautious_retest!(M, p, d, i, cautious_bound)
+        if removed || (d.nonpositive_curvature_behavior === :byrd && iszero(d.ρ[i]))
+            reforming_required = true
+        end
     end
+    reforming_required && _drop_zero_rho_vectors!(d)
     return d
 end
-function _transport_memory!(d::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p_old, p)
-    _transport_memory!(d.qn_du, M, p_old, p)
+function _transport_memory!(
+        d::QuasiNewtonLimitedMemoryBoxDirectionUpdate, M::AbstractManifold, p_old, p;
+        kwargs...,
+    )
+    _transport_memory!(d.qn_du, M, p_old, p; kwargs...)
     # the inner products of the transported pairs may have changed, so the compact
     # representation of the Hessian approximation is recomputed at `p`
     update_current_scale!(M, p, d)
