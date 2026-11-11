@@ -1113,6 +1113,17 @@ are transported into the tangent space ``T_{p_{k+1}} $(_math(:Manifold))``.
 For [`QuasiNewtonLimitedMemoryBoxDirectionUpdate`](@ref) the stored vector pairs of its
 internal limited memory update are treated the same way, and the compact representation of the
 Hessian approximation is recomputed from the transported pairs in either case.
+For the limited memory updates, the newest pair is only added if it also satisfies the curvature
+condition of the wrapped update, see `nonpositive_curvature_behavior` in
+[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref).
+Whether it is added or not, every stored pair is removed if, after its transport into
+``T_{p_{k+1}} $(_math(:Manifold))``, it violates the curvature condition or, if `retest` is
+`true`, the decision rule with the same bound ``θ(h_k)``.
+A vector transport that is not isometric changes inner products and norms, so without this
+test the memory could contain pairs that violate the decision rule.
+The [`ParallelTransport`](@extref `ManifoldsBase.ParallelTransport`) is isometric: the stored
+pairs keep the ratio ``g(y_i,s_i)/$(_tex(:norm, "s_i"))^2`` with which they were stored,
+so the test is off by default for it.
 The maximal step size reported by the generalized Cauchy direction search of the wrapped update,
 see [`get_parameter`](@ref), is passed on.
 If [`InverseBFGS`](@ref) is chosen as update — either within a [`QuasiNewtonMatrixDirectionUpdate`](@ref)
@@ -1134,15 +1145,25 @@ taking into account that the corresponding step size is chosen.
   so that the gradient is not evaluated again. Its type is the real floating point type of
   the numbers stored in `update`. It is `NaN` if no direction was computed since
   the last update; then the update evaluates the gradient at ``p_k``.
+* `retest`: whether the stored pairs of a limited memory update are tested against the
+  decision rule after each transport. It is not used by [`QuasiNewtonMatrixDirectionUpdate`](@ref).
 
 # Constructor
 
-    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonMatrixDirectionUpdate; θ = identity)
-    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonLimitedMemoryDirectionUpdate; θ = identity)
-    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonLimitedMemoryBoxDirectionUpdate; θ = identity)
+    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonMatrixDirectionUpdate; kwargs...)
+    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonLimitedMemoryDirectionUpdate; kwargs...)
+    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonLimitedMemoryBoxDirectionUpdate; kwargs...)
 
 Generate a cautious update for a matrix based, a limited memory based, or a limited memory
 based update rule with support for box constraints.
+
+## Keyword arguments
+
+* `θ = identity`: the function in the decision rule.
+* `retest::Bool`: whether to test the stored pairs after each transport. The default is
+  `false` if the vector transport of `U` is the
+  [`ParallelTransport`](@extref `ManifoldsBase.ParallelTransport`), on product manifolds
+  in every component of a `ProductVectorTransport`, and `true` otherwise.
 
 # See also
 
@@ -1162,9 +1183,11 @@ mutable struct QuasiNewtonCautiousDirectionUpdate{
     update::U
     θ::Tθ
     projected_gradient_norm::R
+    retest::Bool
 end
 function QuasiNewtonCautiousDirectionUpdate(
-        update::U; θ::Function = identity
+        update::U; θ::Function = identity,
+        retest::Bool = !_is_parallel_transport(get_update_vector_transport(update)),
     ) where {
         U <: Union{
             QuasiNewtonMatrixDirectionUpdate,
@@ -1173,7 +1196,7 @@ function QuasiNewtonCautiousDirectionUpdate(
         },
     }
     R = _real_number_type(update)
-    return QuasiNewtonCautiousDirectionUpdate{U, typeof(θ), R}(update, θ, R(NaN))
+    return QuasiNewtonCautiousDirectionUpdate{U, typeof(θ), R}(update, θ, R(NaN), retest)
 end
 
 # the real floating point type of the numbers stored in a direction update
@@ -1192,7 +1215,8 @@ function status_summary(d::QuasiNewtonCautiousDirectionUpdate; context::Symbol =
     A cautious quasi Newton direction update
 
     ## Parameters
-    * θ: $(_MANOPT_INDENT)$(d.θ)
+    * θ:      $(_MANOPT_INDENT)$(d.θ)
+    * retest: $(_MANOPT_INDENT)$(d.retest)
 
     ## Internal direction update
     $(_in_str(status_summary(d.update; context = context); indent = 1, headers = 1))
@@ -1455,10 +1479,11 @@ function update_hessian!(
         mp::AbstractManoptProblem,
         st::AbstractManoptSolverState,
         p_old,
-        k::Int,
+        k::Int;
+        kwargs...,
     )
     (capacity(gh.qn_du.memory_s) == 0) && return gh
-    update_hessian!(gh.qn_du, mp, st, p_old, k)
+    update_hessian!(gh.qn_du, mp, st, p_old, k; kwargs...)
     update_current_scale!(get_manifold(mp), get_iterate(st), gh)
     return gh
 end

@@ -1,4 +1,5 @@
 using Manopt, Manifolds, Test
+using RecursiveArrayTools: ArrayPartition
 using LinearAlgebra: I, eigvecs, tr, Diagonal, dot
 
 mutable struct QuasiNewtonGradientDirectionUpdate{VT <: AbstractVectorTransportMethod} <:
@@ -456,23 +457,137 @@ end
         grad_f(M, p) = -2 .* p
         gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
-        qdu = QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2)
-        qns = QuasiNewtonState(
-            M; p = copy(M, p),
-            direction_update = QuasiNewtonCautiousDirectionUpdate(qdu),
+        # the parallel transport on `Euclidean` is isometric, so the re-test is off by default
+        @test !QuasiNewtonCautiousDirectionUpdate(
+            QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2)
+        ).retest
+        for retest in (false, true)
+            qdu = QuasiNewtonLimitedMemoryDirectionUpdate(M, p, InverseBFGS(), 2)
+            qns = QuasiNewtonState(
+                M; p = copy(M, p),
+                direction_update = QuasiNewtonCautiousDirectionUpdate(qdu; retest = retest),
+            )
+            # current bound with the gradient is 2, so we choose an sk larger than that
+            qns.sk = [1.0, 1.1]
+            # push two dummy pairs we can transport, with ⟨s, y⟩ / ‖s‖² = 11 / 25 and 3
+            push!(qdu.memory_y, [1.0, 2.0])
+            push!(qdu.memory_s, [3.0, 4.0])
+            push!(qdu.memory_y, [3.0, 0.0])
+            push!(qdu.memory_s, [1.0, 0.0])
+            # This triggers a cautious update that does not update the Hessian
+            Manopt.update_hessian!(qns.direction_update, mp, qns, p, 1)
+            # the stored pairs are only transported: no new pair is added and ρ is recomputed;
+            # tested against the bound 2, the first pair is removed
+            if retest
+                @test length(qdu.memory_s) == 1
+                @test qdu.memory_s[1] == [1.0, 0.0]
+                @test qdu.ρ[1] ≈ 1 / 3
+            else
+                @test length(qdu.memory_s) == 2
+                @test qdu.ρ ≈ [1 / 11, 1 / 3]
+            end
+            @test startswith(repr(qdu), "QuasiNewtonLimitedMemoryDirectionUpdate with memory size")
+        end
+    end
+    @testset "Cautious update re-tests pairs after a non-isometric transport" begin
+        M = Sphere(2)
+        mp = DefaultManoptProblem(
+            M, ManifoldGradientObjective((M, p) -> 0.0, (M, p) -> zero_vector(M, p))
         )
-        # current bound with the gradient is 2, so we choose an sk larger than that
-        qns.sk = [1.0, 1.1]
-        # push one dummy pair we can transport
-        push!(qdu.memory_y, [1, 2])
-        push!(qdu.memory_s, [3, 4])
-        # This triggers a cautious update that does not update the Hessian
-        Manopt.update_hessian!(qns.direction_update, mp, qns, p, 1)
-        # the stored pair is only transported: no new pair is added and ρ is recomputed
+        p_old = [1.0, 0.0, 0.0]
+        p_new = [1.0, 1.0, 0.0] ./ sqrt(2)
+        # ⟨s, y⟩ / ‖s‖² is 1/2 at p_old, but 1/3 after the projection onto T_{p_new}M,
+        # while ⟨s, y⟩ = 1/2 stays positive
+        s_bad, y_bad = [0.0, 1.0, 1.0], [0.0, 1.0, 0.0]
+        # tangent at both points, so the projection does not change it
+        s_good, y_good = [0.0, 0.0, 1.0], [0.0, 0.0, 2.0]
+        for (memory_size, add_new) in Iterators.product((2, 3), (true, false))
+            qdu = QuasiNewtonLimitedMemoryDirectionUpdate(
+                M, p_old, InverseBFGS(), memory_size;
+                vector_transport_method = ProjectionTransport(),
+                nonpositive_curvature_behavior = :byrd,
+            )
+            dc = QuasiNewtonCautiousDirectionUpdate(qdu; θ = x -> 0.4)
+            st = QuasiNewtonState(M; p = copy(M, p_new), direction_update = dc)
+            push!(qdu.memory_s, copy(s_good))
+            push!(qdu.memory_y, copy(y_good))
+            push!(qdu.memory_s, copy(s_bad))
+            push!(qdu.memory_y, copy(y_bad))
+            # the new pair has ⟨s, y⟩ / ‖s‖² = 4 or 0
+            st.sk .= [0.0, 0.0, 1.0]
+            st.yk .= add_new ? [0.0, 0.0, 4.0] : zero_vector(M, p_new)
+            Manopt.update_hessian!(dc, mp, st, p_old, 1)
+            # the first pair is kept, the second one is removed, and the new one is added
+            # if it satisfies the decision rule, without removing the first one
+            @test length(qdu.memory_s) == (add_new ? 2 : 1)
+            @test qdu.memory_s[1] == s_good
+            @test qdu.ρ[1] ≈ 1 / 2
+            add_new && @test qdu.ρ[2] ≈ 1 / 4
+        end
+        # the projection transport is not isometric, so the re-test is on by default;
+        # without it, the second pair is kept, with ⟨s, y⟩ = 1/2 after the projection
+        qdu = QuasiNewtonLimitedMemoryDirectionUpdate(
+            M, p_old, InverseBFGS(), 3;
+            vector_transport_method = ProjectionTransport(),
+            nonpositive_curvature_behavior = :byrd,
+        )
+        @test QuasiNewtonCautiousDirectionUpdate(qdu).retest
+        dc = QuasiNewtonCautiousDirectionUpdate(qdu; θ = x -> 0.4, retest = false)
+        st = QuasiNewtonState(M; p = copy(M, p_new), direction_update = dc)
+        push!(qdu.memory_s, copy(s_good))
+        push!(qdu.memory_y, copy(y_good))
+        push!(qdu.memory_s, copy(s_bad))
+        push!(qdu.memory_y, copy(y_bad))
+        st.sk .= [0.0, 0.0, 1.0]
+        st.yk .= zero_vector(M, p_new)
+        Manopt.update_hessian!(dc, mp, st, p_old, 1)
+        @test length(qdu.memory_s) == 2
+        @test qdu.ρ[1:2] ≈ [1 / 2, 2]
+        # the default follows the components of a product vector transport, also in `quasi_Newton`
+        N = Sphere(2) × Euclidean(2)
+        pN = ArrayPartition(p_old, [0.0, 0.0])
+        fN(N, q) = sum(abs2, submanifold_component(N, q, 2) .- 1)
+        function grad_fN(N, q)
+            return ArrayPartition(
+                zero_vector(Sphere(2), submanifold_component(N, q, 1)),
+                2 .* (submanifold_component(N, q, 2) .- 1),
+            )
+        end
+        for (vtm, retest) in (
+                (ProductVectorTransport(ParallelTransport(), ParallelTransport()), false),
+                (ProductVectorTransport(ProjectionTransport(), ParallelTransport()), true),
+            )
+            qdu = QuasiNewtonLimitedMemoryDirectionUpdate(
+                N, pN, InverseBFGS(), 2; vector_transport_method = vtm
+            )
+            @test QuasiNewtonCautiousDirectionUpdate(qdu).retest == retest
+            for cautious_retest in (retest, !retest)
+                kw = cautious_retest == retest ? (;) : (; cautious_retest = cautious_retest)
+                st = quasi_Newton(
+                    N, fN, grad_fN, pN;
+                    cautious_update = true, vector_transport_method = vtm,
+                    stopping_criterion = StopAfterIteration(1), return_state = true, kw...,
+                )
+                @test Manopt.get_state(st).direction_update.retest == cautious_retest
+            end
+        end
+        @test occursin("* retest: ", Manopt.status_summary(dc))
+        # a new pair that satisfies the decision rule but not the curvature condition of
+        # `:byrd` is not added either, and the oldest pair is kept
+        qdu = QuasiNewtonLimitedMemoryDirectionUpdate(
+            M, p_old, InverseBFGS(), 1;
+            vector_transport_method = ProjectionTransport(),
+            nonpositive_curvature_behavior = :byrd, sy_tol = 1.0,
+        )
+        dc = QuasiNewtonCautiousDirectionUpdate(qdu; θ = x -> 0.4)
+        st = QuasiNewtonState(M; p = copy(M, p_new), direction_update = dc)
+        push!(qdu.memory_s, copy(s_good))
+        push!(qdu.memory_y, [0.0, 0.0, 0.5])
+        st.sk .= [0.0, 0.0, 1.0]
+        st.yk .= [0.0, 0.0, 4.0]
+        Manopt.update_hessian!(dc, mp, st, p_old, 1)
         @test length(qdu.memory_s) == 1
-        @test qdu.ρ[1] ≈ 1 / 11
-
-        @test startswith(repr(qdu), "QuasiNewtonLimitedMemoryDirectionUpdate with memory size")
+        @test qdu.memory_y[1] == [0.0, 0.0, 0.5]
     end
     @testset "Cautious skip transports the basis" begin
         M = Sphere(2)
@@ -639,7 +754,7 @@ end
         dc.projected_gradient_norm = 20.0 # pretend a large gradient was recorded: the pair is skipped
         update_hessian!(dc, mp, st, p, 2)
         @test length(dc.update.memory_s) == 1
-        update_hessian!(dc, mp, st, p, 3) # evaluates ‖grad f(p)‖ ≈ 7.2 < 10: added
+        update_hessian!(dc, mp, st, p, 3) # evaluates ‖grad f(p)‖ ≈ 6.3 < 10: added
         @test length(dc.update.memory_s) == 2
         # the type of the recorded norm follows the numbers stored in the wrapped update
         @test dc.projected_gradient_norm isa Float64

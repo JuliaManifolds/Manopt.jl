@@ -81,6 +81,16 @@ The following breaking changes all stem from deprecated features.
 * `trust_regions` no longer accepts the keyword `ρ_prime = `. Use its new name `acceptance_rate = ` instead.
 * the abstract type `AbstractSubProblemSolverState` has been removed, use the trait `has_sub_problem` instead.
 
+## [0.6.13] November 11, 2026
+
+### Added
+
+* keyword `cautious_retest=` for `quasi_Newton` (field `retest` of `QuasiNewtonCautiousDirectionUpdate`): with a limited memory update, stored pairs that violate the decision rule after the vector transport are removed. Defaults to `true` unless the vector transport is `ParallelTransport`, which is isometric.
+
+### Fixed
+
+* the limited memory `QuasiNewtonCautiousDirectionUpdate` adds a new pair only if it also satisfies the curvature condition, and keeps the oldest pair otherwise. Pairs failing the `:byrd` curvature test are then removed instead of kept with `ρ = 0`.
+
 ## [0.6.12] November 9, 2026
 
 ### Added
