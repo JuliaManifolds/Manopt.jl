@@ -26,7 +26,7 @@ For a function $f: ℳ → ℝ$  that maps from a [Riemannian manifold](https://
 
 * a framework to implement arbitrary optimization algorithms on Riemannian manifolds
 * a library of optimization algorithms on Riemannian manifolds
-* an easy-to-use interface for (debug) output and recording values during an algorithm run
+* an easy-to-use interface for (debug) output, recording values, and adding callbacks at specific points during an iteration of an algorithm run
 * several tools to investigate the algorithms, gradients, and optimality criteria
 
 ## Getting started
