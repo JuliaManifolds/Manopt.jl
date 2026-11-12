@@ -3205,7 +3205,8 @@ function _hz_update(
         mp::AbstractManoptProblem, p, η, i_a::Int, i_b::Int, c::Real
     )
     # U0
-    if c < hzls.triples[i_a].t || c > hzls.triples[i_b].t
+    # written like that to reject c == NaN
+    if !(hzls.triples[i_a].t <= c <= hzls.triples[i_b].t)
         return (i_a, i_b, -1, false, false)
     end
     i_c, f_eval, f_wolfe = _hz_evaluate_next_step(hzls, M, mp, p, η, c)
