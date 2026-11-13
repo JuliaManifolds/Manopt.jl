@@ -255,6 +255,19 @@ function get_message(::Val{:evaluation_limit}, k::Int = -1, value::Real = NaN, b
     v_str = isnan(value) ? "" : " Continuing with the last trial stepsize of $value."
     return "At $s: Maximal number of function evaluations$b_str reached without satisfying the Wolfe conditions.$v_str"
 end
+"""
+    get_message(:bracketing_error, k::Int=-1, step::Real = NaN)
+
+Display a message string for a line search at iteration `k` that could not narrow its bracket
+any further, for example because the bracket has non-finite endpoints, and the step size
+`step` used instead.
+"""
+function get_message(::Val{:bracketing_error}, k::Int = -1, value::Real = NaN, bound::Real = NaN)
+    (k < 0) && (return "")
+    s = (k == 0) ? "the beginning" : "iteration #$k"
+    v_str = isnan(value) ? "" : " Continuing with the trial stepsize of $value."
+    return "At $s: The line search bracket could not be narrowed any further, possibly due to non-finite values.$v_str"
+end
 
 #
 #
@@ -2758,7 +2771,8 @@ introducing customizable norms for points and tangent vectors and a maximum step
 # Fields
 
 * `ψ0`, `ψ1`, `ψ2`: the parameters of the steps `I0`, `I1` and `I2`
-* `constant_guess`: if not `NaN`, this value is returned in the first iteration instead of `I0`
+* `constant_guess`: if not `NaN`, this value is returned in the first iteration instead of `I0`.
+  The first-iteration rule is also used whenever the last stepsize is not a finite positive number.
 * `quadstep`: whether to attempt the quadratic interpolation step `I1`
 * `point_distance`: a function `(M, p) -> d` estimating the distance from `p` to the minimizer, see [`default_point_distance`](@ref)
 * `vector_norm`: a function `(M, p, X) -> n` measuring the search direction in `I0`, see [`default_vector_norm`](@ref)
@@ -2831,7 +2845,9 @@ function (hzi::HagerZhangInitialGuess{TF})(
         )
     end
 
-    if k == 1
+    # also use I0 if there is no usable previous stepsize, e.g. if the line search was not
+    # initialized or the previous one failed
+    if k == 1 || !(isfinite(last_stepsize) && last_stepsize > 0)
         point_d = hzi.point_distance(M, p)
         # Step I0
         if isnan(hzi.constant_guess)
@@ -2913,10 +2929,14 @@ $(_fields(:vector_transport_method))
   * `:evaluation_limit` if `max_function_evaluations` was reached first. The returned
     step size is then the trial step with the smallest cost and
     [`has_failed`](@ref Manopt.has_failed) returns `true`.
+  * `:bracketing_error` if the bracket could not be narrowed any further, for example because
+    it has non-finite endpoints. As for `:evaluation_limit`, the returned step size is the
+    trial step with the smallest cost and [`has_failed`](@ref Manopt.has_failed) returns `true`.
 * `messages::NamedTuple`: a named tuple of [`StepsizeMessage`](@ref)s about the last line search,
   reporting a non-descent direction (`:non_descent_direction`), an initial guess exceeding the
-  step size limit (`:stepsize_exceeds`) and reaching the maximal number of function evaluations
-  (`:evaluation_limit`), see [`get_message`](@ref).
+  step size limit (`:stepsize_exceeds`), reaching the maximal number of function evaluations
+  (`:evaluation_limit`) and a failure of the bracketing (`:bracketing_error`),
+  see [`get_message`](@ref).
 
 # Constructor
 
@@ -2965,8 +2985,11 @@ mutable struct HagerZhangLinesearchStepsize{
     ϵₖ::TF
     last_termination::Symbol
     messages::NamedTuple{
-        (:non_descent_direction, :stepsize_exceeds, :evaluation_limit),
-        Tuple{StepsizeMessage{TF, TF}, StepsizeMessage{TF, TF}, StepsizeMessage{Int, TF}},
+        (:non_descent_direction, :stepsize_exceeds, :evaluation_limit, :bracketing_error),
+        Tuple{
+            StepsizeMessage{TF, TF}, StepsizeMessage{TF, TF}, StepsizeMessage{Int, TF},
+            StepsizeMessage{TF, TF},
+        },
     }
     function HagerZhangLinesearchStepsize(
             M::AbstractManifold;
@@ -3036,6 +3059,7 @@ mutable struct HagerZhangLinesearchStepsize{
             non_descent_direction = StepsizeMessage{TF, TF}(),
             stepsize_exceeds = StepsizeMessage{TF, TF}(),
             evaluation_limit = StepsizeMessage{Int, TF}(),
+            bracketing_error = StepsizeMessage{TF, TF}(),
         )
 
         return new{TF, TIG, TRM, TVTM, typeof(candidate_point), typeof(candidate_direction)}(
@@ -3238,7 +3262,8 @@ function _hz_update(
         mp::AbstractManoptProblem, p, η, i_a::Int, i_b::Int, c::Real
     )
     # U0
-    if c < hzls.triples[i_a].t || c > hzls.triples[i_b].t
+    # written like that to reject c == NaN
+    if !(hzls.triples[i_a].t <= c <= hzls.triples[i_b].t)
         return (i_a, i_b, -1, false, false)
     end
     i_c, f_eval, f_wolfe = _hz_evaluate_next_step(hzls, M, mp, p, η, c)
@@ -3416,6 +3441,7 @@ function (hzls::HagerZhangLinesearchStepsize)(
     # L0, bracket(c)
     local i_a_j, i_b_j, f_eval, f_wolfe # COV_EXCL_LINE
     (i_a_j, i_b_j, f_eval, f_wolfe, f_early_maxstep) = _hz_bracket(hzls, M, mp, p, η, α0, max_alpha)
+    f_bracketing_error = false
     !f_early_maxstep && while !(f_eval || f_wolfe)
         # L1
         finite_at_b = isfinite(hzls.triples[i_b_j].f)
@@ -3428,15 +3454,24 @@ function (hzls::HagerZhangLinesearchStepsize)(
         end
         # L2
         # we additionally check that we can continue narrowing the bracket
+        # the width condition is negated so that degenerate (zero or NaN) widths also lead
+        # to bisection; this way each iteration either performs an evaluation or detects
+        # a broken bracket below, which guarantees termination of this loop
         if !(f_eval || f_wolfe) &&
-                (!finite_at_b || (hzls.triples[i_b].t - hzls.triples[i_a].t) > hzls.γ * (hzls.triples[i_b_j].t - hzls.triples[i_a_j].t))
+                (!finite_at_b || !((hzls.triples[i_b].t - hzls.triples[i_a].t) < hzls.γ * (hzls.triples[i_b_j].t - hzls.triples[i_a_j].t)))
             # secant2 did not reduce the bracket sufficiently
             # we need to do bisection
-            (i_a, i_b, _i_c, f_eval, f_wolfe) = _hz_update(
+            (i_a, i_b, i_c_bisect, f_eval, f_wolfe) = _hz_update(
                 hzls, M, mp, p, η,
                 i_a, i_b,
                 (hzls.triples[i_a].t + hzls.triples[i_b].t) / 2,
             )
+            if i_c_bisect == -1
+                # the midpoint is not inside the bracket, which can only happen when the
+                # bracket has non-finite endpoints; no further progress is possible
+                f_bracketing_error = true
+                break
+            end
         end
         # L3
         i_a_j, i_b_j = i_a, i_b
@@ -3447,17 +3482,22 @@ function (hzls::HagerZhangLinesearchStepsize)(
 
     hzls.last_termination = if f_early_maxstep
         :max_stepsize
+    elseif f_bracketing_error
+        :bracketing_error
     elseif f_wolfe
         :wolfe
     else
         :evaluation_limit
     end
     i_return = hzls.last_evaluation_index
-    if hzls.last_termination === :evaluation_limit
-        # no trial step is acceptable, return the one with the smallest cost
+    if has_failed(hzls)
+        # no trial step is acceptable, return the one with the smallest cost, ignoring NaNs
         for i in 2:hzls.last_evaluation_index
-            (hzls.triples[i].f < hzls.triples[i_return].f) && (i_return = i)
+            f_i, f_r = hzls.triples[i].f, hzls.triples[i_return].f
+            (f_i < f_r || (isnan(f_r) && !isnan(f_i))) && (i_return = i)
         end
+        # if all trial costs are NaN, do not move
+        isnan(hzls.triples[i_return].f) && (i_return = 1)
     end
     hzls.last_stepsize = hzls.triples[i_return].t
     hzls.last_cost = hzls.triples[i_return].f
@@ -3466,11 +3506,16 @@ function (hzls::HagerZhangLinesearchStepsize)(
             hzls.messages, :evaluation_limit;
             at = k, bound = length(hzls.triples), value = hzls.last_stepsize,
         )
+    elseif hzls.last_termination === :bracketing_error
+        set_message!(hzls.messages, :bracketing_error; at = k, value = hzls.last_stepsize)
     end
     return hzls.last_stepsize
 end
 get_last_stepsize(hzls::HagerZhangLinesearchStepsize, ::Any...) = hzls.last_stepsize
-has_failed(hzls::HagerZhangLinesearchStepsize) = hzls.last_termination === :evaluation_limit
+function has_failed(hzls::HagerZhangLinesearchStepsize)
+    return hzls.last_termination === :evaluation_limit ||
+        hzls.last_termination === :bracketing_error
+end
 function get_message(hzls::HagerZhangLinesearchStepsize)
     s = [get_message(kv[1], kv[2]) for kv in pairs(hzls.messages)]
     return join([m for m in s if length(m) > 0], "\n")

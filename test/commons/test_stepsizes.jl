@@ -1046,6 +1046,46 @@ end
             @test abs(step - 0.5) < 1.0e-1
         end
 
+        @testset "Hager-Zhang non-finite bracket terminates with :bracketing_error" begin
+            # a NaN initial guess fills the bracket with NaN values; this used to loop forever
+            M2 = Euclidean(2)
+            dmp2 = DefaultManoptProblem(M2, ManifoldGradientObjective(f_sum_sq, grad_f_sum_sq))
+            gs2 = GradientDescentState(M2; p = [1.0, 2.0])
+            η2 = -grad_f_sum_sq(M2, [1.0, 2.0])
+            hzls_nan = Manopt.HagerZhangLinesearchStepsize(
+                M2; initial_guess = Manopt.ConstantInitialGuess(NaN)
+            )
+            step = hzls_nan(dmp2, gs2, 1, η2)
+            @test hzls_nan.last_termination === :bracketing_error
+            @test Manopt.has_failed(hzls_nan)
+            # all trial costs are NaN, so the line search does not move
+            @test step == 0.0
+            @test startswith(
+                Manopt.get_message(hzls_nan),
+                "At iteration #1: The line search bracket could not be narrowed any further",
+            )
+            @test Manopt.get_message(:bracketing_error, -1) == ""
+            @test Manopt.get_message(:bracketing_error, 0) ==
+                "At the beginning: The line search bracket could not be narrowed any further, possibly due to non-finite values."
+        end
+
+        @testset "Hager-Zhang without a usable last stepsize at k > 1" begin
+            # a fresh line search has last_stepsize = NaN; the initial guess falls back to I0
+            M2 = Euclidean(2)
+            dmp2 = DefaultManoptProblem(M2, ManifoldGradientObjective(f_sum_sq, grad_f_sum_sq))
+            gs2 = GradientDescentState(M2; p = [1.0, 2.0])
+            η2 = -grad_f_sum_sq(M2, [1.0, 2.0])
+            hzls_fresh = Manopt.HagerZhangLinesearchStepsize(M2)
+            step = hzls_fresh(dmp2, gs2, 4, η2)
+            @test isfinite(step) && step > 0
+            @test !Manopt.has_failed(hzls_fresh)
+            hzi = Manopt.HagerZhangInitialGuess()
+            α_I0 = hzi(dmp2, gs2, 1, NaN, η2)
+            @test hzi(dmp2, gs2, 4, NaN, η2) == α_I0
+            @test hzi(dmp2, gs2, 4, 0.0, η2) == α_I0
+            @test hzi(dmp2, gs2, 4, Inf, η2) == α_I0
+        end
+
         @testset "Hager-Zhang initialize_stepsize!" begin
             hzls = HagerZhangLinesearch()(M)
             hzls.last_evaluation_index = 5

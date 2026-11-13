@@ -81,7 +81,17 @@ The following breaking changes all stem from deprecated features.
 * `trust_regions` no longer accepts the keyword `ρ_prime = `. Use its new name `acceptance_rate = ` instead.
 * the abstract type `AbstractSubProblemSolverState` has been removed, use the trait `has_sub_problem` instead.
 
-## [0.6.13] November 11, 2026
+## [0.6.14] November 13, 2026
+
+### Fixed
+
+* Hager-Zhang line search is now more robust to step size underflow.
+* Hager-Zhang line search no longer loops infinitely when its bracket has non-finite endpoints;
+  it now terminates with the new `:bracketing_error` status, which `has_failed` reports as a failure.
+* `HagerZhangInitialGuess` falls back to the first-iteration guess `I0` when the last stepsize
+  is not a finite positive number, instead of returning `NaN`.
+
+## [0.6.13] November 12, 2026
 
 ### Added
 
