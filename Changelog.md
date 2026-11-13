@@ -6,7 +6,17 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.13] unreleased
+## [0.6.14] November 13, 2026
+
+### Fixed
+
+* Hager-Zhang line search is now more robust to step size underflow.
+* Hager-Zhang line search no longer loops infinitely when its bracket has non-finite endpoints;
+  it now terminates with the new `:bracketing_error` status, which `has_failed` reports as a failure.
+* `HagerZhangInitialGuess` falls back to the first-iteration guess `I0` when the last stepsize
+  is not a finite positive number, instead of returning `NaN`.
+
+## [0.6.13] November 12, 2026
 
 ### Added
 
