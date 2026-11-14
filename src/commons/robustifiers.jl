@@ -120,8 +120,13 @@ function get_robustifier_values(crf::ComponentwiseRobustifierFunction, x::Real)
     return get_robustifier_values(crf.robustifier, x)
 end
 function get_robustifier_values(crf::ComponentwiseRobustifierFunction, x::AbstractArray)
-    # turn the vector of tuples (per component) into a vector of tuples (per value/derivative)
-    return collect(zip([get_robustifier_values(crf, xi) for xi in x]...))
+    # turn the vector of tuples (per component) into a tuple of vectors (per value/derivative)
+    rvs = map(xi -> get_robustifier_values(crf, xi), x)
+    return (
+        map(xi -> xi[1], rvs),
+        map(xi -> xi[2], rvs),
+        map(xi -> xi[3], rvs),
+    )
 end
 
 """
