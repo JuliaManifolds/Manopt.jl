@@ -81,6 +81,12 @@ The following breaking changes all stem from deprecated features.
 * `trust_regions` no longer accepts the keyword `ρ_prime = `. Use its new name `acceptance_rate = ` instead.
 * the abstract type `AbstractSubProblemSolverState` has been removed, use the trait `has_sub_problem` instead.
 
+## [0.6.15] November 14, 2026
+
+### Fixed
+
+* `ComponentwiseRobustifierFunction` now compiles much faster for large vectors.
+
 ## [0.6.14] November 13, 2026
 
 ### Fixed
