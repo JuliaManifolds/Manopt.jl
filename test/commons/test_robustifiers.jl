@@ -16,7 +16,7 @@ using Manopt, Test
         cr = ComponentwiseRobustifierFunction(r)
         @test ComponentwiseRobustifierFunction(cr).robustifier === cr.robustifier
         x = [1.0, 2.0]
-        @test Manopt.get_robustifier_values(cr, x) == [Tuple(x), (1.0, 1.0), (0.0, 0.0)]
+        @test Manopt.get_robustifier_values(cr, x) == (x, [1.0, 1.0], [0.0, 0.0])
         @test Manopt.get_robustifier_values(cr, x[1]) == Manopt.get_robustifier_values(r, x[1])
     end
     @testset "Composed robustifier" begin
