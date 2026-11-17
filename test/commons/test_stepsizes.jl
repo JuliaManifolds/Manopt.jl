@@ -1071,6 +1071,24 @@ end
             @test Manopt.get_message(:bracketing_error, -1) == ""
             @test Manopt.get_message(:bracketing_error, 0) ==
                 "At the beginning: The line search bracket could not be narrowed any further, possibly due to non-finite values."
+
+            # a bracket [1e308, floatmax] has finite endpoints, but its midpoint overflows
+            # to Inf, so neither secant nor bisection steps can narrow it
+            M1 = Euclidean(1)
+            f_ovf(M, p) = p[1] < 1.5e308 ? -p[1] / 1.0e308 : 1.0
+            grad_f_ovf(M, p) = p[1] < 1.5e308 ? [-1.0e-308] : [1.0]
+            dmp_ovf = DefaultManoptProblem(M1, ManifoldGradientObjective(f_ovf, grad_f_ovf))
+            gs_ovf = GradientDescentState(M1; p = [0.0])
+            hzls_ovf = Manopt.HagerZhangLinesearchStepsize(
+                M1; initial_guess = Manopt.ConstantInitialGuess(1.0e308),
+                stepsize_limit = floatmax(Float64),
+            )
+            step_ovf = hzls_ovf(dmp_ovf, gs_ovf, 1, [1.0])
+            @test hzls_ovf.last_termination === :bracketing_error
+            @test Manopt.has_failed(hzls_ovf)
+            # the trial step with the smallest cost is returned
+            @test step_ovf == 1.0e308
+            @test hzls_ovf.last_evaluation_index == 3
         end
 
         @testset "Hager-Zhang bracketing limit" begin

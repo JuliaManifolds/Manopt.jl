@@ -3435,12 +3435,13 @@ function (hzls::HagerZhangLinesearchStepsize)(
     end
 
     # L0, bracket(c)
-    local i_a_j, i_b_j, f_eval, f_wolfe # COV_EXCL_LINE
     if isfinite(α0)
         (i_a_j, i_b_j, f_eval, f_wolfe, f_early_maxstep, f_no_bracket) = _hz_bracket(hzls, M, mp, p, η, α0, max_alpha)
         f_bracketing_error = false
     else
         # no bracket can be built from a non-finite trial step, for example a NaN initial guess
+        # the indices are not used since the main loop below is skipped
+        i_a_j, i_b_j = 1, 1
         f_eval, f_wolfe, f_early_maxstep, f_no_bracket = false, false, false, false
         f_bracketing_error = true
     end
