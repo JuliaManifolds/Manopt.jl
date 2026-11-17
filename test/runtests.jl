@@ -48,6 +48,7 @@ using Manifolds, ManifoldsBase, Manopt, Pkg, Test
         include("helpers/test_manifold_extra_functions.jl")
     end
     @testset "Solver Tests" begin
+        include("solvers/test_accepted_steps.jl")
         include("solvers/test_adaptive_regularization_with_cubics.jl")
         include("solvers/test_alternating_gradient.jl")
         include("solvers/test_augmented_lagrangian.jl")

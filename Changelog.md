@@ -6,6 +6,24 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.16] November 18, 2026
+
+### Added
+
+* function `has_accepted_step(state)` (default `true`) to indicate whether the last iteration of a solver accepted its step or rejected it and kept the iterate. It is implemented for `quasi_Newton` (a failed line search with `linesearch_failure_behavior=:restart`), `trust_regions`, `adaptive_regularization_with_cubics`, `LevenbergMarquardt`, `convex_bundle_method` and `proximal_bundle_method` (null steps), `gradient_sampling` and `mesh_adaptive_direct_search` (unsuccessful search and poll). The states of the trust region, Levenberg-Marquardt, bundle and gradient sampling methods have a new field `step_accepted` for this.
+* Hager-Zhang line search termination status `:bracketing_limit`, which `has_failed` reports as a failure, together with a corresponding message.
+
+### Changed
+
+* The default `max_bracket_iterations` of the Hager-Zhang line search is now `max_function_evaluations` (20 by default) instead of `10`, so that by default the expansion of the step size is only limited by the number of function evaluations.
+* The default `Δ` of the Hager-Zhang line search is now `0` instead of `0.7`, so that the estimate of the error in the cost is `ϵ |f(p_k)|` at the current iterate, as in Hager and Zhang (2005) and LineSearches.jl. With `Δ = 0.7`, the weighted average of the absolute values of the cost at the previous iterates overestimates this error by many orders of magnitude after a large decrease of the cost, so that the line search accepted steps that increased the cost far beyond its rounding errors.
+
+### Fixed
+
+* The stopping criteria `StopWhenChangeLess`, `StopWhenCostChangeLess`, `StopWhenGradientChangeLess` and `StopWhenRelativeAPosterioriCostChangeLessOrEqual` are only checked after an iteration that accepted its step, since their tests are not meaningful when the iterate was kept. Previously, for example `quasi_Newton` with `linesearch_failure_behavior=:restart` stopped at a rejected step, and `trust_regions` with `StopWhenChangeLess` at a rejected proposal. L-BFGS-B also checks its relative cost change only after accepted steps.
+* The Hager-Zhang line search in the `:adaptive` mode now switches to the approximate Wolfe conditions once the step of a successful line search changes the cost by at most `ω C_k`, as in condition V3 of Hager and Zhang (2006). Previously, the check compared the cost at the iterate with the cost returned by the previous line search, which is the same value, so that the approximate Wolfe conditions were used from the second line search on.
+* When the Hager-Zhang line search reaches `max_bracket_iterations` while the cost still decreases, it now terminates with `:bracketing_limit` and the trial step with the smallest cost. Previously, it spent its remaining function evaluations on secant and bisection steps between the last two trial steps, which do not bracket a minimum, so that none of these steps could satisfy the curvature condition.
+
 ## [0.6.15] November 14, 2026
 
 ### Fixed

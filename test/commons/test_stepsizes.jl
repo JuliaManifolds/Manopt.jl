@@ -576,6 +576,14 @@ end
             α_adapt = hzls_adapt(dmp, gs, 1, η)
             @test α_adapt > 0
             @test hzls_adapt.current_mode == :approximate
+            # V3: the mode only changes if the step changes the cost by at most ω C_k,
+            # here the cost decreases to 0, so the standard conditions are kept
+            hzls_v3 = Manopt.HagerZhangLinesearchStepsize(
+                M; initial_guess = Manopt.ConstantInitialGuess(0.5), max_function_evaluations = 5,
+            )
+            hzls_v3(dmp, gs, 1, η)
+            @test hzls_v3.last_cost < 1.0e-3 * f_sum_sq(M, get_iterate(gs))
+            @test hzls_v3.current_mode == :standard
 
             hzls_eval = Manopt.HagerZhangLinesearchStepsize(
                 M;
@@ -1065,6 +1073,61 @@ end
                 "At the beginning: The line search bracket could not be narrowed any further, possibly due to non-finite values."
         end
 
+        @testset "Hager-Zhang bracketing limit" begin
+            # a linear cost has no minimizer along the direction, so there is no bracket
+            M1 = Euclidean(1)
+            dmp1 = DefaultManoptProblem(M1, ManifoldGradientObjective((M, p) -> -p[1], (M, p) -> [-1.0]))
+            gs1 = GradientDescentState(M1; p = [0.0])
+            hzls_bl = Manopt.HagerZhangLinesearchStepsize(
+                M1; initial_guess = Manopt.ConstantInitialGuess(1.0), max_bracket_iterations = 3
+            )
+            step = hzls_bl(dmp1, gs1, 2, [1.0])
+            # no secant or bisection steps between the last two trial steps 5 and 25
+            @test hzls_bl.last_evaluation_index == 4
+            @test hzls_bl.last_termination === :bracketing_limit
+            @test Manopt.has_failed(hzls_bl)
+            # the trial step with the smallest cost
+            @test step == 25.0
+            @test hzls_bl.last_cost == -25.0
+            @test Manopt.get_message(hzls_bl) ==
+                "At iteration #2: Maximal number of bracketing iterations (3) reached while the cost was still decreasing. Continuing with the trial stepsize of 25.0."
+            @test Manopt.get_message(:bracketing_limit, -1) == ""
+            @test Manopt.get_message(:bracketing_limit, 0) ==
+                "At the beginning: Maximal number of bracketing iterations reached while the cost was still decreasing."
+            # by default, the expansion is only limited by the number of function evaluations
+            hzls_d = Manopt.HagerZhangLinesearchStepsize(M1; initial_guess = Manopt.ConstantInitialGuess(1.0))
+            @test hzls_d.max_bracket_iterations == 20
+            @test Manopt.HagerZhangLinesearchStepsize(M1; max_function_evaluations = 7).max_bracket_iterations == 7
+            step = hzls_d(dmp1, gs1, 2, [1.0])
+            @test hzls_d.last_termination === :evaluation_limit
+            @test hzls_d.last_evaluation_index == 20
+            @test step == 5.0^18
+            # a step size limit still ends the expansion early with a successful step
+            hzls_l = Manopt.HagerZhangLinesearchStepsize(
+                M1; initial_guess = Manopt.ConstantInitialGuess(1.0), max_bracket_iterations = 3,
+                stepsize_limit = 25.0,
+            )
+            @test hzls_l(dmp1, gs1, 2, [1.0]) == 25.0
+            @test hzls_l.last_termination === :max_stepsize
+            @test !Manopt.has_failed(hzls_l)
+            # a NaN cost while expanding is treated as an increase (B2) and not expanded
+            # further: the trial steps 1 and 5 do not satisfy the curvature condition for
+            # σ = 0.1, 25 has a NaN cost, and the minimizer 9 lies between 5 and 25
+            dmp_nan = DefaultManoptProblem(
+                M1, ManifoldGradientObjective(
+                    (M, p) -> p[1] > 10 ? NaN : (p[1] - 9)^2,
+                    (M, p) -> [p[1] > 10 ? NaN : 2 * (p[1] - 9)],
+                )
+            )
+            hzls_n = Manopt.HagerZhangLinesearchStepsize(
+                M1; initial_guess = Manopt.ConstantInitialGuess(1.0), σ = 0.1
+            )
+            step = hzls_n(dmp_nan, gs1, 2, [1.0])
+            @test hzls_n.last_termination === :wolfe
+            @test 5.0 < step <= 10.0
+            @test hzls_n.last_evaluation_index < 10
+        end
+
         @testset "Hager-Zhang without a usable last stepsize at k > 1" begin
             # a fresh line search has last_stepsize = NaN; the initial guess falls back to I0
             M2 = Euclidean(2)
@@ -1100,7 +1163,8 @@ end
             f_off(M, q) = 1.0e9 + (q[1] - 1)^2
             grad_f_off(M, q) = 2 .* (q .- 1)
             dmp_off = DefaultManoptProblem(M1, ManifoldGradientObjective(f_off, grad_f_off))
-            hzls = HagerZhangLinesearch()(M1)
+            # the weighted average of HagerZhang:2006:2 with their suggested Δ = 0.7
+            hzls = HagerZhangLinesearch(; Δ = 0.7)(M1)
             gs = GradientDescentState(M1; p = [0.0])
             hzls(dmp_off, gs, 1, [1.0])
             # C₀ = |f(p₀)|, ϵ₀ = ϵ C₀
@@ -1110,6 +1174,19 @@ end
             hzls(dmp_off, gs, 2, [1.0])
             @test hzls.Cₖ ≈ f_off(M1, [0.0]) + (f_off(M1, [0.5]) - f_off(M1, [0.0])) / (1 + hzls.Δ)
             @test hzls.ϵₖ == hzls.ϵ * hzls.Cₖ
+            # by default Δ = 0, so that Cₖ = |f(pₖ)| as in HagerZhang:2005
+            hzls0 = HagerZhangLinesearch()(M1)
+            @test hzls0.Δ == 0
+            gs.p .= [0.0]
+            @test hzls0.current_mode == :standard
+            hzls0(dmp_off, gs, 1, [1.0])
+            # the step changes the cost by at most 1, relative to 1e9, so the following
+            # line searches use the approximate Wolfe conditions (V3)
+            @test hzls0.current_mode == :approximate
+            gs.p .= [0.5]
+            hzls0(dmp_off, gs, 2, [1.0])
+            @test hzls0.Cₖ == f_off(M1, [0.5])
+            @test hzls0.ϵₖ == hzls0.ϵ * f_off(M1, [0.5])
         end
 
     end

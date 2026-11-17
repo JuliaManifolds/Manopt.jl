@@ -25,6 +25,8 @@ $(_fields(:inverse_retraction_method))
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `p_last_serious`:           last serious iterate
 $(_fields(:retraction_method))
+* `step_accepted`:            whether the last step was a serious step, which is accepted,
+  instead of a null step, see [`has_accepted_step`](@ref Manopt.has_accepted_step)
 $(_fields(:stopping_criterion; name = "stop"))
 * `transported_subgradients`: subgradients of the bundle that are transported to `p_last_serious`
 $(_fields(:vector_transport_method))
@@ -90,6 +92,7 @@ mutable struct ProximalBundleMethodState{
     λ::VR
     μ::R
     ν::R
+    step_accepted::Bool
     function ProximalBundleMethodState(
             M::TM, sub_problem::Pr, sub_state::St;
             bundle_size::Integer = 50,
@@ -140,11 +143,12 @@ mutable struct ProximalBundleMethodState{
             approx_errors, bundle, bundle_size, c, callbacks, d, inverse_retraction_method,
             lin_errors, m, p, p_last_serious, retraction_method, stopping_criterion,
             sub_problem, sub_state, transported_subgradients, vector_transport_method,
-            X, α, α₀, δ, ε, η, λ, μ, ν,
+            X, α, α₀, δ, ε, η, λ, μ, ν, true,
         )
     end
 end
 has_sub_problem(::Type{<:ProximalBundleMethodState}) = true
+has_accepted_step(pbms::ProximalBundleMethodState) = pbms.step_accepted
 ProximalBundleMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Proximal Bundle Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function ProximalBundleMethodState(
         M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType;
@@ -374,6 +378,7 @@ function initialize_solver!(
     push!(pbms.lin_errors, zero(R))
     empty!(pbms.approx_errors)
     push!(pbms.approx_errors, zero(R))
+    pbms.step_accepted = true
     return pbms
 end
 function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, k)
@@ -426,7 +431,9 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
     end
     f_p = get_cost(mp, pbms.p)
     f_last_serious = get_cost(mp, pbms.p_last_serious)
-    if f_p ≤ (f_last_serious + pbms.m * pbms.ν)
+    # a serious step accepts the candidate as the new iterate, a null step keeps the iterate
+    pbms.step_accepted = f_p ≤ (f_last_serious + pbms.m * pbms.ν)
+    if pbms.step_accepted
         copyto!(M, pbms.p_last_serious, pbms.p)
         if pbms.δ < zero(eltype(pbms.μ))
             pbms.μ = log(k + 1)

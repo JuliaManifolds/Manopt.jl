@@ -50,6 +50,8 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 * `q`:                                    a point for the candidate to evaluate the cost at
 $(_fields(:retraction_method))
 * `residual_values`:                       values of the residuals calculated in the solver setup or the previous iteration
+* `step_accepted`:                        whether the candidate of the last iteration was accepted,
+  see [`has_accepted_step`](@ref Manopt.has_accepted_step)
 $(_fields(:stopping_criterion; name = "stop"))
 $(_fields(:sub_problem))
 $(_fields(:sub_state))
@@ -108,6 +110,7 @@ mutable struct LevenbergMarquardtState{
     sub_problem::Pr
     sub_state::St
     X::T
+    step_accepted::Bool
     function LevenbergMarquardtState(
             sub_problem::Pr, sub_state::St;
             candidate_acceptance_threshold::R, damping_increase_factor::R, damping_increase_threshold::R,
@@ -120,7 +123,7 @@ mutable struct LevenbergMarquardtState{
             candidate_acceptance_threshold, damping_increase_factor, damping_increase_threshold,
             damping_reduction_threshold, damping_reduction_factor, damping_term, damping_term_min, damping_term_max,
             direction, callbacks, jacobian_matrices, minimum_acceptable_model_improvement, p, q, residual_values,
-            retraction_method, stopping_criterion, sub_problem, sub_state, X
+            retraction_method, stopping_criterion, sub_problem, sub_state, X, true
         )
     end
     function LevenbergMarquardtState(
@@ -497,6 +500,7 @@ function initialize_solver!(dmp::DefaultManoptProblem, lms::LevenbergMarquardtSt
         !isnothing(jb) && get_jacobian!(M, jb, o, lms.p)
     end
     get_gradient!(M, lms.X, nlso, lms.p; value_cache = lms.residual_values, jacobian_cache = jms)
+    lms.step_accepted = true
     return lms
 end
 
@@ -517,6 +521,7 @@ function step_solver!(
     # Subsolver result
     solve_LM_subproblem!(M, lms.direction, lms.p, lms.sub_problem, lms.sub_state, lms.X)
     callback(:Stepsize, dmp, lms, k)
+    lms.step_accepted = false
     #solve!(lms.sub_problem, lms.sub_state)
     #lms.direction .= -get_solver_result(lms.sub_problem, lms.sub_state)
     if norm(M, lms.p, lms.direction) > max_stepsize(M, lms.p)
@@ -555,6 +560,7 @@ function step_solver!(
         callback(:DampingIncreaseImprovementTooPoor, dmp, lms, k)
     end
     if ρ >= lms.candidate_acceptance_threshold # enough improvement: accept candidate
+        lms.step_accepted = true
         callback(:CandidateAccept, dmp, lms, k)
         copyto!(M, lms.p, lms.q)
         get_residuals!(M, lms.residual_values, nlso, lms.p)
@@ -606,3 +612,5 @@ function get_last_stepsize(dmp::DefaultManoptProblem, lms::LevenbergMarquardtSta
     M = get_manifold(dmp)
     return norm(M, lms.p, lms.direction)
 end
+
+has_accepted_step(lms::LevenbergMarquardtState) = lms.step_accepted
