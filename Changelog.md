@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* The default `max_bracket_iterations` of the Hager-Zhang line search is now `max_function_evaluations` (20 by default) instead of `10`, so that by default the expansion of the step size is only limited by the number of function evaluations.
+* The default `max_bracket_iterations` of the Hager-Zhang line search is now `max_function_evaluations` (20 by default) instead of `10`.
 * The default `Δ` of the Hager-Zhang line search is now `0` instead of `0.7`.
 
 ### Fixed
