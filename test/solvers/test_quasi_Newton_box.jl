@@ -574,10 +574,11 @@ using RecursiveArrayTools
     end
 
     @testset "Line searches are not limited before the bounds" begin
-        # Rosenbrock function with bounds active at the solution. While the line searches
-        # bounded the step length by the largest edge of the box (Wolfe-Powell) or by the
-        # largest distance of an element to its bounds (Hager-Zhang), they took 18 and 20
-        # iterations, respectively.
+        # Rosenbrock function with bounds active at the solution. While the initial guess of
+        # the Hager-Zhang line search was bounded by the largest distance of an element to its
+        # bounds, it took 20 iterations. The Wolfe-Powell line search is only bounded by the
+        # steps to the bounds with `max_stepsize = Inf`; its default `max_stepsize(M)`, the
+        # largest edge of the box, takes 18 iterations.
         n = 10
         M = Hyperrectangle(fill(-2.0, n), fill(0.8, n))
         f(M, x) = sum(100 * (x[i + 1] - x[i]^2)^2 + (1 - x[i])^2 for i in 1:2:n)
@@ -591,8 +592,8 @@ using RecursiveArrayTools
             return G
         end
         p0 = fill(-1.2, n)
-        for kwargs in ((;), (; stepsize = HagerZhangLinesearch()))
-            s = quasi_Newton(M, f, grad_f, p0; return_state = true, kwargs...)
+        for stepsize in (WolfePowellLinesearch(; max_stepsize = Inf), HagerZhangLinesearch())
+            s = quasi_Newton(M, f, grad_f, p0; stepsize = stepsize, return_state = true)
             @test get_count(get_state(s), :Iterations) <= 10
             @test isapprox(get_solver_result(s), repeat([0.8, 0.64], n ÷ 2); atol = 1.0e-6)
         end
