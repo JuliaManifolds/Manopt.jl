@@ -10,13 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* function `has_accepted_step(state)` (default `true`) to indicate whether the last iteration of a solver accepted its step or rejected it and kept the iterate. It is implemented for `quasi_Newton` (a failed line search with `linesearch_failure_behavior=:restart`), `trust_regions`, `adaptive_regularization_with_cubics`, `LevenbergMarquardt`, `convex_bundle_method` and `proximal_bundle_method` (null steps), `gradient_sampling` and `mesh_adaptive_direct_search` (unsuccessful search and poll). The states of the trust region, Levenberg-Marquardt, bundle and gradient sampling methods have a new field `step_accepted` for this.
+* function `has_accepted_step(state)` (default `true`) to indicate whether the last iteration of a solver accepted or rejected its step.
+  It is implemented for `quasi_Newton`, `trust_regions`, `adaptive_regularization_with_cubics`, `LevenbergMarquardt`, `convex_bundle_method`, `proximal_bundle_method`, `gradient_sampling`, and `mesh_adaptive_direct_search`. The states of the trust region, Levenberg-Marquardt, bundle and gradient sampling methods have a new field `step_accepted` for this.
 * Hager-Zhang line search termination status `:bracketing_limit`, which `has_failed` reports as a failure, together with a corresponding message.
 
 ### Changed
 
 * The default `max_bracket_iterations` of the Hager-Zhang line search is now `max_function_evaluations` (20 by default) instead of `10`, so that by default the expansion of the step size is only limited by the number of function evaluations.
-* The default `Δ` of the Hager-Zhang line search is now `0` instead of `0.7`, so that the estimate of the error in the cost is `ϵ |f(p_k)|` at the current iterate, as in Hager and Zhang (2005) and LineSearches.jl. With `Δ = 0.7`, the weighted average of the absolute values of the cost at the previous iterates overestimates this error by many orders of magnitude after a large decrease of the cost, so that the line search accepted steps that increased the cost far beyond its rounding errors.
+* The default `Δ` of the Hager-Zhang line search is now `0` instead of `0.7`.
 
 ### Fixed
 
