@@ -70,6 +70,7 @@ Manopt.default_point_distance(::Euclidean, ::Any)
 Manopt.default_vector_norm(::Euclidean, ::Any, ::Any)
 Manopt.max_stepsize(::FixedRankMatrices, ::Any)
 Manopt.max_stepsize(::Hyperrectangle, ::Any)
+Manopt.max_stepsize(::Hyperrectangle, ::Any, ::Any)
 Manopt.max_stepsize(::SymmetricPositiveDefinite, ::Any)
 Manopt.max_stepsize(::TangentBundle, ::Any)
 mid_point

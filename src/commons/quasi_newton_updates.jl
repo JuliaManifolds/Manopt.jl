@@ -1832,9 +1832,8 @@ function collect_isotropic_limits!(M::ProductManifold, F_list::Vector{<:Tuple{TF
     smallest_positive_limit = Inf
     map(M.manifolds, submanifold_components(M, p), submanifold_components(M, d)) do Mi, p_i, d_i
         if !has_anisotropic_max_stepsize(Mi)
-            max_step = Manopt.max_stepsize(Mi, p_i)
-            if isfinite(max_step)
-                tms = max_step / norm(Mi, p_i, d_i)
+            tms = Manopt.max_stepsize(Mi, p_i, d_i)
+            if isfinite(tms)
                 push!(F_list, (tms, -1))
                 has_finite_limit = true
                 if tms < smallest_positive_limit
@@ -1867,7 +1866,7 @@ The `status` can be one of the following:
 * `:found_limited` if the point was found and a step of length at most the returned
   `max_stepsize`, which is at least 1, can be performed in direction `d_out` afterwards,
 * `:found_unlimited` if the point was found and we can perform a step of length at most
-  `max_stepsize(M, p)` in direction `d_out` afterwards,
+  [`max_stepsize`](@ref)`(M, p, d_out)` in direction `d_out` afterwards,
 * `:not_found` if `d`, with the elements described above set to zero, is not a descent
   direction of the model, or vanishes. In this case `d_out` is set to the zero vector.
 """

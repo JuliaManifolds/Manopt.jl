@@ -479,7 +479,7 @@ calls_with_kwargs(::typeof(quasi_Newton!)) = (decorate_objective!, decorate_stat
 function _get_max_stepsize(M::AbstractManifold, qns::QuasiNewtonState)
     current_max_stepsize = get_parameter(qns.direction_update, Val(:max_stepsize))
     if !isnothing(current_max_stepsize) && !isfinite(current_max_stepsize)
-        return max_stepsize(M, qns.p) / norm(M, qns.p, qns.η)
+        return max_stepsize(M, qns.p, qns.η)
     else
         return current_max_stepsize
     end

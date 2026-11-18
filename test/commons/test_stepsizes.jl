@@ -1383,6 +1383,91 @@ end
             @test f(M, x) ≈ 1
         end
     end
+    @testset "Line searches on a box stay within the maximal step size in the direction" begin
+        # f(x) = ½‖x - c‖² on the box [0,1]^n, starting at the center p in the direction η, that
+        # meets the upper bounds at the step size 1. For c = 10 the minimizer along η lies far
+        # beyond the bounds and the slope at the bounds still points out of the box. Since the
+        # exponential retraction does not clamp to the box, every trial point the line searches
+        # evaluate shows whether they stayed within the feasible step sizes.
+        n = 100
+        M = Hyperrectangle(zeros(n), ones(n))
+        p = fill(0.5, n)
+        η = fill(0.5, n)
+        trials = Vector{Vector{Float64}}()
+        function box_problem(c)
+            f(M, x) = (push!(trials, copy(x)); sum(abs2, x .- c) / 2)
+            grad_f(M, x) = x .- c
+            return DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        end
+        in_box(q) = all(0 .<= q .<= 1)
+        gds = GradientDescentState(M; p = copy(p))
+        rm = ExponentialRetraction()
+        # the isotropic bound is far below the step size to the bounds
+        @test Manopt.max_stepsize(M, p) / norm(M, p, η) ≈ 0.1
+        @test Manopt.max_stepsize(M, p, η) == 1.0
+        @testset "Hager-Zhang" begin
+            # the step to the bounds fulfills the Wolfe conditions for c = 2 and is the first trial
+            mp2 = box_problem(2.0)
+            hz = Manopt.HagerZhangLinesearchStepsize(M; retraction_method = rm, initial_last_stepsize = 1.0)
+            empty!(trials)
+            @test hz(mp2, gds, 2, η) == 1.0
+            @test hz.last_termination === :wolfe
+            @test hz.last_evaluation_index == 2
+            @test all(in_box, trials)
+            # for c = 10 the curvature condition fails at the bounds, but the step is accepted
+            mp10 = box_problem(10.0)
+            hz = Manopt.HagerZhangLinesearchStepsize(M; retraction_method = rm, initial_last_stepsize = 1.0)
+            @test hz(mp10, gds, 2, η) == 1.0
+            @test hz.last_termination === :max_stepsize
+            @test !Manopt.has_failed(hz)
+            # the quadratic step I1 of the initial guess probes at ψ1 * 20 = 2 without the bound
+            hz = Manopt.HagerZhangLinesearchStepsize(M; retraction_method = rm, initial_last_stepsize = 20.0)
+            empty!(trials)
+            @test hz(mp10, gds, 2, η) == 1.0
+            @test all(in_box, trials)
+            # a constant initial guess and the bracketing are bounded as well
+            hz = Manopt.HagerZhangLinesearchStepsize(M; retraction_method = rm, initial_guess = Manopt.ConstantInitialGuess(5.0))
+            empty!(trials)
+            @test hz(mp10, gds, 2, η) == 1.0
+            @test all(in_box, trials)
+            # reaching the bound with the last allowed evaluation is still a successful step
+            hz = Manopt.HagerZhangLinesearchStepsize(
+                M; retraction_method = rm, initial_guess = Manopt.ConstantInitialGuess(0.2),
+                max_function_evaluations = 3,
+            )
+            @test hz(mp10, gds, 2, η) == 1.0
+            @test hz.last_evaluation_index == 3
+            @test hz.last_termination === :max_stepsize
+            @test !Manopt.has_failed(hz)
+        end
+        @testset "Wolfe-Powell" begin
+            mp10 = box_problem(10.0)
+            wp = Manopt.WolfePowellLinesearchStepsize(M; retraction_method = rm, initial_guess = Manopt.ConstantInitialGuess(5.0), max_stepsize = Inf)
+            empty!(trials)
+            @test wp(mp10, gds, 1, η) == 1.0
+            @test all(in_box, trials)
+            wpb = Manopt.WolfePowellBinaryLinesearchStepsize(M; retraction_method = rm, initial_guess = Manopt.ConstantInitialGuess(5.0))
+            empty!(trials)
+            @test wpb(mp10, gds, 1, η) == 1.0
+            @test all(in_box, trials)
+        end
+        @testset "Cubic bracketing" begin
+            mp10 = box_problem(10.0)
+            cbls = Manopt.CubicBracketingLinesearchStepsize(M; retraction_method = rm, initial_stepsize = 5.0, max_stepsize = Inf)
+            empty!(trials)
+            @test cbls(mp10, gds, 1, η) == 1.0
+            @test all(in_box, trials)
+        end
+        @testset "Armijo initial guess and backtracking" begin
+            mp10 = box_problem(10.0)
+            @test Manopt.ArmijoInitialGuess()(mp10, gds, 1, 5.0, η) == 1.0
+            f10 = Manopt.get_cost_function(get_objective(mp10))
+            @test Manopt.linesearch_backtrack(
+                M, f10, p, 5.0, 1.0e-4, 0.5, η; retraction_method = rm,
+                gradient = get_gradient(mp10, p),
+            ) == 1.0
+        end
+    end
     @testset "max_stepsize fallbacks" begin
         M = Manopt.Test.DummyManifold()
         @test isinf(Manopt.max_stepsize(M))

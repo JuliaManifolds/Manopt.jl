@@ -123,10 +123,9 @@ end
 
 Implement the initial guess for an Armijo line search.
 
-The initial step size is chosen as `min(l, max_stepsize(M, p) / norm(M, p, X))`,
-where `l` is the last step size used, `p` the current point and `X` the gradient at `p`.
-
-The default provided is based on the [`max_stepsize`](@ref)`(M, p)`.
+The initial step size is chosen as `min(l, max_stepsize(M, p, η))`,
+where `l` is the last step size used, `p` the current point and `η` the search direction,
+see [`max_stepsize`](@ref).
 
 # Constructor
 
@@ -138,11 +137,9 @@ function (::ArmijoInitialGuess)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, ::Int, l::Real, η; kwargs...
     )
     M = get_manifold(mp)
-    X = get_gradient(s)
     p = get_iterate(s)
-    grad_norm = norm(M, p, X)
-    max_step = max_stepsize(M, p)
-    return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
+    max_step = max_stepsize(M, p, η)
+    return ifelse(isfinite(max_step), min(l, max_step), l)
 end
 
 """
@@ -1345,7 +1342,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
     check_curvature(c::UnivariateTriple) = abs(c.df) < cbls.sufficient_curvature * abs(init.df)
 
     n_iter = 0
-    max_step = cbls.max_stepsize / norm(M, p, η)
+    max_step = min(cbls.max_stepsize / norm(M, p, η), max_stepsize(M, p, η))
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_step = min(max_step, kwargs[:stop_when_stepsize_exceeds])
     end
@@ -2254,7 +2251,7 @@ $(_fields(:vector_transport_method))
 
 * `sufficient_decrease=number_type(1e-4)`
 * `sufficient_curvature=number_type(0.999)`
-* `initial_guess=`[`ConstantInitialGuess`](@ref)`(number_type(1.0))`: the first trial step, clamped to `max_stepsize`
+* `initial_guess=`[`ConstantInitialGuess`](@ref)`(number_type(1.0))`: the first trial step, clamped to the maximal step size
 $(_kwargs(:p)) to store an interim result
 $(_kwargs(:X)) as type of memory allocated for the candidate direction
 $(_kwargs(:number_type; p = "p"))
@@ -2358,6 +2355,8 @@ function (a::WolfePowellLinesearchStepsize)(
         min(finite_step_limit, a.max_stepsize / grad_norm),
         finite_step_limit,
     )
+    # the bound in the search direction, for example up to the boundary of a box
+    max_step_increase = min(max_step_increase, oftype(max_step_increase, max_stepsize(M, p, η)))
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_step_increase = min(max_step_increase, kwargs[:stop_when_stepsize_exceeds])
     end
@@ -2516,7 +2515,7 @@ This is adopted from [NocedalWright:2006; Section 3.1](@cite)
 
 * `sufficient_decrease=number_type(1e-4)`
 * `sufficient_curvature=number_type(0.999)`
-* `initial_guess=`[`ConstantInitialGuess`](@ref)`(number_type(1.0))`: the first trial step, clamped to `max_stepsize`
+* `initial_guess=`[`ConstantInitialGuess`](@ref)`(number_type(1.0))`: the first trial step, clamped to the maximal step size
 $(_kwargs(:p)) as temporary storage for candidates
 $(_kwargs(:X)) as type of memory allocated for the candidate direction
 $(_kwargs(:number_type; p = "p"))
@@ -2558,7 +2557,7 @@ $(_fields(:vector_transport_method))
 
 * `sufficient_decrease=1e-4`
 * `sufficient_curvature=0.999`
-* `initial_guess=`[`ConstantInitialGuess`](@ref)`(1.0)`: the first trial step, clamped to the maximal step
+* `initial_guess=`[`ConstantInitialGuess`](@ref)`(1.0)`: the first trial step, clamped to the maximal step [`max_stepsize`](@ref)`(M, p, η)` in the search direction `η`
 $(_kwargs(:retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
 * `last_stepsize=0.0`: initial value of the stored last stepsize
@@ -2600,7 +2599,7 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
     )
     M = get_manifold(amp)
     p = get_iterate(ams)
-    max_step = max_stepsize(M, p) / norm(M, p, η)
+    max_step = max_stepsize(M, p, η)
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_step = min(max_step, kwargs[:stop_when_stepsize_exceeds])
     end
@@ -2703,7 +2702,7 @@ $(_doc_WPBL_algorithm)
 
 * `sufficient_decrease=1e-4`
 * `sufficient_curvature=0.999`
-* `initial_guess=`[`ConstantInitialGuess`](@ref)`(1.0)`: the first trial step, clamped to the maximal step
+* `initial_guess=`[`ConstantInitialGuess`](@ref)`(1.0)`: the first trial step, clamped to the maximal step [`max_stepsize`](@ref)`(M, p, η)` in the search direction `η`
 $(_kwargs(:retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
 * `last_stepsize=0.0`: initial value of the stored last stepsize
@@ -2748,6 +2747,10 @@ default_vector_norm(::DefaultManifold, p, X) = norm(X, Inf)
 Initial line search guess from the paper [HagerZhang:2006:2](@cite), following their
 initial-guess procedure `I0`. The line search was adapted to the Riemannian setting by
 introducing customizable norms for points and tangent vectors and a maximum stepsize `alphamax`.
+
+The guess, and the step at which step `I1` probes the cost, are bounded by `alphamax`,
+by [`max_stepsize`](@ref)`(M, p, η)` in the search direction `η` and by a
+`stop_when_stepsize_exceeds` keyword argument, if provided.
 
 # Fields
 
@@ -2817,7 +2820,7 @@ function (hzi::HagerZhangInitialGuess{TF})(
     p = get_iterate(s)
     abs_lf0 = abs(lf0)
 
-    alphamax = min(hzi.alphamax, max_stepsize(M, p) / norm(M, p, η))
+    alphamax = min(hzi.alphamax, max_stepsize(M, p, η))
 
     if :stop_when_stepsize_exceeds in keys(kwargs)
         alphamax = min(
@@ -2848,8 +2851,8 @@ function (hzi::HagerZhangInitialGuess{TF})(
         end
     else
         if hzi.quadstep
-            # attempt step I1
-            step_R = hzi.ψ1 * last_stepsize
+            # attempt step I1, probing the cost only at steps up to the maximal one
+            step_R = min(hzi.ψ1 * last_stepsize, alphamax)
             f_R = get_cost(mp, ManifoldsBase.retract_fused(M, p, η, step_R, retraction_method))
             # solving quadratic fit to the line given lf0, Dlf0 and cost at f_R
             q_b = Dlf0
@@ -3186,9 +3189,20 @@ function _hz_bracket(
     ls_no_bracket = false
     for j in 1:hzls.max_bracket_iterations
         c_index, f_eval, f_wolfe = _hz_evaluate_next_step(hzls, M, mp, p, η, current_step)
-        if f_eval || (f_wolfe && j >= hzls.start_enforcing_wolfe_conditions_at_bracketing_iteration)
+        if f_wolfe && j >= hzls.start_enforcing_wolfe_conditions_at_bracketing_iteration
             break
         end
+        # written like the conditions of B1 and B2 below, which both do not apply
+        if current_step == max_alpha && !(hzls.triples[c_index].df >= 0) &&
+                hzls.triples[c_index].f <= hzls.triples[1].f + hzls.ϵₖ
+            # we've reached maximum alpha with a negative slope and no increase of the cost,
+            # so we can't expand anymore; we handle this case after the loop.
+            # This is checked before the evaluation limit, since reaching the maximum alpha
+            # with the last evaluation does not make the step less acceptable.
+            ls_early_exit = hzls.allow_early_maxstep_termination
+            break
+        end
+        f_eval && break
         if hzls.triples[c_index].df >= 0
             # B1 -- detecting a positive slope
             # handled after the loop
@@ -3202,12 +3216,7 @@ function _hz_bracket(
                 (i_a_bar, i_b_bar, f_eval, f_wolfe) = _hz_u3(hzls, M, mp, p, η, 1, c_index)
                 return (i_a_bar, i_b_bar, f_eval, f_wolfe, false, false)
             else
-                if current_step == max_alpha
-                    # we've reached maximum alpha so we can't expand anymore
-                    # we handle this case after the loop
-                    ls_early_exit = hzls.allow_early_maxstep_termination
-                    break
-                end
+                # reaching the maximum alpha is handled above
                 if j == hzls.max_bracket_iterations
                     # The slope is still negative and the cost has not increased, since B1
                     # and B2 did not apply. The last two trial steps then do not bracket a
@@ -3417,8 +3426,8 @@ function (hzls::HagerZhangLinesearchStepsize)(
 
     # L0, initialization
 
-    # handle stepsize limit
-    max_alpha = hzls.stepsize_limit
+    # handle stepsize limit, including the maximal step in the search direction
+    max_alpha = min(hzls.stepsize_limit, convert(typeof(hzls.stepsize_limit), max_stepsize(M, p, η)))
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_alpha = min(
             kwargs[:stop_when_stepsize_exceeds],
@@ -3595,7 +3604,14 @@ The following changes were made to the original algorithm from the paper:
    during the bracketing phase with a negative slope and an improvement over the initial
    point. This implementation allows for an early termination in this case, which seems
    reasonable since we can't expand the bracket anymore and this point is likely close to
-   the minimum. By default this early termination is allowed, but it can be turned off via
+   the minimum. On a manifold with corners, the maximum stepsize can be the step to the
+   boundary, where the slope points out of the manifold; this step then minimizes the cost
+   along the feasible part of the search direction. The early termination also applies if
+   the maximal number of function evaluations is reached with this step. The maximum
+   stepsize is the minimum of `stepsize_limit`, [`max_stepsize`](@ref)`(M, p, η)` in the
+   search direction `η` and a `stop_when_stepsize_exceeds` keyword argument passed to the
+   line search, if provided.
+   By default this early termination is allowed, but it can be turned off via
    `allow_early_maxstep_termination` in which case the algorithm continues with the main
    loop even in this case.
 5. The bracketing phase of the paper expands the step until a bracket is found. Here it is
@@ -3617,7 +3633,7 @@ $(_kwargs(:vector_transport_method))
 * `initial_guess::AbstractInitialLinesearchGuess=HagerZhangInitialGuess()`: initial linesearch guess strategy
 * `initial_last_stepsize::Real = NaN`: initial value for the stored last stepsize
 * `initial_last_cost::Real = NaN`: initial value for the stored last cost
-* `stepsize_limit::Real = Inf`: upper bound for trial stepsizes during bracketing
+* `stepsize_limit::Real = Inf`: upper bound for trial stepsizes, see the remarks above for further bounds
 * `candidate_direction = zero_vector(M, candidate_point)`: storage for transported directions
 * `max_bracket_iterations::Int = max_function_evaluations`: maximum number of bracketing
   iterations, i.e. expansions of the trial step size, see the remarks above
