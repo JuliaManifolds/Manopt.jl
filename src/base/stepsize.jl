@@ -252,8 +252,11 @@ the boundary in the direction of `X`.
 """
 function max_stepsize(M::AbstractManifold, p, X)
     n = norm(M, p, X)
-    t = max_stepsize(M, p) / n
-    return iszero(n) ? oftype(t, Inf) : t
+    if iszero(n)
+        return oftype(n, Inf)
+    else
+        return max_stepsize(M, p) / n
+    end
 end
 function max_stepsize(M::ProductManifold, p, X)
     return min(
