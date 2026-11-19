@@ -995,5 +995,52 @@ end
             @test occursin("line search failure:     restart", Manopt.status_summary(qns))
             @test occursin("linesearch_failure_behavior = restart", repr(qns))
         end
+        @testset "change based stopping criteria are only checked after accepted steps" begin
+            mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            qns = QuasiNewtonState(
+                M; p = copy(p0), linesearch_failure_behavior = :restart,
+                stepsize = HagerZhangLinesearch(; max_function_evaluations = 3)(M),
+            )
+            cs = [
+                StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr = 0.0),
+                StopWhenCostChangeLess(1.0e-12),
+                StopWhenChangeLess(M, 1.0e-12),
+                StopWhenGradientChangeLess(M, 1.0e-12),
+            ]
+            initialize_solver!(mp, qns)
+            foreach(c -> c(mp, qns, 0), cs)
+            @test Manopt.has_accepted_step(qns)
+            k = 0
+            while qns.linesearch_status !== :failure_restarted && k < 50
+                k += 1
+                step_solver!(mp, qns, k)
+                (qns.linesearch_status === :failure_restarted) && break
+                foreach(c -> c(mp, qns, k), cs)
+            end
+            @test qns.linesearch_status === :failure_restarted
+            @test !Manopt.has_accepted_step(qns)
+            @test !Manopt.has_accepted_step(DebugSolverState(qns, DebugMessages(:Info, :Always)))
+            @test Manopt.has_accepted_step(GradientDescentState(M; p = copy(p0)))
+            @test all(c -> !c(mp, qns, k), cs)
+            # without the check, all of them would indicate to stop: the cost is the one
+            # of the last accepted iterate, which they keep,
+            @test get_cost(mp, qns) == cs[1].last_cost == cs[2].last_cost
+            # and the iterate and the gradient are the stored ones
+            # (only the reported cost of a successful line search would differ)
+            qns.linesearch_status = :success
+            @test cs[3](mp, qns, k) && cs[4](mp, qns, k)
+            qns.linesearch_status = :failure_after_restart
+            @test !Manopt.has_accepted_step(qns)
+            # a full run with the relative cost change criterion of L-BFGS-B, `factr = 0`,
+            # no longer stops at the first rejected step
+            sc = StopAfterIteration(200) | StopWhenRelativeAPosterioriCostChangeLessOrEqual(; factr = 0.0) |
+                StopWhenStuck()
+            st = quasi_Newton(
+                M, f, grad_f, p0;
+                stepsize = HagerZhangLinesearch(; max_function_evaluations = 3),
+                linesearch_failure_behavior = :restart, stopping_criterion = sc, return_state = true,
+            )
+            @test get_count(st, :Iterations) > k
+        end
     end
 end

@@ -123,10 +123,9 @@ end
 
 Implement the initial guess for an Armijo line search.
 
-The initial step size is chosen as `min(l, max_stepsize(M, p) / norm(M, p, X))`,
-where `l` is the last step size used, `p` the current point and `X` the gradient at `p`.
-
-The default provided is based on the [`max_stepsize`](@ref)`(M, p)`.
+The initial step size is chosen as `min(l, directional_max_stepsize(M, p, η))`,
+where `l` is the last step size used, `p` the current point and `η` the search direction,
+see [`directional_max_stepsize`](@ref).
 
 # Constructor
 
@@ -138,11 +137,9 @@ function (::ArmijoInitialGuess)(
         mp::AbstractManoptProblem, s::AbstractManoptSolverState, ::Int, l::Real, η; kwargs...
     )
     M = get_manifold(mp)
-    X = get_gradient(s)
     p = get_iterate(s)
-    grad_norm = norm(M, p, X)
-    max_step = max_stepsize(M, p)
-    return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
+    max_step = directional_max_stepsize(M, p, η)
+    return ifelse(isfinite(max_step), min(l, max_step), l)
 end
 
 """
@@ -254,6 +251,20 @@ function get_message(::Val{:evaluation_limit}, k::Int = -1, value::Real = NaN, b
     b_str = (bound < 0) ? "" : " ($bound)"
     v_str = isnan(value) ? "" : " Continuing with the last trial stepsize of $value."
     return "At $s: Maximal number of function evaluations$b_str reached without satisfying the Wolfe conditions.$v_str"
+end
+"""
+    get_message(:bracketing_limit, k::Int=-1, step::Real = NaN, bound::Int = -1)
+
+Display a message string for a line search that reached its maximal number of bracketing
+iterations `bound` at iteration `k` while the cost was still decreasing, so that no bracket
+was found, and the step size `step` used instead.
+"""
+function get_message(::Val{:bracketing_limit}, k::Int = -1, value::Real = NaN, bound::Int = -1)
+    (k < 0) && (return "")
+    s = (k == 0) ? "the beginning" : "iteration #$k"
+    b_str = (bound < 0) ? "" : " ($bound)"
+    v_str = isnan(value) ? "" : " Continuing with the trial stepsize of $value."
+    return "At $s: Maximal number of bracketing iterations$b_str reached while the cost was still decreasing.$v_str"
 end
 """
     get_message(:bracketing_error, k::Int=-1, step::Real = NaN)
@@ -1331,7 +1342,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
     check_curvature(c::UnivariateTriple) = abs(c.df) < cbls.sufficient_curvature * abs(init.df)
 
     n_iter = 0
-    max_step = cbls.max_stepsize / norm(M, p, η)
+    max_step = min(cbls.max_stepsize / norm(M, p, η), directional_max_stepsize(M, p, η))
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_step = min(max_step, kwargs[:stop_when_stepsize_exceeds])
     end
@@ -2240,7 +2251,7 @@ $(_fields(:vector_transport_method))
 
 * `sufficient_decrease=number_type(1e-4)`
 * `sufficient_curvature=number_type(0.999)`
-* `initial_guess=`[`ConstantInitialGuess`](@ref)`(number_type(1.0))`: the first trial step, clamped to `max_stepsize`
+* `initial_guess=`[`ConstantInitialGuess`](@ref)`(number_type(1.0))`: the first trial step, clamped to the maximal step size
 $(_kwargs(:p)) to store an interim result
 $(_kwargs(:X)) as type of memory allocated for the candidate direction
 $(_kwargs(:number_type; p = "p"))
@@ -2337,13 +2348,15 @@ function (a::WolfePowellLinesearchStepsize)(
     p = get_iterate(ams)
     l = isnothing(gradient) ? get_differential(mp, p, η) :
         get_differential(mp, p, η; gradient = gradient, evaluated = true)
-    grad_norm = norm(M, p, η)
+    direction_norm = norm(M, p, η)
     finite_step_limit = oftype(a.max_stepsize, 1.0e9)
     max_step_increase = ifelse(
         isfinite(a.max_stepsize),
-        min(finite_step_limit, a.max_stepsize / grad_norm),
+        min(finite_step_limit, a.max_stepsize / direction_norm),
         finite_step_limit,
     )
+    # the bound in the search direction, for example up to the boundary of a box
+    max_step_increase = min(max_step_increase, oftype(max_step_increase, directional_max_stepsize(M, p, η)))
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_step_increase = min(max_step_increase, kwargs[:stop_when_stepsize_exceeds])
     end
@@ -2502,7 +2515,7 @@ This is adopted from [NocedalWright:2006; Section 3.1](@cite)
 
 * `sufficient_decrease=number_type(1e-4)`
 * `sufficient_curvature=number_type(0.999)`
-* `initial_guess=`[`ConstantInitialGuess`](@ref)`(number_type(1.0))`: the first trial step, clamped to `max_stepsize`
+* `initial_guess=`[`ConstantInitialGuess`](@ref)`(number_type(1.0))`: the first trial step, clamped to the maximal step size
 $(_kwargs(:p)) as temporary storage for candidates
 $(_kwargs(:X)) as type of memory allocated for the candidate direction
 $(_kwargs(:number_type; p = "p"))
@@ -2544,7 +2557,7 @@ $(_fields(:vector_transport_method))
 
 * `sufficient_decrease=1e-4`
 * `sufficient_curvature=0.999`
-* `initial_guess=`[`ConstantInitialGuess`](@ref)`(1.0)`: the first trial step, clamped to the maximal step
+* `initial_guess=`[`ConstantInitialGuess`](@ref)`(1.0)`: the first trial step, clamped to the maximal step [`max_stepsize`](@ref)`(M, p, η)` in the search direction `η`
 $(_kwargs(:retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
 * `last_stepsize=0.0`: initial value of the stored last stepsize
@@ -2586,7 +2599,7 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
     )
     M = get_manifold(amp)
     p = get_iterate(ams)
-    max_step = max_stepsize(M, p) / norm(M, p, η)
+    max_step = directional_max_stepsize(M, p, η)
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_step = min(max_step, kwargs[:stop_when_stepsize_exceeds])
     end
@@ -2689,7 +2702,7 @@ $(_doc_WPBL_algorithm)
 
 * `sufficient_decrease=1e-4`
 * `sufficient_curvature=0.999`
-* `initial_guess=`[`ConstantInitialGuess`](@ref)`(1.0)`: the first trial step, clamped to the maximal step
+* `initial_guess=`[`ConstantInitialGuess`](@ref)`(1.0)`: the first trial step, clamped to the maximal step [`max_stepsize`](@ref)`(M, p, η)` in the search direction `η`
 $(_kwargs(:retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
 * `last_stepsize=0.0`: initial value of the stored last stepsize
@@ -2734,6 +2747,10 @@ default_vector_norm(::DefaultManifold, p, X) = norm(X, Inf)
 Initial line search guess from the paper [HagerZhang:2006:2](@cite), following their
 initial-guess procedure `I0`. The line search was adapted to the Riemannian setting by
 introducing customizable norms for points and tangent vectors and a maximum stepsize `alphamax`.
+
+The guess, and the step at which step `I1` probes the cost, are bounded by `alphamax`,
+by [`max_stepsize`](@ref)`(M, p, η)` in the search direction `η` and by a
+`stop_when_stepsize_exceeds` keyword argument, if provided.
 
 # Fields
 
@@ -2803,7 +2820,7 @@ function (hzi::HagerZhangInitialGuess{TF})(
     p = get_iterate(s)
     abs_lf0 = abs(lf0)
 
-    alphamax = min(hzi.alphamax, max_stepsize(M, p) / norm(M, p, η))
+    alphamax = min(hzi.alphamax, directional_max_stepsize(M, p, η))
 
     if :stop_when_stepsize_exceeds in keys(kwargs)
         alphamax = min(
@@ -2834,8 +2851,8 @@ function (hzi::HagerZhangInitialGuess{TF})(
         end
     else
         if hzi.quadstep
-            # attempt step I1
-            step_R = hzi.ψ1 * last_stepsize
+            # attempt step I1, probing the cost only at steps up to the maximal one
+            step_R = min(hzi.ψ1 * last_stepsize, alphamax)
             f_R = get_cost(mp, ManifoldsBase.retract_fused(M, p, η, step_R, retraction_method))
             # solving quadratic fit to the line given lf0, Dlf0 and cost at f_R
             q_b = Dlf0
@@ -2899,10 +2916,15 @@ $(_fields(:vector_transport_method))
   * `:bracketing_error` if the bracket could not be narrowed any further, for example because
     it has non-finite endpoints. As for `:evaluation_limit`, the returned step size is the
     trial step with the smallest cost and [`has_failed`](@ref Manopt.has_failed) returns `true`.
+  * `:bracketing_limit` if `max_bracket_iterations` was reached while the cost was still
+    decreasing with a negative slope, so that no bracket was found. As for `:evaluation_limit`,
+    the returned step size is the trial step with the smallest cost and
+    [`has_failed`](@ref Manopt.has_failed) returns `true`.
 * `messages::NamedTuple`: a named tuple of [`StepsizeMessage`](@ref)s about the last line search,
   reporting a non-descent direction (`:non_descent_direction`), an initial guess exceeding the
   step size limit (`:stepsize_exceeds`), reaching the maximal number of function evaluations
-  (`:evaluation_limit`) and a failure of the bracketing (`:bracketing_error`),
+  (`:evaluation_limit`), a failure of the bracketing (`:bracketing_error`) and reaching the
+  maximal number of bracketing iterations without a bracket (`:bracketing_limit`),
   see [`get_message`](@ref).
 
 # Constructor
@@ -2952,10 +2974,10 @@ mutable struct HagerZhangLinesearchStepsize{
     ϵₖ::TF
     last_termination::Symbol
     messages::NamedTuple{
-        (:non_descent_direction, :stepsize_exceeds, :evaluation_limit, :bracketing_error),
+        (:non_descent_direction, :stepsize_exceeds, :evaluation_limit, :bracketing_error, :bracketing_limit),
         Tuple{
             StepsizeMessage{TF, TF}, StepsizeMessage{TF, TF}, StepsizeMessage{Int, TF},
-            StepsizeMessage{TF, TF},
+            StepsizeMessage{TF, TF}, StepsizeMessage{Int, TF},
         },
     }
     function HagerZhangLinesearchStepsize(
@@ -2968,9 +2990,9 @@ mutable struct HagerZhangLinesearchStepsize{
             stepsize_limit::Real = Inf,
             candidate_point = allocate_result(M, rand),
             candidate_direction = zero_vector(M, candidate_point),
-            max_bracket_iterations::Int = 10,
-            start_enforcing_wolfe_conditions_at_bracketing_iteration::Int = initial_guess isa ConstantInitialGuess ? 2 : 1,
             max_function_evaluations::Int = 20,
+            max_bracket_iterations::Int = max_function_evaluations,
+            start_enforcing_wolfe_conditions_at_bracketing_iteration::Int = initial_guess isa ConstantInitialGuess ? 2 : 1,
             wolfe_condition_mode::Symbol = :adaptive,
             allow_early_maxstep_termination::Bool = true,
             ϵ::Real = 1.0e-6,
@@ -2980,7 +3002,7 @@ mutable struct HagerZhangLinesearchStepsize{
             θ::Real = 0.5,
             γ::Real = 0.66,
             ρ::Real = 5.0,
-            Δ::Real = 0.7,
+            Δ::Real = 0.0,
             secant_acceptance_ratio::Real = 1.0e-8,
         ) where {
             TIG <: AbstractInitialLinesearchGuess, TRM <: AbstractRetractionMethod,
@@ -3027,6 +3049,7 @@ mutable struct HagerZhangLinesearchStepsize{
             stepsize_exceeds = StepsizeMessage{TF, TF}(),
             evaluation_limit = StepsizeMessage{Int, TF}(),
             bracketing_error = StepsizeMessage{TF, TF}(),
+            bracketing_limit = StepsizeMessage{Int, TF}(),
         )
 
         return new{TF, TIG, TRM, TVTM, typeof(candidate_point), typeof(candidate_direction)}(
@@ -3145,12 +3168,15 @@ end
 Perform the bracketing phase of the Hager-Zhang linesearch starting from an initial
 stepsize `c` and not exceeding `max_alpha`.
 
-Returns a tuple `(i_a, i_b, f_eval, f_wolfe, f_early_maxstep)` where `i_a` and `i_b` are
-the indices in the stored function evaluations such that the minimum is bracketed between
-`triples[i_a].t` and `triples[i_b].t`. `f_eval` is `true` if the maximum number of function
+Returns a tuple `(i_a, i_b, f_eval, f_wolfe, f_early_maxstep, f_no_bracket)` where `i_a` and
+`i_b` are the indices in the stored function evaluations such that the minimum is bracketed
+between `triples[i_a].t` and `triples[i_b].t`. `f_eval` is `true` if the maximum number of function
 evaluations has been reached during the bracketing phase. `f_wolfe` is `true` if the Wolfe
 conditions have been satisfied. `f_early_maxstep` is `true` if the maximum stepsize was
 reached early with negative slope and an improvement over the initial point.
+`f_no_bracket` is `true` if `max_bracket_iterations` was reached without finding a bracket,
+that is, the last trial step still has a negative slope and no larger cost than the initial
+point. The indices `i_a` and `i_b` do not bracket a minimum in this case.
 """
 function _hz_bracket(
         hzls::HagerZhangLinesearchStepsize, M::AbstractManifold,
@@ -3160,26 +3186,45 @@ function _hz_bracket(
     current_step = c
     c_index, f_eval, f_wolfe = 1, false, false
     ls_early_exit = false
+    ls_no_bracket = false
     for j in 1:hzls.max_bracket_iterations
         c_index, f_eval, f_wolfe = _hz_evaluate_next_step(hzls, M, mp, p, η, current_step)
-        if f_eval || (f_wolfe && j >= hzls.start_enforcing_wolfe_conditions_at_bracketing_iteration)
+        if f_wolfe && j >= hzls.start_enforcing_wolfe_conditions_at_bracketing_iteration
             break
         end
+        # written like the conditions of B1 and B2 below, which both do not apply
+        if current_step == max_alpha && !(hzls.triples[c_index].df >= 0) &&
+                hzls.triples[c_index].f <= hzls.triples[1].f + hzls.ϵₖ
+            # we've reached maximum alpha with a negative slope and no increase of the cost,
+            # so we can't expand anymore; we handle this case after the loop.
+            # This is checked before the evaluation limit, since reaching the maximum alpha
+            # with the last evaluation does not make the step less acceptable.
+            ls_early_exit = hzls.allow_early_maxstep_termination
+            break
+        end
+        f_eval && break
         if hzls.triples[c_index].df >= 0
             # B1 -- detecting a positive slope
             # handled after the loop
             break
         else
-            if hzls.triples[c_index].f > hzls.triples[1].f + hzls.ϵₖ
+            # written like that to treat a NaN cost as larger, as in `_hz_update`, instead of
+            # expanding the bracket further
+            if !(hzls.triples[c_index].f <= hzls.triples[1].f + hzls.ϵₖ)
                 # B2 -- function value gets sufficiently larger than at 0
                 # perform main bracketing loop (we can skip U0-U2 checks here)
                 (i_a_bar, i_b_bar, f_eval, f_wolfe) = _hz_u3(hzls, M, mp, p, η, 1, c_index)
-                return (i_a_bar, i_b_bar, f_eval, f_wolfe, false)
+                return (i_a_bar, i_b_bar, f_eval, f_wolfe, false, false)
             else
-                if current_step == max_alpha
-                    # we've reached maximum alpha so we can't expand anymore
-                    # we handle this case after the loop
-                    ls_early_exit = hzls.allow_early_maxstep_termination
+                # reaching the maximum alpha is handled above
+                if j == hzls.max_bracket_iterations
+                    # The slope is still negative and the cost has not increased, since B1
+                    # and B2 did not apply. The last two trial steps then do not bracket a
+                    # minimum: narrowing the interval between them with secant and bisection
+                    # steps only approaches the last one, where the curvature condition is
+                    # not satisfied either. A trial step satisfying the Wolfe conditions
+                    # before they are enforced is still accepted.
+                    ls_no_bracket = !f_wolfe
                     break
                 end
                 # B3 -- widen the bracket
@@ -3196,7 +3241,7 @@ function _hz_bracket(
     if ls_early_exit
         # additional termination condition: we reached the maximum stepsize with negative
         # slope and an improvement over the initial point, so we can exit early with this step
-        return (1, c_index, f_eval, f_wolfe, true)
+        return (1, c_index, f_eval, f_wolfe, true, false)
     end
 
     i_min = 1
@@ -3205,7 +3250,7 @@ function _hz_bracket(
             i_min = i
         end
     end
-    return (i_min, c_index, f_eval, f_wolfe, false)
+    return (i_min, c_index, f_eval, f_wolfe, false, ls_no_bracket)
 end
 
 """
@@ -3379,17 +3424,10 @@ function (hzls::HagerZhangLinesearchStepsize)(
     # estimate of the error in the cost, Eq. (28) in HagerZhang:2006:2
     hzls.ϵₖ = hzls.ϵ * hzls.Cₖ
 
-    if hzls.wolfe_condition_mode == :adaptive
-        # Checking the V3 condition
-        if abs(hzls.last_cost - fp) <= hzls.ω * hzls.Cₖ
-            hzls.current_mode = :approximate
-        end
-    end
-
     # L0, initialization
 
-    # handle stepsize limit
-    max_alpha = hzls.stepsize_limit
+    # handle stepsize limit, including the maximal step in the search direction
+    max_alpha = min(hzls.stepsize_limit, convert(typeof(hzls.stepsize_limit), directional_max_stepsize(M, p, η)))
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_alpha = min(
             kwargs[:stop_when_stepsize_exceeds],
@@ -3406,10 +3444,18 @@ function (hzls::HagerZhangLinesearchStepsize)(
     end
 
     # L0, bracket(c)
-    local i_a_j, i_b_j, f_eval, f_wolfe # COV_EXCL_LINE
-    (i_a_j, i_b_j, f_eval, f_wolfe, f_early_maxstep) = _hz_bracket(hzls, M, mp, p, η, α0, max_alpha)
-    f_bracketing_error = false
-    !f_early_maxstep && while !(f_eval || f_wolfe)
+    if isfinite(α0)
+        (i_a_j, i_b_j, f_eval, f_wolfe, f_early_maxstep, f_no_bracket) = _hz_bracket(hzls, M, mp, p, η, α0, max_alpha)
+        f_bracketing_error = false
+    else
+        # no bracket can be built from a non-finite trial step, for example a NaN initial guess
+        # the indices are not used since the main loop below is skipped
+        i_a_j, i_b_j = 1, 1
+        f_eval, f_wolfe, f_early_maxstep, f_no_bracket = false, false, false, false
+        f_bracketing_error = true
+    end
+    # without a bracket, the secant and bisection steps cannot find an acceptable step
+    !(f_early_maxstep || f_no_bracket || f_bracketing_error) && while !(f_eval || f_wolfe)
         # L1
         finite_at_b = isfinite(hzls.triples[i_b_j].f)
         if finite_at_b
@@ -3453,6 +3499,8 @@ function (hzls::HagerZhangLinesearchStepsize)(
         :bracketing_error
     elseif f_wolfe
         :wolfe
+    elseif f_no_bracket
+        :bracketing_limit
     else
         :evaluation_limit
     end
@@ -3468,6 +3516,13 @@ function (hzls::HagerZhangLinesearchStepsize)(
     end
     hzls.last_stepsize = hzls.triples[i_return].t
     hzls.last_cost = hzls.triples[i_return].f
+    # V3 in HagerZhang:2006:2: once the cost changes by at most ω C_k between consecutive
+    # iterates, the following line searches use the approximate Wolfe conditions. The step of
+    # a failed line search is not considered, since the solver might reject it.
+    if hzls.wolfe_condition_mode === :adaptive && !has_failed(hzls) &&
+            abs(hzls.last_cost - hzls.triples[1].f) <= hzls.ω * hzls.Cₖ
+        hzls.current_mode = :approximate
+    end
     if hzls.last_termination === :evaluation_limit
         set_message!(
             hzls.messages, :evaluation_limit;
@@ -3475,13 +3530,19 @@ function (hzls::HagerZhangLinesearchStepsize)(
         )
     elseif hzls.last_termination === :bracketing_error
         set_message!(hzls.messages, :bracketing_error; at = k, value = hzls.last_stepsize)
+    elseif hzls.last_termination === :bracketing_limit
+        set_message!(
+            hzls.messages, :bracketing_limit;
+            at = k, bound = hzls.max_bracket_iterations, value = hzls.last_stepsize,
+        )
     end
     return hzls.last_stepsize
 end
 get_last_stepsize(hzls::HagerZhangLinesearchStepsize, ::Any...) = hzls.last_stepsize
 function has_failed(hzls::HagerZhangLinesearchStepsize)
     return hzls.last_termination === :evaluation_limit ||
-        hzls.last_termination === :bracketing_error
+        hzls.last_termination === :bracketing_error ||
+        hzls.last_termination === :bracketing_limit
 end
 function get_message(hzls::HagerZhangLinesearchStepsize)
     s = [get_message(kv[1], kv[2]) for kv in pairs(hzls.messages)]
@@ -3543,9 +3604,26 @@ The following changes were made to the original algorithm from the paper:
    during the bracketing phase with a negative slope and an improvement over the initial
    point. This implementation allows for an early termination in this case, which seems
    reasonable since we can't expand the bracket anymore and this point is likely close to
-   the minimum. By default this early termination is allowed, but it can be turned off via
+   the minimum. On a manifold with corners, the maximum stepsize can be the step to the
+   boundary, where the slope points out of the manifold; this step then minimizes the cost
+   along the feasible part of the search direction. The early termination also applies if
+   the maximal number of function evaluations is reached with this step. The maximum
+   stepsize is the minimum of `stepsize_limit`, [`max_stepsize`](@ref)`(M, p, η)` in the
+   search direction `η` and a `stop_when_stepsize_exceeds` keyword argument passed to the
+   line search, if provided.
+   By default this early termination is allowed, but it can be turned off via
    `allow_early_maxstep_termination` in which case the algorithm continues with the main
    loop even in this case.
+5. The bracketing phase of the paper expands the step until a bracket is found. Here it is
+   limited to `max_bracket_iterations` expansions. If the cost still decreases with a negative
+   slope at the last one, the line search terminates with the trial step with the smallest
+   cost and reports a failure, see [`has_failed`](@ref Manopt.has_failed). The last two trial
+   steps do not bracket a minimum, so secant and bisection steps between them cannot find
+   a step satisfying the curvature condition. By default, the limit is the number of
+   function evaluations, so that the expansion is only limited by `max_function_evaluations`.
+6. The estimate ``ϵ_k`` of the error in the cost is by default ``ϵ \\lvert f(p_k) \\rvert``, as in
+   [HagerZhang:2005](@cite), instead of the weighted average of the absolute values of the cost
+   at the previous iterates suggested in [HagerZhang:2006:2](@cite), which is available via `Δ`.
 
 ## Keyword arguments
 
@@ -3555,9 +3633,10 @@ $(_kwargs(:vector_transport_method))
 * `initial_guess::AbstractInitialLinesearchGuess=HagerZhangInitialGuess()`: initial linesearch guess strategy
 * `initial_last_stepsize::Real = NaN`: initial value for the stored last stepsize
 * `initial_last_cost::Real = NaN`: initial value for the stored last cost
-* `stepsize_limit::Real = Inf`: upper bound for trial stepsizes during bracketing
+* `stepsize_limit::Real = Inf`: upper bound for trial stepsizes, see the remarks above for further bounds
 * `candidate_direction = zero_vector(M, candidate_point)`: storage for transported directions
-* `max_bracket_iterations::Int = 10`: maximum number of bracketing iterations
+* `max_bracket_iterations::Int = max_function_evaluations`: maximum number of bracketing
+  iterations, i.e. expansions of the trial step size, see the remarks above
 * `start_enforcing_wolfe_conditions_at_bracketing_iteration::Int = initial_guess isa ConstantInitialGuess ? 2 : 1`:
   bracketing iteration number at which Wolfe conditions are started to be enforced;
   setting to 1 may cause no bracketing to occur when the initial guess satisfies the Wolfe
@@ -3570,18 +3649,26 @@ $(_kwargs(:vector_transport_method))
 * `ϵ::Real = 1.0e-6`: relative error in the cost. The cost may increase by at most
   ``ϵ_k = ϵ C_k`` in termination condition (T2) and is considered decreased in the bracketing
   and update rules if it increases by at most ``ϵ_k``, where ``C_k`` is the weighted average of
-  the absolute values of the cost at the previous iterates, see `Δ`. Allowed range: `ϵ >= 0`.
+  the absolute values of the cost at the current and the previous iterates, see `Δ`.
+  Allowed range: `ϵ >= 0`.
 * `δ::Real = 0.1`: parameter for approximate Wolfe condition.
   Allowed range: `0 < δ < 0.5` and `δ <= σ`.
 * `σ::Real = 0.9`: curvature condition parameter. Allowed range: `δ <= σ < 1`.
 * `ω::Real = 1.0e-3`: threshold for switching from the standard to the approximate Wolfe condition
-  in `:adaptive` mode, applied when the cost changes by at most ``ω C_k``. Allowed range: `0 <= ω <= 1`.
+  in `:adaptive` mode: once the step of a successful line search changes the cost by at most
+  ``ω C_k``, the following line searches use the approximate Wolfe condition.
+  Allowed range: `0 <= ω <= 1`.
 * `θ::Real = 0.5`: bisection update parameter. Allowed range: `0 < θ < 1`.
 * `γ::Real = 0.66`: determines when a bisection step is performed instead of secant.
   Allowed range: `0 < γ < 1`.
 * `ρ::Real = 5.0`: bracketing expansion factor. Allowed range: `ρ > 1`.
-* `Δ::Real = 0.7`: Parameter controlling the rate of change of Qₖ, i.e. the weights of
-  the average ``C_k`` of the absolute values of the cost.
+* `Δ::Real = 0.0`: Parameter controlling the rate of change of Qₖ, i.e. the weights of
+  the average ``C_k`` of the absolute values of the cost, see Eqs. (27) and (28) in
+  [HagerZhang:2006:2](@cite). For the default `Δ = 0`, ``C_k = \\lvert f(p_k) \\rvert``, as in
+  [HagerZhang:2005](@cite). For `Δ > 0`, the weights of the previous iterates decay like
+  ``Δ^j``, and [HagerZhang:2006:2](@cite) suggest `Δ = 0.7`. After a large decrease of the cost,
+  ``C_k`` then overestimates the error in the cost at ``p_k`` for many iterations, so that
+  steps that increase the cost far beyond its rounding errors are accepted.
   Allowed range: `0 <= Δ <= 1`.
 * `secant_acceptance_ratio::Real = 1.0e-8`: minimum relative interval length
   for accepting secant step. Allowed range: `secant_acceptance_ratio >= 0`.

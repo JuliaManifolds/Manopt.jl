@@ -573,6 +573,32 @@ using RecursiveArrayTools
         @test any(c -> c isa StopWhenGradientNormLess, QuasiNewtonState(Euclidean(2); p = [0.5, 0.5]).stop.criteria)
     end
 
+    @testset "Line searches are not limited before the bounds" begin
+        # Rosenbrock function with bounds active at the solution. While the initial guess of
+        # the Hager-Zhang line search was bounded by the largest distance of an element to its
+        # bounds, it took 20 iterations. The Wolfe-Powell line search is only bounded by the
+        # steps to the bounds with `max_stepsize = Inf`; its default `max_stepsize(M)`, the
+        # largest edge of the box, takes 18 iterations.
+        n = 10
+        M = Hyperrectangle(fill(-2.0, n), fill(0.8, n))
+        f(M, x) = sum(100 * (x[i + 1] - x[i]^2)^2 + (1 - x[i])^2 for i in 1:2:n)
+        function grad_f(M, x)
+            G = zero(x)
+            for i in 1:2:n
+                t = x[i + 1] - x[i]^2
+                G[i] = -400 * x[i] * t - 2 * (1 - x[i])
+                G[i + 1] = 200 * t
+            end
+            return G
+        end
+        p0 = fill(-1.2, n)
+        for stepsize in (WolfePowellLinesearch(; max_stepsize = Inf), HagerZhangLinesearch())
+            s = quasi_Newton(M, f, grad_f, p0; stepsize = stepsize, return_state = true)
+            @test get_count(get_state(s), :Iterations) <= 10
+            @test isapprox(get_solver_result(s), repeat([0.8, 0.64], n ÷ 2); atol = 1.0e-6)
+        end
+    end
+
     @testset "has_anisotropic_max_stepsize" begin
         @test !Manopt.has_anisotropic_max_stepsize(Sphere(2))
         @test Manopt.has_anisotropic_max_stepsize(Hyperrectangle([1], [2]))
@@ -630,6 +656,15 @@ using RecursiveArrayTools
             (:found_limited, 1.0)
         # the direction may not leave the isotropic maximal step size of the sphere factor
         @test norm(S2, p.x[2], d_out.x[2]) <= Manopt.max_stepsize(S2, p.x[2]) + 1.0e-12
+        # the limits are the maximal step sizes in the direction of the factors
+        F_list = Tuple{Float64, Int}[]
+        @test Manopt.collect_isotropic_limits!(M, F_list, p, d) == (true, π / 10)
+        @test F_list == [(π / 10, -1)]
+        # a factor that does not move does not limit the step size
+        empty!(F_list)
+        @test Manopt.collect_isotropic_limits!(M, F_list, p, ArrayPartition([-1.0], [0.0, 0.0, 0.0])) ==
+            (false, Inf)
+        @test isempty(F_list)
     end
 
     @testset "Sphere × Hyperrectangle" begin

@@ -542,6 +542,8 @@ function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSol
         c.at_iteration = -1
         c.last_change = Inf
     end
+    # after a rejected step, the iterate is the stored one and the test is not meaningful
+    (k > 0 && !has_accepted_step(s)) && return false
     if has_storage(c.storage, PointStorageKey(:Iterate))
         M = get_manifold(mp)
         p_old = get_storage(c.storage, PointStorageKey(:Iterate))
@@ -621,6 +623,9 @@ function (c::StopWhenCostChangeLess)(
         c.last_cost = Inf
         c.last_change = 2 * c.tolerance
     end
+    # after a rejected step, the iterate and its cost are the stored ones, and the test is
+    # not meaningful
+    (k > 0 && !has_accepted_step(state)) && return false
     c.last_change = c.last_cost
     c.last_cost = get_cost(problem, state)
     c.last_change = c.last_change - c.last_cost
@@ -1056,6 +1061,9 @@ function (c::StopWhenGradientChangeLess)(
     if k <= 0 # reset on init
         c.at_iteration = -1
     end
+    # after a rejected step, the iterate and its gradient are the stored ones, and the test
+    # is not meaningful
+    (k > 0 && !has_accepted_step(s)) && return false
     if has_storage(c.storage, PointStorageKey(:Iterate)) &&
             has_storage(c.storage, VectorStorageKey(:Gradient))
         p_old = get_storage(c.storage, PointStorageKey(:Iterate))
@@ -1507,6 +1515,30 @@ end
 _is_stuck(s::AbstractManoptSolverState, ::Val{true}) = is_stuck(s.state)
 _is_stuck(::AbstractManoptSolverState, ::Val{false}) = false
 
+@doc """
+    has_accepted_step(s::AbstractManoptSolverState)
+
+Return `true` if the solver with state `s` accepted the step of its last iteration, and
+`false` if it rejected the step, that is, it kept the iterate and continues from it.
+Examples of rejected steps are a failed line search of the [`quasi_Newton`](@ref) solver
+with `linesearch_failure_behavior=:restart`, or a trial point of a trust region method whose
+actual decrease of the cost is too small compared to the decrease of its model.
+
+Stopping criteria that compare consecutive iterates, like [`StopWhenChangeLess`](@ref),
+[`StopWhenCostChangeLess`](@ref), [`StopWhenGradientChangeLess`](@ref) and
+[`StopWhenRelativeAPosterioriCostChangeLessOrEqual`](@ref), are only checked after an
+iteration with an accepted step. After a rejected step, the iterate is the one they compare
+to, so their tests are not meaningful.
+
+This method takes into account that `s` might be decorated. By default, `true` is returned;
+solvers that can reject steps implement this function for their state.
+"""
+function has_accepted_step(s::AbstractManoptSolverState)
+    return _has_accepted_step(s, dispatch_state_decorator(s))
+end
+_has_accepted_step(s::AbstractManoptSolverState, ::Val{true}) = has_accepted_step(s.state)
+_has_accepted_step(::AbstractManoptSolverState, ::Val{false}) = true
+
 #
 #
 # ---
@@ -1736,6 +1768,9 @@ A stopping criterion to stop when
 
 based on Eq. (1) in [ZhuByrdLuNocedal:1997](@cite).
 The criterion is checked from the second iteration on, that is for `k > 1`.
+As in L-BFGS-B, it is only checked after an iteration that accepted its step, see
+[`has_accepted_step`](@ref Manopt.has_accepted_step); ``f_k`` then denotes the cost at the
+last accepted iterate.
 
 # Fields
 * `threshold`: the threshold `tol` in the above formula.
@@ -1771,6 +1806,10 @@ function (c::StopWhenRelativeAPosterioriCostChangeLessOrEqual)(
         c.last_cost = Inf
         c.last_change = 2 * c.threshold
     end
+    # As in L-BFGS-B, the test is only performed after an accepted step: after a rejected
+    # step, the iterate and its cost are the stored ones, and the test is not meaningful.
+    # `last_cost` is kept, so that the next accepted step is compared to the same cost.
+    (k > 0 && !has_accepted_step(state)) && return false
     current_cost = get_cost(problem, state)
     c.last_change = (c.last_cost - current_cost) / max(abs(c.last_cost), abs(current_cost), 1)
     c.last_cost = current_cost

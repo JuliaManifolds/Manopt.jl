@@ -513,6 +513,9 @@ function adaptive_regularization_with_cubics!(
     return get_solver_return(get_objective(dmp), darcs)
 end
 calls_with_kwargs(::typeof(adaptive_regularization_with_cubics!)) = (decorate_objective!, decorate_state!)
+# the candidate is accepted if the model was (very) successful, see `step_solver!`
+has_accepted_step(arcs::AdaptiveRegularizationState) = arcs.ρ >= arcs.η1
+
 function initialize_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationState)
     get_gradient!(dmp, arcs.X, arcs.p)
     return arcs

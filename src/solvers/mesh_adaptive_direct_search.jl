@@ -649,6 +649,12 @@ function mesh_adaptive_direct_search!(
 end
 calls_with_kwargs(::typeof(mesh_adaptive_direct_search!)) = (decorate_objective!, decorate_state!)
 
+# the iterate moves exactly if the search or, if it was not successful, the poll was
+# successful; otherwise only the mesh is refined, see `step_solver!`
+function has_accepted_step(madss::MeshAdaptiveDirectSearchState)
+    return is_successful(madss.search) || is_successful(madss.poll)
+end
+
 #
 #
 # Solver Implementation

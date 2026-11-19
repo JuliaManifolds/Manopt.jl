@@ -107,6 +107,8 @@ $(_fields(:inverse_retraction_method))
 $(_fields(:p; add_properties = [:as_Iterate]))
 * `p_last_serious::P`:         last serious iterate
 $(_fields(:retraction_method))
+* `step_accepted::Bool`:       whether the last step was a serious step, which is accepted,
+  instead of a null step, see [`has_accepted_step`](@ref Manopt.has_accepted_step)
 $(_fields(:stopping_criterion; name = "stop"))
 * `transported_subgradients`:  subgradients of the bundle that are transported to `p_last_serious`
 $(_fields(:vector_transport_method))
@@ -194,6 +196,7 @@ mutable struct ConvexBundleMethodState{
     λ::A
     ξ::R
     ϱ::R
+    step_accepted::Bool
     function ConvexBundleMethodState(
             M::TM, sub_problem::Pr, sub_state::St;
             atol_errors::Real = eps(), atol_λ::Real = eps(),
@@ -283,13 +286,14 @@ mutable struct ConvexBundleMethodState{
             inverse_retraction_method, k_max, k_min, last_stepsize,
             linearization_errors, m, null_stepsize, p, p_last_serious, retraction_method,
             stepsize, stopping_criterion, sub_problem, sub_state, transported_subgradients,
-            vector_transport_method, X, ε, λ, ξ, ϱ
+            vector_transport_method, X, ε, λ, ξ, ϱ, true
         )
     end
     # resolve an ambiguity
     ConvexBundleMethodState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Convex Bundle Method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 end
 has_sub_problem(::Type{<:ConvexBundleMethodState}) = true
+has_accepted_step(bms::ConvexBundleMethodState) = bms.step_accepted
 function ConvexBundleMethodState(
         M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType;
         kwargs...,
@@ -767,6 +771,7 @@ function initialize_solver!(
     push!(bms.transported_subgradients, zero_vector(M, bms.p))
     cf = get_parameter(bms.stepsize, :ContractionFactor)
     isnothing(cf) || (bms.contraction_factor = cf) # keep state and step size consistent
+    bms.step_accepted = true
     return bms
 end
 function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k)
@@ -791,8 +796,10 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
     else
         copyto!(M, bms.p, q)
     end
-    if get_cost(mp, bms.p) ≤
-            (get_cost(mp, bms.p_last_serious) + bms.last_stepsize * bms.m * bms.ξ)
+    # a serious step accepts the candidate as the new iterate, a null step keeps the iterate
+    bms.step_accepted = get_cost(mp, bms.p) ≤
+        (get_cost(mp, bms.p_last_serious) + bms.last_stepsize * bms.m * bms.ξ)
+    if bms.step_accepted
         copyto!(M, bms.p_last_serious, bms.p)
         get_subgradient!(mp, bms.X, bms.p)
     else

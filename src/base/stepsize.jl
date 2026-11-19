@@ -234,6 +234,48 @@ function max_stepsize(M::AbstractPowerManifold)
     return max_stepsize(M.manifold)
 end
 
+@doc """
+    max_stepsize(M::AbstractManifold, p, X)
+
+Get the maximum stepsize ``t`` for a step ``tX`` from `p` in the direction of the tangent
+vector `X` on manifold `M`, for example the largest factor `t` in a retraction
+`retract(M, p, X, t)` that a line search along `X` should try.
+
+By default, this is [`max_stepsize`](@ref)`(M, p) / norm(M, p, X)`, or `Inf` if `X` is zero.
+On product and power manifolds, each component is moved by its component of `X`, so this is
+the minimum of `max_stepsize` of the components in the direction of the corresponding
+components of `X`.
+Manifolds with an anisotropic maximum stepsize, see
+[`has_anisotropic_max_stepsize`](@ref Manopt.has_anisotropic_max_stepsize), like a
+[`Hyperrectangle`](@extref Manifolds.Hyperrectangle), implement the stepsize up to
+the boundary in the direction of `X`.
+"""
+function directional_max_stepsize(M::AbstractManifold, p, X)
+    n = norm(M, p, X)
+    if iszero(n)
+        return oftype(n, Inf)
+    else
+        return max_stepsize(M, p) / n
+    end
+end
+function directional_max_stepsize(M::ProductManifold, p, X)
+    return min(
+        map(
+            directional_max_stepsize, M.manifolds, submanifold_components(M, p),
+            submanifold_components(M, X),
+        )...,
+    )
+end
+function directional_max_stepsize(M::AbstractPowerManifold, p, X)
+    stepsize = real(float(number_eltype(X)))(Inf)
+    rep_size = representation_size(M.manifold)
+    for i in get_iterator(M)
+        cur_stepsize = directional_max_stepsize(M.manifold, _read(M, rep_size, p, i), _read(M, rep_size, X, i))
+        stepsize = min(cur_stepsize, stepsize)
+    end
+    return stepsize
+end
+
 
 """
     Linesearch <: Stepsize
@@ -305,7 +347,7 @@ $(_kwargs(:retraction_method))
 * `report_messages_in::NamedTuple = (; )`: a named tuple of [`StepsizeMessage`](@ref)s to report messages in.
   currently supported keywords are `:non_descent_direction`, `:stepsize_exceeds`, `:stepsize_less`, `:stop_increasing`, `:stop_decreasing`
 * `stop_when_stepsize_less::Real=0.0`: to avoid numerical underflow
-* `stop_when_stepsize_exceeds::Real=`[`max_stepsize`](@ref)`(M, p) / norm(M, p, η)`: to avoid leaving the injectivity radius on a manifold or exceeding boundaries on a manifold with corners
+* `stop_when_stepsize_exceeds::Real=`[`directional_max_stepsize`](@ref)`(M, p, η)`: to avoid leaving the injectivity radius on a manifold or exceeding boundaries on a manifold with corners
 * `stop_increasing_at_step=100`: stop the initial increase of step size after these many steps
 * `stop_decreasing_at_step=1000`: stop the decreasing search after these many steps
 
@@ -335,7 +377,7 @@ function linesearch_backtrack!(
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         additional_increase_condition = (M, p) -> true,
         additional_decrease_condition = (M, p) -> true,
-        stop_when_stepsize_less::Real = 0.0, stop_when_stepsize_exceeds::Real = max_stepsize(M, p) / norm(M, p, η),
+        stop_when_stepsize_less::Real = 0.0, stop_when_stepsize_exceeds::Real = directional_max_stepsize(M, p, η),
         stop_increasing_at_step = 100,
         stop_decreasing_at_step = 1000,
         report_messages_in::NamedTuple = (;),

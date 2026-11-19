@@ -110,6 +110,27 @@ function max_stepsize(M::Hyperrectangle, p)
     end # COV_EXCL_LINE
     return ms
 end
+"""
+    directional_max_stepsize(M::Hyperrectangle, p, X)
+
+The maximum stepsize from `p` in the direction `X` on the
+[`Hyperrectangle`](@extref Manifolds.Hyperrectangle) `M`, that is the largest ``t`` such that
+``p + tX`` lies in `M`, or `Inf` if `X` does not point towards any finite bound.
+
+Elements of `X` that point out of `M` at an index where `p` is already at the bound do not
+limit the stepsize: they are not part of the tangent cone at `p`, see `project`, and the
+default `ProjectionRetraction` keeps these elements at their bounds.
+"""
+function directional_max_stepsize(M::Hyperrectangle, p, X)
+    T = float(promote_type(eltype(M.lb), eltype(M.ub), eltype(p), eltype(X)))
+    t = T(Inf)
+    for i in eachindex(M.lb, M.ub, p, X)
+        t_i = Manopt.get_stepsize_bound(M, p, X, i)
+        # a nonpositive bound belongs to an element that cannot move further in direction X
+        (t_i > 0 && t_i < t) && (t = T(t_i))
+    end
+    return t
+end
 function max_stepsize(M::Hyperrectangle)
     ms = 0.0
     for i in eachindex(M.lb, M.ub)
