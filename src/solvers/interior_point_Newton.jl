@@ -38,7 +38,7 @@ function interior_point_initial_guess(
         mp::AbstractManoptProblem, ips::StepsizeState, ::Int, l::R, η; kwargs...
     ) where {R <: Real}
     N = get_manifold(mp)
-    max_step = max_stepsize(N, ips.p, η)
+    max_step = directional_max_stepsize(N, ips.p, η)
     return ifelse(isfinite(max_step), min(one(R), l, max_step), min(one(R), l))
 end
 

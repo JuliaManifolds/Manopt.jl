@@ -1404,7 +1404,7 @@ end
         rm = ExponentialRetraction()
         # the isotropic bound is far below the step size to the bounds
         @test Manopt.max_stepsize(M, p) / norm(M, p, η) ≈ 0.1
-        @test Manopt.max_stepsize(M, p, η) == 1.0
+        @test Manopt.directional_max_stepsize(M, p, η) == 1.0
         @testset "Hager-Zhang" begin
             # the step to the bounds fulfills the Wolfe conditions for c = 2 and is the first trial
             mp2 = box_problem(2.0)

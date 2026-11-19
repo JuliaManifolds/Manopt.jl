@@ -524,7 +524,7 @@ function step_solver!(
     lms.step_accepted = false
     #solve!(lms.sub_problem, lms.sub_state)
     #lms.direction .= -get_solver_result(lms.sub_problem, lms.sub_state)
-    if max_stepsize(M, lms.p, lms.direction) < 1
+    if directional_max_stepsize(M, lms.p, lms.direction) < 1
         # Vector too long:
         # we reject the step without evaluating the objective
         # and increase damping
