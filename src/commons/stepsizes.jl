@@ -123,9 +123,9 @@ end
 
 Implement the initial guess for an Armijo line search.
 
-The initial step size is chosen as `min(l, max_stepsize(M, p, η))`,
+The initial step size is chosen as `min(l, directional_max_stepsize(M, p, η))`,
 where `l` is the last step size used, `p` the current point and `η` the search direction,
-see [`max_stepsize`](@ref).
+see [`directional_max_stepsize`](@ref).
 
 # Constructor
 
@@ -138,7 +138,7 @@ function (::ArmijoInitialGuess)(
     )
     M = get_manifold(mp)
     p = get_iterate(s)
-    max_step = max_stepsize(M, p, η)
+    max_step = directional_max_stepsize(M, p, η)
     return ifelse(isfinite(max_step), min(l, max_step), l)
 end
 
@@ -1342,7 +1342,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
     check_curvature(c::UnivariateTriple) = abs(c.df) < cbls.sufficient_curvature * abs(init.df)
 
     n_iter = 0
-    max_step = min(cbls.max_stepsize / norm(M, p, η), max_stepsize(M, p, η))
+    max_step = min(cbls.max_stepsize / norm(M, p, η), directional_max_stepsize(M, p, η))
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_step = min(max_step, kwargs[:stop_when_stepsize_exceeds])
     end
@@ -2348,15 +2348,15 @@ function (a::WolfePowellLinesearchStepsize)(
     p = get_iterate(ams)
     l = isnothing(gradient) ? get_differential(mp, p, η) :
         get_differential(mp, p, η; gradient = gradient, evaluated = true)
-    grad_norm = norm(M, p, η)
+    direction_norm = norm(M, p, η)
     finite_step_limit = oftype(a.max_stepsize, 1.0e9)
     max_step_increase = ifelse(
         isfinite(a.max_stepsize),
-        min(finite_step_limit, a.max_stepsize / grad_norm),
+        min(finite_step_limit, a.max_stepsize / direction_norm),
         finite_step_limit,
     )
     # the bound in the search direction, for example up to the boundary of a box
-    max_step_increase = min(max_step_increase, oftype(max_step_increase, max_stepsize(M, p, η)))
+    max_step_increase = min(max_step_increase, oftype(max_step_increase, directional_max_stepsize(M, p, η)))
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_step_increase = min(max_step_increase, kwargs[:stop_when_stepsize_exceeds])
     end
@@ -2599,7 +2599,7 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
     )
     M = get_manifold(amp)
     p = get_iterate(ams)
-    max_step = max_stepsize(M, p, η)
+    max_step = directional_max_stepsize(M, p, η)
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_step = min(max_step, kwargs[:stop_when_stepsize_exceeds])
     end
@@ -2820,7 +2820,7 @@ function (hzi::HagerZhangInitialGuess{TF})(
     p = get_iterate(s)
     abs_lf0 = abs(lf0)
 
-    alphamax = min(hzi.alphamax, max_stepsize(M, p, η))
+    alphamax = min(hzi.alphamax, directional_max_stepsize(M, p, η))
 
     if :stop_when_stepsize_exceeds in keys(kwargs)
         alphamax = min(
@@ -3427,7 +3427,7 @@ function (hzls::HagerZhangLinesearchStepsize)(
     # L0, initialization
 
     # handle stepsize limit, including the maximal step in the search direction
-    max_alpha = min(hzls.stepsize_limit, convert(typeof(hzls.stepsize_limit), max_stepsize(M, p, η)))
+    max_alpha = min(hzls.stepsize_limit, convert(typeof(hzls.stepsize_limit), directional_max_stepsize(M, p, η)))
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_alpha = min(
             kwargs[:stop_when_stepsize_exceeds],

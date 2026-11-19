@@ -1832,7 +1832,7 @@ function collect_isotropic_limits!(M::ProductManifold, F_list::Vector{<:Tuple{TF
     smallest_positive_limit = Inf
     map(M.manifolds, submanifold_components(M, p), submanifold_components(M, d)) do Mi, p_i, d_i
         if !has_anisotropic_max_stepsize(Mi)
-            tms = Manopt.max_stepsize(Mi, p_i, d_i)
+            tms = directional_max_stepsize(Mi, p_i, d_i)
             if isfinite(tms)
                 push!(F_list, (tms, -1))
                 has_finite_limit = true

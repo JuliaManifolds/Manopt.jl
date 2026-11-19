@@ -13,14 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * function `has_accepted_step(state)` (default `true`) to indicate whether the last iteration of a solver accepted or rejected its step.
   It is implemented for `quasi_Newton`, `trust_regions`, `adaptive_regularization_with_cubics`, `LevenbergMarquardt`, `convex_bundle_method`, `proximal_bundle_method`, `gradient_sampling`, and `mesh_adaptive_direct_search`.
 * Hager-Zhang line search termination status `:bracketing_limit`, which `has_failed` reports as a failure, together with a corresponding message.
-* `max_stepsize(M, p, X)`, the maximal step size from `p` in the direction `X`.
+* `directional_max_stepsize(M, p, X)`, the maximal step size from `p` in the direction `X`.
 
 ### Changed
 
 * The default `max_bracket_iterations` of the Hager-Zhang line search is now `max_function_evaluations` (20 by default) instead of `10`.
 * The default `Δ` of the Hager-Zhang line search is now `0` instead of `0.7`.
-* `max_stepsize(M, p, η)` is now used by `HagerZhangInitialGuess`, `WolfePowellBinaryLinesearch`, `ArmijoInitialGuess`, the initial guess of `interior_point_Newton`, the isotropic limits of the generalized Cauchy direction, the default of `linesearch_backtrack` and `LevenbergMarquardt`.
-* The Hager-Zhang, Wolfe-Powell and cubic bracketing line searches bound all trial step sizes by `max_stepsize(M, p, η)`.
+* `directional_max_stepsize(M, p, η)` is now used by `HagerZhangInitialGuess`, `WolfePowellBinaryLinesearch`, `ArmijoInitialGuess`, the initial guess of `interior_point_Newton`, the isotropic limits of the generalized Cauchy direction, the default of `linesearch_backtrack` and `LevenbergMarquardt`.
+* The Hager-Zhang, Wolfe-Powell and cubic bracketing line searches bound all trial step sizes by `directional_max_stepsize(M, p, η)`.
 
 ### Fixed
 

@@ -97,14 +97,14 @@ using Manifolds, Manopt, Test, ManifoldsBase, RecursiveArrayTools
 
         # in a direction
         Y = [1.0, 0.0, 1.0]
-        @test Manopt.max_stepsize(M, p, Y) ≈ π / norm(Y)
-        @test Manopt.max_stepsize(M, p, X) == Inf
-        @test Manopt.max_stepsize(R3, p, Y) == Inf
+        @test Manopt.directional_max_stepsize(M, p, Y) ≈ π / norm(Y)
+        @test Manopt.directional_max_stepsize(M, p, X) == Inf
+        @test Manopt.directional_max_stepsize(R3, p, Y) == Inf
         # each component is moved by its component of the direction
-        @test Manopt.max_stepsize(S_R3, ArrayPartition(p, X), ArrayPartition(Y, [10.0, 0.0, 0.0])) ≈ π / norm(Y)
-        @test Manopt.max_stepsize(S_R3, ArrayPartition(p, X), ArrayPartition(X, Y)) == Inf
-        @test Manopt.max_stepsize(S_pow, [p, p, p], [Y, 2 .* Y, X]) ≈ π / (2 * norm(Y))
-        @test Manopt.max_stepsize(S_pow, [p, p, p], [X, X, X]) == Inf
+        @test Manopt.directional_max_stepsize(S_R3, ArrayPartition(p, X), ArrayPartition(Y, [10.0, 0.0, 0.0])) ≈ π / norm(Y)
+        @test Manopt.directional_max_stepsize(S_R3, ArrayPartition(p, X), ArrayPartition(X, Y)) == Inf
+        @test Manopt.directional_max_stepsize(S_pow, [p, p, p], [Y, 2 .* Y, X]) ≈ π / (2 * norm(Y))
+        @test Manopt.directional_max_stepsize(S_pow, [p, p, p], [X, X, X]) == Inf
 
         Mfr = FixedRankMatrices(5, 4, 2)
         pfr = SVDMPoint(
@@ -128,25 +128,25 @@ using Manifolds, Manopt, Test, ManifoldsBase, RecursiveArrayTools
         @test Manopt.max_stepsize(M, [-1, 0.5]) ≈ 4.0
         # in a direction: the step size up to the first bound met
         q = [-1.0, 0.5]
-        @test Manopt.max_stepsize(M, q, [1.0, 1.0]) ≈ 1.0
-        @test Manopt.max_stepsize(M, q, [-1.0, 0.0]) ≈ 2.0
-        @test Manopt.max_stepsize(M, q, [-1.0, -4.0]) ≈ 0.5
-        @test Manopt.max_stepsize(M, q, [0.0, 0.0]) == Inf
+        @test Manopt.directional_max_stepsize(M, q, [1.0, 1.0]) ≈ 1.0
+        @test Manopt.directional_max_stepsize(M, q, [-1.0, 0.0]) ≈ 2.0
+        @test Manopt.directional_max_stepsize(M, q, [-1.0, -4.0]) ≈ 0.5
+        @test Manopt.directional_max_stepsize(M, q, [0.0, 0.0]) == Inf
         # elements pointing out of the box at their bound do not limit the step
-        @test Manopt.max_stepsize(M, [3.0, 0.5], [1.0, -0.5]) ≈ 4.0
-        @test Manopt.max_stepsize(M, [3.0, 0.5], [1.0, 0.0]) == Inf
-        @test Manopt.max_stepsize(M, [3.0, 1.5], [-1.0, 0.0]) ≈ 6.0
+        @test Manopt.directional_max_stepsize(M, [3.0, 0.5], [1.0, -0.5]) ≈ 4.0
+        @test Manopt.directional_max_stepsize(M, [3.0, 0.5], [1.0, 0.0]) == Inf
+        @test Manopt.directional_max_stepsize(M, [3.0, 1.5], [-1.0, 0.0]) ≈ 6.0
         # infinite bounds
         Mh = Hyperrectangle([0.0, -Inf], [Inf, Inf])
         @test Manopt.max_stepsize(Mh) == Inf
-        @test Manopt.max_stepsize(Mh, [1.0, 0.0], [1.0, -1.0]) == Inf
-        @test Manopt.max_stepsize(Mh, [1.0, 0.0], [-0.5, 1.0]) ≈ 2.0
-        @test Manopt.max_stepsize(Hyperrectangle(Float32[0, 0], Float32[1, 1]), Float32[0.5, 0.5], Float32[1, 0]) isa Float32
+        @test Manopt.directional_max_stepsize(Mh, [1.0, 0.0], [1.0, -1.0]) == Inf
+        @test Manopt.directional_max_stepsize(Mh, [1.0, 0.0], [-0.5, 1.0]) ≈ 2.0
+        @test Manopt.directional_max_stepsize(Hyperrectangle(Float32[0, 0], Float32[1, 1]), Float32[0.5, 0.5], Float32[1, 0]) isa Float32
         # with a box component
         N = ProductManifold(M, Sphere(2))
-        @test Manopt.max_stepsize(N, ArrayPartition(q, p), ArrayPartition([0.1, 0.1], Y)) ≈ π / norm(Y)
-        @test Manopt.max_stepsize(N, ArrayPartition(q, p), ArrayPartition([1.0, 1.0], Y)) ≈ 1.0
-        @test Manopt.max_stepsize(N, ArrayPartition(q, p), ArrayPartition([0.0, 0.0], X)) == Inf
+        @test Manopt.directional_max_stepsize(N, ArrayPartition(q, p), ArrayPartition([0.1, 0.1], Y)) ≈ π / norm(Y)
+        @test Manopt.directional_max_stepsize(N, ArrayPartition(q, p), ArrayPartition([1.0, 1.0], Y)) ≈ 1.0
+        @test Manopt.directional_max_stepsize(N, ArrayPartition(q, p), ArrayPartition([0.0, 0.0], X)) == Inf
 
         M = ProbabilitySimplex(3)
         @test Manopt.max_stepsize(M) == 1.0

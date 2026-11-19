@@ -250,7 +250,7 @@ Manifolds with an anisotropic maximum stepsize, see
 [`Hyperrectangle`](@extref Manifolds.Hyperrectangle), implement the stepsize up to
 the boundary in the direction of `X`.
 """
-function max_stepsize(M::AbstractManifold, p, X)
+function directional_max_stepsize(M::AbstractManifold, p, X)
     n = norm(M, p, X)
     if iszero(n)
         return oftype(n, Inf)
@@ -258,19 +258,19 @@ function max_stepsize(M::AbstractManifold, p, X)
         return max_stepsize(M, p) / n
     end
 end
-function max_stepsize(M::ProductManifold, p, X)
+function directional_max_stepsize(M::ProductManifold, p, X)
     return min(
         map(
-            max_stepsize, M.manifolds, submanifold_components(M, p),
+            directional_max_stepsize, M.manifolds, submanifold_components(M, p),
             submanifold_components(M, X),
         )...,
     )
 end
-function max_stepsize(M::AbstractPowerManifold, p, X)
+function directional_max_stepsize(M::AbstractPowerManifold, p, X)
     stepsize = real(float(number_eltype(X)))(Inf)
     rep_size = representation_size(M.manifold)
     for i in get_iterator(M)
-        cur_stepsize = max_stepsize(M.manifold, _read(M, rep_size, p, i), _read(M, rep_size, X, i))
+        cur_stepsize = directional_max_stepsize(M.manifold, _read(M, rep_size, p, i), _read(M, rep_size, X, i))
         stepsize = min(cur_stepsize, stepsize)
     end
     return stepsize
@@ -347,7 +347,7 @@ $(_kwargs(:retraction_method))
 * `report_messages_in::NamedTuple = (; )`: a named tuple of [`StepsizeMessage`](@ref)s to report messages in.
   currently supported keywords are `:non_descent_direction`, `:stepsize_exceeds`, `:stepsize_less`, `:stop_increasing`, `:stop_decreasing`
 * `stop_when_stepsize_less::Real=0.0`: to avoid numerical underflow
-* `stop_when_stepsize_exceeds::Real=`[`max_stepsize`](@ref)`(M, p, η)`: to avoid leaving the injectivity radius on a manifold or exceeding boundaries on a manifold with corners
+* `stop_when_stepsize_exceeds::Real=`[`directional_max_stepsize`](@ref)`(M, p, η)`: to avoid leaving the injectivity radius on a manifold or exceeding boundaries on a manifold with corners
 * `stop_increasing_at_step=100`: stop the initial increase of step size after these many steps
 * `stop_decreasing_at_step=1000`: stop the decreasing search after these many steps
 
@@ -377,7 +377,7 @@ function linesearch_backtrack!(
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
         additional_increase_condition = (M, p) -> true,
         additional_decrease_condition = (M, p) -> true,
-        stop_when_stepsize_less::Real = 0.0, stop_when_stepsize_exceeds::Real = max_stepsize(M, p, η),
+        stop_when_stepsize_less::Real = 0.0, stop_when_stepsize_exceeds::Real = directional_max_stepsize(M, p, η),
         stop_increasing_at_step = 100,
         stop_decreasing_at_step = 1000,
         report_messages_in::NamedTuple = (;),
