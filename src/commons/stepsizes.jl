@@ -1099,7 +1099,7 @@ $(_fields(:retraction_method))
 * `sufficient_curvature::R`: target reduction of the curvature ``(0,1)``
 * `min_bracket_width::R`: minimal size of the bracket ``[a,b]``
 * `hybrid::Bool`: use the hybrid strategy
-* `max_stepsize::R`: maximal stepsize
+* `stop_when_stepsize_exceeds::R`: an upper bound as a safeguard for the stepsize
 * `last_failed::Bool`: whether the last line search stopped at its iteration limit or minimal
   bracket width without fulfilling the curvature condition, see [`has_failed`](@ref Manopt.has_failed)
 $(_fields(:vector_transport_method))
@@ -1122,7 +1122,7 @@ $(_kwargs(:retraction_method))
 * `sufficient_curvature=0.2`: target reduction of the curvature ``(0,1)``
 * `min_bracket_width=1e-4`: minimal size of the bracket ``[a,b]``
 * `hybrid=true`: use the hybrid strategy
-* `max_stepsize=max_stepsize(M)`: maximal stepsize
+* `stop_when_stepsize_exceeds=max_stepsize(M)`: stop when reaching this stepsize
 $(_kwargs(:vector_transport_method))
 """
 mutable struct CubicBracketingLinesearchStepsize{
@@ -1147,7 +1147,7 @@ mutable struct CubicBracketingLinesearchStepsize{
     min_bracket_width::R
     hybrid::Bool
     vector_transport_method::VTM
-    max_stepsize::R
+    stop_when_stepsize_exceeds::R
     last_failed::Bool
     function CubicBracketingLinesearchStepsize(
             M::AbstractManifold;
@@ -1163,16 +1163,16 @@ mutable struct CubicBracketingLinesearchStepsize{
             min_bracket_width::Real = 1.0e-4,
             hybrid::Bool = true,
             vector_transport_method::VTM = default_vector_transport_method(M, typeof(candidate_point)),
-            max_stepsize::Real = max_stepsize(M),
+            stop_when_stepsize_exceeds::Real = max_stepsize(M),
         ) where {I <: Integer, TRM, VTM, P, T, IG}
         # “Unify” the type of these bounds, since they share a type parameter
-        R = float(promote_type(typeof.((initial_stepsize, expansion_factor, sufficient_curvature, min_bracket_width, max_stepsize))...))
-        initial_stepsize, expansion_factor, sufficient_curvature, min_bracket_width, max_stepsize =
-            convert.(Ref(R), (initial_stepsize, expansion_factor, sufficient_curvature, min_bracket_width, max_stepsize))
+        R = float(promote_type(typeof.((initial_stepsize, expansion_factor, sufficient_curvature, min_bracket_width, stop_when_stepsize_exceeds))...))
+        initial_stepsize, expansion_factor, sufficient_curvature, min_bracket_width, stop_when_stepsize_exceeds =
+            convert.(Ref(R), (initial_stepsize, expansion_factor, sufficient_curvature, min_bracket_width, stop_when_stepsize_exceeds))
         p = maybe_wrap_variable(candidate_point)
         X = maybe_wrap_variable(candidate_direction)
         Y = maybe_wrap_variable(temporary_tangent)
-        return new{R, I, TRM, VTM, typeof(p), typeof(X), IG}(X, p, Y, initial_stepsize, initial_guess, initial_stepsize, retraction_method, expansion_factor, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, max_stepsize, false)
+        return new{R, I, TRM, VTM, typeof(p), typeof(X), IG}(X, p, Y, initial_stepsize, initial_guess, initial_stepsize, retraction_method, expansion_factor, max_iterations, sufficient_curvature, min_bracket_width, hybrid, vector_transport_method, stop_when_stepsize_exceeds, false)
     end
 end
 function CubicBracketingLinesearchStepsize(M::AbstractManifold, p; kwargs...)
@@ -1359,7 +1359,7 @@ function (cbls::CubicBracketingLinesearchStepsize)(
     check_curvature(c::UnivariateTriple) = abs(c.df) < cbls.sufficient_curvature * abs(init.df)
 
     n_iter = 0
-    max_step = min(cbls.max_stepsize / norm(M, p, η), directional_max_stepsize(M, p, η))
+    max_step = min(cbls.stop_when_stepsize_exceeds / norm(M, p, η), directional_max_stepsize(M, p, η))
     if :stop_when_stepsize_exceeds in keys(kwargs)
         max_step = min(max_step, kwargs[:stop_when_stepsize_exceeds])
     end
@@ -1437,7 +1437,7 @@ end
 function Base.show(io::IO, cbls::CubicBracketingLinesearchStepsize)
     return print(
         io,
-        "CubicBracketingLinesearch(; initial_stepsize = $(cbls.initial_stepsize),  initial_guess = $(cbls.initial_guess),  expansion_factor = $(cbls.expansion_factor),  sufficient_curvature = $(cbls.sufficient_curvature),  min_bracket_width = $(cbls.min_bracket_width),  hybrid = $(cbls.hybrid),  retraction_method = $(cbls.retraction_method),  vector_transport_method = $(cbls.vector_transport_method),  max_stepsize = $(cbls.max_stepsize))",
+        "CubicBracketingLinesearch(; initial_stepsize = $(cbls.initial_stepsize),  initial_guess = $(cbls.initial_guess),  expansion_factor = $(cbls.expansion_factor),  sufficient_curvature = $(cbls.sufficient_curvature),  min_bracket_width = $(cbls.min_bracket_width),  hybrid = $(cbls.hybrid),  retraction_method = $(cbls.retraction_method),  vector_transport_method = $(cbls.vector_transport_method),  stop_when_stepsize_exceeds = $(cbls.stop_when_stepsize_exceeds))",
     )
 end
 function status_summary(cbls::CubicBracketingLinesearchStepsize; context = :default)
@@ -1448,17 +1448,17 @@ function status_summary(cbls::CubicBracketingLinesearchStepsize; context = :defa
 
     ## Parameters
 
-    * hybrid:                    $(_MANOPT_INDENT)$(cbls.hybrid ? "true" : "false")
-    * initial stepsize:          $(_MANOPT_INDENT)$(cbls.initial_stepsize)
-    * initial guess:             $(_MANOPT_INDENT)$(cbls.initial_guess)
-    * last stepsize:             $(_MANOPT_INDENT)$(cbls.last_stepsize)
-    * minimal bracket width:     $(_MANOPT_INDENT)$(cbls.min_bracket_width)
-    * maximal iterations:        $(_MANOPT_INDENT)$(cbls.max_iterations)
-    * maximal stepsize:          $(_MANOPT_INDENT)$(cbls.max_stepsize)
-    * sufficient curvature:      $(_MANOPT_INDENT)$(cbls.sufficient_curvature)
-    * retraction method:         $(_MANOPT_INDENT)$(cbls.retraction_method)
-    * expansion factor:          $(_MANOPT_INDENT)$(cbls.expansion_factor)
-    * vector transport method:   $(_MANOPT_INDENT)$(cbls.vector_transport_method)
+    * hybrid:                     $(_MANOPT_INDENT)$(cbls.hybrid ? "true" : "false")
+    * initial stepsize:           $(_MANOPT_INDENT)$(cbls.initial_stepsize)
+    * initial guess:              $(_MANOPT_INDENT)$(cbls.initial_guess)
+    * last stepsize:              $(_MANOPT_INDENT)$(cbls.last_stepsize)
+    * minimal bracket width:      $(_MANOPT_INDENT)$(cbls.min_bracket_width)
+    * maximal iterations:         $(_MANOPT_INDENT)$(cbls.max_iterations)
+    * stop when stepsize exceeds: $(_MANOPT_INDENT)$(cbls.stop_when_stepsize_exceeds)
+    * sufficient curvature:       $(_MANOPT_INDENT)$(cbls.sufficient_curvature)
+    * retraction method:          $(_MANOPT_INDENT)$(cbls.retraction_method)
+    * expansion factor:           $(_MANOPT_INDENT)$(cbls.expansion_factor)
+    * vector transport method:    $(_MANOPT_INDENT)$(cbls.vector_transport_method)
     """
 end
 
@@ -1501,7 +1501,7 @@ $(_kwargs(:retraction_method))
 * `sufficient_curvature=0.2`: target reduction of the curvature ``(0,1)``
 * `min_bracket_width=1e-4`: minimal size of the bracket ``[a,b]``
 * `hybrid=true`: use the hybrid strategy
-* `max_stepsize=`[`max_stepsize`](@ref)`(M)`: maximal stepsize
+* `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M)`: stop when reaching this stepsize
 $(_kwargs(:vector_transport_method))
 
 $(_note(:ManifoldDefaultsFactory, "CubicBracketingLinesearchStepsize"))

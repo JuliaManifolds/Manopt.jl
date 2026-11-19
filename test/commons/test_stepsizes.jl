@@ -1457,7 +1457,7 @@ end
         end
         @testset "Cubic bracketing" begin
             mp10 = box_problem(10.0)
-            cbls = Manopt.CubicBracketingLinesearchStepsize(M; retraction_method = rm, initial_stepsize = 5.0, max_stepsize = Inf)
+            cbls = Manopt.CubicBracketingLinesearchStepsize(M; retraction_method = rm, initial_stepsize = 5.0, stop_when_stepsize_exceeds = Inf)
             empty!(trials)
             @test cbls(mp10, gds, 1, η) == 1.0
             @test all(in_box, trials)

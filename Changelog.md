@@ -59,6 +59,7 @@ The following keyword renames are breaking changes
 
 * `NonmonotoneLinesearchStepsize`: `stepsize_reduction` is now unified to `contraction_factor`
 * `CubicBracketingLinesearchStepsize`: `stepsize_increase` is now unified to `expansion_factor`
+* `CubicBracketingLinesearchStepsize`: `max_stepsize` is now unified to `stop_when_stepsize_exceeds`
 * `WolfePowellLinesearchStepsize`: `max_stepsize` is now unified to `stop_when_stepsize_exceeds`, defaulting to `max_stepsize(M)` or `1e9` when that is infinite
 * `primal_dual_semismooth_Newton`: `reg_param` is now unified to `regularization_parameter`, the name of the state keyword
 * `LevenbergMarquardtState`: `damping_term` is now unified to `initial_damping_term`, the name of the solver keyword
