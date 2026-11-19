@@ -25,6 +25,8 @@ $(_fields(:stopping_criterion; name = "stop"))
 * `ρ_regularization`:        regularize the model fitness ``ρ`` to avoid division by zero
 $(_fields([:sub_problem, :sub_state]))
 * `σ`:                       Gaussian standard deviation when creating the random initial tangent vector
+* `step_accepted`:           whether the proposal of the last iteration was accepted,
+  see [`has_accepted_step`](@ref Manopt.has_accepted_step)
   Defaults to `0` unless `randomize` is set; a value of `0` disables the randomized (Cauchy point) mode.
 * `τ`:                       the scaling factor of the Cauchy point step (only used in the randomized mode)
 * `trust_region_radius`: the trust-region radius
@@ -102,6 +104,7 @@ mutable struct TrustRegionsState{
     Y::T
     HY::T
     τ::R
+    step_accepted::Bool
     function TrustRegionsState(
             sub_problem::Pr, sub_state::St;
             callbacks::C = Dict{Symbol, Function}(),
@@ -139,6 +142,7 @@ mutable struct TrustRegionsState{
         trs.augmentation_factor = augmentation_factor
         trs.project! = project!
         trs.σ = σ
+        trs.step_accepted = true
         !isnothing(HX) && (trs.HX = HX)
         !isnothing(Y) && (trs.Y = Y)
         !isnothing(HY) && (trs.HY = HY)
@@ -147,6 +151,7 @@ mutable struct TrustRegionsState{
     end
 end
 has_sub_problem(::Type{<:TrustRegionsState}) = true
+has_accepted_step(trs::TrustRegionsState) = trs.step_accepted
 TrustRegionsState(M::AbstractManifold, st::AbstractManoptSolverState; kwargs...) = error("Trust region method state can not be constructed based on $M and the sub state $st, a sub_problem is missing")
 function TrustRegionsState(
         M::AbstractManifold, sub_problem::Pr, sub_state::St;
@@ -538,6 +543,7 @@ function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     trs.Y = zero_vector(M, trs.p)
     trs.HY = zero_vector(M, trs.p)
     trs.p_proposal = deepcopy(trs.p)
+    trs.step_accepted = true
     if trs.σ > 0 #only init if necessary
         trs.τ = zero(trs.trust_region_radius)
         trs.HX = zero_vector(M, trs.p)
@@ -646,7 +652,8 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
         )
     end
     # (c) decreased and performed well enough -> accept step
-    if model_decreased && (ρ > trs.acceptance_rate)
+    trs.step_accepted = model_decreased && (ρ > trs.acceptance_rate)
+    if trs.step_accepted
         copyto!(M, trs.p, trs.p_proposal)
         # If working with approximate Hessian -> update base point there
         update_hessian_basis!(M, get_hessian_function(mho, true), trs.p)

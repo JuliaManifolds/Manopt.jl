@@ -49,6 +49,7 @@ $(_fields(:p; add_properties = [:as_Iterate]))
 * `sampling_radius_reduction` factor ``θ_ϵ`` to reduce the sampling radius when rejecting a step
 * `subgradient_norm_reduction` factor ``θ_δ`` to reduce the subgradient norm tolerance when rejecting a step
 * `subgradient_norm_tolerance` bound ``δ_k`` to reject too small gradient vector solutions from the sub problem
+* `step_accepted` whether the last iteration accepted its step, see [`has_accepted_step`](@ref Manopt.has_accepted_step)
 $(_fields(:stopping_criterion; name = "stop"))
 $(_fields([:stepsize, :sub_problem, :sub_state, :retraction_method, :vector_transport_method]))
 $(_fields(:X; add_properties = [:as_Gradient]))
@@ -109,6 +110,7 @@ mutable struct GradientSamplingState{
     vector_transport_method::VTM
     X::T
     Y::T
+    step_accepted::Bool
     function GradientSamplingState(;
             callbacks::C = Dict{Symbol, Function}(),
             p::P, convex_hull_coeffs::A,
@@ -131,11 +133,12 @@ mutable struct GradientSamplingState{
             sampled_points, sampled_vectors, sampling_radius, sampling_radius_reduction,
             stepsize, stopping_criterion, subgradient_norm_reduction, subgradient_norm_tolerance,
             sub_problem, sub_state, vector_transport_method,
-            X, Y,
+            X, Y, true,
         )
     end
 end
 has_sub_problem(::Type{<:GradientSamplingState}) = true
+has_accepted_step(gss::GradientSamplingState) = gss.step_accepted
 function GradientSamplingState(
         M::AbstractManifold, sub_problem, sub_state::AbstractEvaluationType; kwargs...
     )
@@ -407,6 +410,7 @@ calls_with_kwargs(::typeof(gradient_sampling!)) = (decorate_objective!, decorate
 function initialize_solver!(mp::AbstractManoptProblem, gss::GradientSamplingState)
     get_gradient!(mp, gss.X, gss.p)
     initialize_stepsize!(gss.stepsize)
+    gss.step_accepted = true
     return gss
 end
 
@@ -443,7 +447,8 @@ function step_solver!(mp::AbstractManoptProblem, gss::GradientSamplingState, k)
         gss.Y .+= λj * Xj
     end
     # Decide whether to accept the step or update radius
-    if norm(M, gss.p, gss.Y) < gss.subgradient_norm_tolerance
+    gss.step_accepted = !(norm(M, gss.p, gss.Y) < gss.subgradient_norm_tolerance)
+    if !gss.step_accepted
         # do not accept this step but decrease radius and tolerance
         gss.sampling_radius *= gss.sampling_radius_reduction
         gss.subgradient_norm_tolerance *= gss.subgradient_norm_reduction

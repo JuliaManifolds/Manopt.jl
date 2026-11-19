@@ -46,4 +46,5 @@ get_active_stopping_criteria
 get_reason
 requires_update
 Manopt.is_stuck
+Manopt.has_accepted_step
 ```

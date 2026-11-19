@@ -223,6 +223,11 @@ end
 # the line search failed although the direction update held no curvature information,
 # which can only happen for `linesearch_failure_behavior=:restart`
 is_stuck(qns::QuasiNewtonState) = qns.linesearch_status === :failure_after_restart
+# for `linesearch_failure_behavior=:restart`, a failed line search keeps the iterate
+function has_accepted_step(qns::QuasiNewtonState)
+    return qns.linesearch_status !== :failure_restarted &&
+        qns.linesearch_status !== :failure_after_restart
+end
 
 function default_stepsize(M::AbstractManifold, ::Type{QuasiNewtonState}; p = rand(M), kwargs...)
     R = real(float(number_eltype(p)))
@@ -473,7 +478,7 @@ calls_with_kwargs(::typeof(quasi_Newton!)) = (decorate_objective!, decorate_stat
 function _get_max_stepsize(M::AbstractManifold, qns::QuasiNewtonState)
     current_max_stepsize = get_parameter(qns.direction_update, Val(:max_stepsize))
     if !isnothing(current_max_stepsize) && !isfinite(current_max_stepsize)
-        return max_stepsize(M, qns.p) / norm(M, qns.p, qns.η)
+        return directional_max_stepsize(M, qns.p, qns.η)
     else
         return current_max_stepsize
     end

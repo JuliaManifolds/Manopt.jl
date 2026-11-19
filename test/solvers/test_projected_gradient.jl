@@ -77,6 +77,7 @@ using Manifolds, Manopt, Random, Test
         return_state = true,
     )
     @test isapprox(M, mean_pg_1, mean_pg_3)
+    @test get_gradient(st) === st.X
     @test startswith(
         Manopt.status_summary(st; context = :default),
         "# Solver state for `Manopt.jl`s Projected Gradient Method\n"

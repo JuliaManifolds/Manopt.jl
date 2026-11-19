@@ -536,6 +536,20 @@ using ManifoldDiff, Manifolds, Manopt, Test, RecursiveArrayTools
         @test !isempty(hits) # the branch under test was actually taken
         @test s.damping_term == 5.0e-6 # without the clamp this would be 1.0e-5
     end
+    @testset "feasible steps on a box are not rejected as too long" begin
+        # The Gauss-Newton step towards (2, 2) is trimmed to the corner of the box. Its length
+        # 1/√2 exceeds max_stepsize(Mb, p) = 1/2, the largest distance of an element of p to
+        # its bounds, which rejected the step while this bound was used.
+        Mb = Manifolds.Hyperrectangle(zeros(2), ones(2))
+        Fb(M, p) = p .- 2.0
+        JFb(M, p) = [1.0 0.0; 0.0 1.0]
+        hits = Int[]
+        cb(sym, prob, st, k) = (sym === :DampingIncreaseStepTooLong && push!(hits, k))
+        s = LevenbergMarquardt(Mb, Fb, JFb, [0.5, 0.5], 2; callbacks = cb, return_state = true)
+        @test isempty(hits)
+        @test get_solver_result(s) ≈ [1.0, 1.0]
+        @test get_count(get_state(s), :Iterations) <= 2
+    end
     @testset "a surrogate built on its own receives residuals and Jacobians" begin
         Me = Euclidean(2)
         ts = [0.0, 1.0, 2.0]
