@@ -1605,6 +1605,20 @@ end
             α = wpls(dmp, gs, 1, η; stop_when_stepsize_exceeds = 30.0)
             @test 25 ≤ α ≤ 27.5
             @test !Manopt.has_failed(wpls)
+            # along η = 1 the cost -t jumps to 1 at t = 1/3, so the sufficient decrease condition
+            # holds exactly on [0, 1/3], where the curvature condition never holds. Without
+            # a minimal interval width the bisection runs until the interval collapses to
+            # two adjacent floats around 1/3.
+            M1 = Euclidean(1)
+            f1(M, p) = p[1] <= 1 / 3 ? -p[1] : 1.0
+            grad_f1(M, p) = p[1] <= 1 / 3 ? [-1.0] : [0.0]
+            dmp1 = DefaultManoptProblem(M1, ManifoldGradientObjective(f1, grad_f1))
+            gs1 = GradientDescentState(M1; p = [0.0], X = [-1.0])
+            wpls = WolfePowellLinesearch(; stop_when_stepsize_less = 0.0)(M1)
+            α = wpls(dmp1, gs1, 1, [1.0])
+            @test α ≤ 1 / 3 < nextfloat(α)
+            @test wpls.messages[:stepsize_less].at_iteration < 0
+            @test Manopt.has_failed(wpls)
         end
         @testset "WolfePowellBinary" begin
             wpb = WolfePowellBinaryLinesearch(; stop_when_stepsize_less = 1.0e-3)(M)
