@@ -193,6 +193,8 @@ import Manifolds: inner
         p5c = difference_of_convex_proximal_point(
             M, grad_h, p0; g = g, grad_g = grad_g, sub_hess = missing,
             stopping_criterion = StopAfterIteration(10), # is not that stable
+            # 1e-8 asks for cost changes below double precision, which stalls the Armijo search
+            sub_stopping_criterion = StopAfterIteration(300) | StopWhenGradientNormLess(1.0e-7),
         )
         # also providing the cost – usually only useful for e.g. debug
         p5d = difference_of_convex_proximal_point(M, f, grad_h, p0; g = g, grad_g = grad_g)
@@ -229,7 +231,8 @@ import Manifolds: inner
 
         # using GD - only very imprecise
         p9 = difference_of_convex_algorithm(
-            M, f, g, grad_h, p0; grad_g = grad_g, sub_hess = missing
+            M, f, g, grad_h, p0; grad_g = grad_g, sub_hess = missing,
+            sub_stopping_criterion = StopAfterIteration(300) | StopWhenGradientNormLess(1.0e-7),
         )
         @test isapprox(M, p9, p2; atol = 1.0e-7)
 

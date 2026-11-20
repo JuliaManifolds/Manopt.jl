@@ -40,7 +40,6 @@ Construct a debug decorated state, where `dD` can be
 * an `Array` of [`DebugAction`](@ref)s.
 * a `Dict{Symbol,DebugAction}`.
 * an `Array` of `Symbol`s, `String`s and an `Int` for the [`DebugFactory`](@ref).
-* a `Function` used as a callback, which is passed to the [`DebugFactory`](@ref).
 """
 mutable struct DebugSolverState{S <: AbstractManoptSolverState} <: AbstractManoptSolverState
     state::S
@@ -68,11 +67,6 @@ function DebugSolverState(
         st::S, format::Array{<:Any, 1}
     ) where {S <: AbstractManoptSolverState}
     return DebugSolverState{S}(st, DebugFactory(format))
-end
-function DebugSolverState( # a function: callback
-        st::S, callback::Function,
-    ) where {S <: AbstractManoptSolverState}
-    return DebugSolverState{S}(st, DebugFactory([callback]))
 end
 
 """

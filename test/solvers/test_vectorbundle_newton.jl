@@ -235,6 +235,13 @@ using LinearAlgebra: eigvals
         @test !Manopt.indicates_convergence(stop_st3)
         summary = Manopt.status_summary(st3.stop)
         @test contains(summary, "Stop when _one_ of the following is fulfilled:")
+        # the state builds the same default stopping criterion when it is constructed directly
+        vbns_acs = VectorBundleNewtonState(
+            M, TangentBundle(M), y0, solve_augmented_system, AllocatingEvaluation();
+            stepsize = AffineCovariantStepsize(M; θ_des = 0.25, stop_when_stepsize_less = 1.0e-4),
+            stop_when_newton_direction_norm_less = 1.0e-5,
+        )
+        @test repr(vbns_acs.stop) == "StopWhenAny([StopAfterIteration(1000), StopWhenStepsizeLess(0.0001), StopWhenNewtonDirectionNormLess(1.0e-5)])"
 
         stop = StopWhenNewtonDirectionNormLess(1.0e-8)
         @test length(get_reason(stop)) == 0

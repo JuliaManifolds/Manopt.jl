@@ -163,7 +163,7 @@ where `evaluation` determines how to call the sub function.
 * `ρ_regularization=1e3`
 $(_kwargs([:evaluation, :p, :retraction_method]))
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)"))
 $(_kwargs(:X))
 """
 mutable struct AdaptiveRegularizationState{
@@ -209,7 +209,8 @@ function AdaptiveRegularizationState(
         M::AbstractManifold, sub_problem::Pr, sub_state::St;
         p::P = rand(M), X::T = zero_vector(M, p), σ::Real = 100.0 / sqrt(manifold_dimension(M)),
         callbacks::C = Dict{Symbol, Function}(),
-        ρ_regularization::Real = 1.0e3, stopping_criterion::SC = StopAfterIteration(100),
+        ρ_regularization::Real = 1.0e3,
+        stopping_criterion::SC = StopAfterIteration(40) | StopWhenGradientNormLess(1.0e-9),
         retraction_method::RTM = default_retraction_method(M, typeof(p)),
         σmin::Real = 1.0e-10, η1::Real = 0.1, η2::Real = 0.9, γ1::Real = 0.1, γ2::Real = 2.0,
     ) where {

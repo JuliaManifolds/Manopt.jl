@@ -65,8 +65,8 @@ $(_fields(:X; add_properties = [:as_Gradient]))
 $(_kwargs(:p))
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `order_type::Symbol=:Linear`
-* `order::Vector{<:Int}=Int[]`
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)"))
+* `order::Vector{<:Int}=Int[]`: the order of the components; an empty vector is filled with `1:n` for the `n` components when the solver starts
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(100)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`default_stepsize`](@ref)`(M, AlternatingGradientDescentState; retraction_method=retraction_method)"))
 $(_kwargs(:X))
@@ -100,7 +100,7 @@ mutable struct AlternatingGradientDescentState{
             inner_iterations::Int = 5,
             order_type::Symbol = :Linear, order::Vector{<:Int} = Int[],
             retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-            stopping_criterion::StoppingCriterion = StopAfterIteration(1000),
+            stopping_criterion::StoppingCriterion = StopAfterIteration(100) | StopWhenGradientNormLess(1.0e-9),
             stepsize::Stepsize = default_stepsize(
                 M, AlternatingGradientDescentState; retraction_method = retraction_method
             ),
@@ -302,6 +302,7 @@ function initialize_solver!(
     )
     agds.k = 1
     agds.i = 1
+    isempty(agds.order) && (agds.order = collect(1:length(get_manifold(amp).manifolds)))
     get_gradient!(amp, agds.X, agds.p)
     (agds.order_type == :FixedRandom || agds.order_type == :Random) &&
         (shuffle!(agds.order))

@@ -29,7 +29,7 @@ $(_kwargs(:callbacks; add_properties = [:as_dict]))
   a per cycle newly permuted sequence (`:Random`), or the default `:Linear` order.
 * `λ=k -> 1.0 / k`: a function to compute ``λ_k`` for ``k ∈ ℕ``,
 $(_kwargs(:p; add_properties = [:as_Initial]))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(2000)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)"))
 
 # See also
 
@@ -55,7 +55,7 @@ function CyclicProximalPointState(
         callbacks::C = Dict{Symbol, Function}(),
         evaluation_order::Symbol = :Linear,
         p::P = rand(M),
-        stopping_criterion::S = StopAfterIteration(2000),
+        stopping_criterion::S = StopAfterIteration(5000) | StopWhenChangeLess(M, 1.0e-12),
         λ::F = (k) -> 1.0 / k,
     ) where {P, C <: AbstractDict{Symbol}, S, F}
     (evaluation_order in (:Linear, :FixedRandom, :Random)) || throw(

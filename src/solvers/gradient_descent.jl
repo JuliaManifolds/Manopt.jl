@@ -142,6 +142,9 @@ perform the gradient descent algorithm
 $(_doc_gd_iterate)
 The algorithm can be performed in-place of `p`.
 
+For more details see for example [Boumal:2023; Section 4.3](@cite) or [AbsilMahonySepulchre:2008; Chapter 4](@cite) and
+
+
 # Input
 
 $(_args([:M, :f, :grad_f, :p]))
