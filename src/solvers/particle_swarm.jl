@@ -42,7 +42,7 @@ $(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `inertia=0.65`
 $(_kwargs([:inverse_retraction_method, :retraction_method]))
 * `social_weight=1.4`
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenSwarmVelocityLess`](@ref)`(1e-4)"))
 $(_kwargs(:vector_transport_method))
 
 # See also
@@ -99,7 +99,7 @@ mutable struct ParticleSwarmState{
             M::AbstractManifold, swarm::VP, velocity::VT;
             callbacks::C = Dict{Symbol, Function}(),
             inertia::Real = 0.65, social_weight::Real = 1.4, cognitive_weight::Real = 1.4,
-            stopping_criterion::SCT = StopAfterIteration(500) | StopWhenChangeLess(M, 1.0e-4),
+            stopping_criterion::SCT = StopAfterIteration(500) | StopWhenSwarmVelocityLess(1.0e-4),
             retraction_method::RTM = default_retraction_method(M, eltype(swarm)),
             inverse_retraction_method::IRM = default_inverse_retraction_method(M, eltype(swarm)),
             vector_transport_method::VTM = default_vector_transport_method(M, eltype(swarm)),

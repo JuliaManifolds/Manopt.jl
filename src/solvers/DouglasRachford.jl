@@ -40,7 +40,7 @@ $(_kwargs(:p; add_properties = [:as_Initial]))
   the prox of `p`, which always works in-place.
 * `reflection_evaluation=`[`InplaceEvaluation`](@ref)`()`: specify whether the reflection works in-place (default) or allocating
 $(_kwargs(:retraction_method))
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-5)"))
 * `parallel=false`: indicate whether to use a parallel Douglas-Rachford or not.
 """
 mutable struct DouglasRachfordState{
@@ -63,7 +63,7 @@ mutable struct DouglasRachfordState{
             callbacks::C = Dict{Symbol, Function}(),
             reflection_evaluation::E = InplaceEvaluation(),
             R!::FR = Manopt.reflect!,
-            stopping_criterion::S = StopAfterIteration(300),
+            stopping_criterion::S = StopAfterIteration(200) | StopWhenChangeLess(M, 1.0e-5),
             parallel = false,
             retraction_method::TM = default_retraction_method(M, typeof(p)),
             inverse_retraction_method::ITM = default_inverse_retraction_method(M, typeof(p)),

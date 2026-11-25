@@ -49,10 +49,10 @@ Generate the Quasi Newton state on the manifold `M`.
 
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), memory_size; vector_transport_method=vector_transport_method, initial_scale=initial_scale)`
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`, where [`StopWhenProjectedNegativeGradientNormLess`](@ref)`(1e-6)` replaces the gradient norm criterion on manifolds with box constraints, see [`has_anisotropic_max_stepsize`](@ref Manopt.has_anisotropic_max_stepsize)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`, where [`StopWhenProjectedNegativeGradientNormLess`](@ref)`(1e-6)` replaces the gradient norm criterion on manifolds with box constraints, see [`has_anisotropic_max_stepsize`](@ref Manopt.has_anisotropic_max_stepsize)"))
 * `initial_scale=1.0`: a relative initial scale. By default deactivated when using a preconditioner.
 * `linesearch_failure_behavior=:accept`: how to handle a failed line search, see [`quasi_Newton`](@ref)
-* `memory_size=20`: a shortcut to set the memory in the default direction update
+* `memory_size=min(manifold_dimension(M), 10)`: a shortcut to set the memory in the default direction update
 * `nondescent_direction_behavior=:reinitialize_direction_update`: how to handle a direction that is not a descent direction, see [`quasi_Newton`](@ref)
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `preconditioner::Union{`[`QuasiNewtonPreconditioner`](@ref)`, Missing} = missing` specify a preconditioner or deactivate by passing `missing`.
@@ -95,17 +95,16 @@ mutable struct QuasiNewtonState{
             M::AbstractManifold;
             callbacks::C = Dict{Symbol, Function}(),
             p::P = rand(M),
-            initial_vector::T = zero_vector(M, p), # deprecated
-            X::T = initial_vector,
+            X::T = zero_vector(M, p),
             vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
             preconditioner::Union{QuasiNewtonPreconditioner, Missing} = missing,
             initial_scale::Union{<:Real, Nothing} = ismissing(preconditioner) ? 1.0 : nothing,
-            memory_size::Int = 20,
+            memory_size::Int = min(manifold_dimension(M), 10),
             direction_update::D = QuasiNewtonLimitedMemoryDirectionUpdate(
                 M, p, InverseBFGS(), memory_size;
                 vector_transport_method = vector_transport_method, initial_scale = initial_scale,
             ),
-            stopping_criterion::SC = StopAfterIteration(1000) | _default_qn_stationarity_criterion(M, 1.0e-6),
+            stopping_criterion::SC = StopAfterIteration(max(1000, memory_size)) | _default_qn_stationarity_criterion(M, 1.0e-6),
             retraction_method::RM = default_retraction_method(M, typeof(p)),
             stepsize::S = default_stepsize(
                 M, QuasiNewtonState;
@@ -303,7 +302,7 @@ $(_kwargs(:evaluation; add_properties = [:GradientExample]))
     This criterion is part of the default `stopping_criterion=` for this behavior;
     include it when specifying a custom stopping criterion, since otherwise the solver
     keeps retrying from the same iterate until the custom criterion indicates to stop.
-* `memory_size::Int=min(manifold_dimension(M), 20)`: limited memory, number of ``s_k, y_k`` to store.
+* `memory_size::Int=min(manifold_dimension(M), 10)`: limited memory, number of ``s_k, y_k`` to store.
    Set to a negative value to use a full memory (matrix) representation
 * `model_decrease_factor=1e-4`: on manifolds with box constraints, i.e. an anisotropic maximal
   step size like a [`Hyperrectangle`](@extref `Manifolds.Hyperrectangle`), the generalized
@@ -390,7 +389,7 @@ function quasi_Newton!(
         cautious_retest::Bool = !_is_parallel_transport(vector_transport_method),
         basis::AbstractBasis = default_basis(M, typeof(p)),
         direction_update::AbstractQuasiNewtonUpdateRule = InverseBFGS(),
-        memory_size::Int = min(manifold_dimension(M), 20),
+        memory_size::Int = min(manifold_dimension(M), 10),
         (project!) = (copyto!),
         initial_operator::AbstractMatrix = (
             if memory_size >= 0

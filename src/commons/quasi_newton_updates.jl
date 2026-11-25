@@ -31,7 +31,7 @@ abstract type AbstractQuasiNewtonUpdateRule end
 @doc """
     BFGS <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian BFGS update is used in the Riemannian quasi-Newton method.
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian BFGS update is used in the Riemannian quasi-Newton method, see [HuangGallivanAbsil:2015](@cite).
 
 Denote by ``$(_tex(:widetilde, "H"))_k^$(_tex(:rm, "BFGS"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``p_{k+1} = R_{p_k}(α_k η_k)``.
 Then the update formula reads
@@ -54,7 +54,7 @@ struct BFGS <: AbstractQuasiNewtonUpdateRule end
 @doc """
     InverseBFGS <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemannian BFGS update is used in the Riemannian quasi-Newton method.
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemannian BFGS update is used in the Riemannian quasi-Newton method, see [HuangGallivanAbsil:2015](@cite).
 
 Denote by ``$(_tex(:widetilde, "B"))_k^$(_tex(:rm, "BFGS"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``p_{k+1} = R_{p_k}(α_k η_k)``.
 Then the update formula reads
@@ -83,7 +83,7 @@ struct InverseBFGS <: AbstractQuasiNewtonUpdateRule end
 @doc """
     DFP <: AbstractQuasiNewtonUpdateRule
 
-indicates in an [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian DFP update is used in the Riemannian quasi-Newton method.
+indicates in an [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian DFP update is used in the Riemannian quasi-Newton method, see [HuangGallivanAbsil:2015](@cite).
 
 Denote by ``$(_tex(:widetilde, "H"))_k^$(_tex(:rm, "DFP"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``p_{k+1} = R_{p_k}(α_k η_k)``.
 Then the update formula reads
@@ -112,7 +112,7 @@ struct DFP <: AbstractQuasiNewtonUpdateRule end
 @doc """
     InverseDFP <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemannian DFP update is used in the Riemannian quasi-Newton method.
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemannian DFP update is used in the Riemannian quasi-Newton method, see [HuangGallivanAbsil:2015](@cite).
 
 Denote by ``$(_tex(:widetilde, "B"))_k^$(_tex(:rm, "DFP"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``p_{k+1} = R_{p_k}(α_k η_k)``.
 Then the update formula reads
@@ -136,7 +136,7 @@ struct InverseDFP <: AbstractQuasiNewtonUpdateRule end
 @doc """
     SR1 <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian SR1 update is used in the Riemannian quasi-Newton method.
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian SR1 update is used in the Riemannian quasi-Newton method, see [HuangAbsilGallivan:2015](@cite).
 
 Denote by ``$(_tex(:widetilde, "H"))_k^{$(_tex(:rm, "SR1"))}`` the operator concatenated with a vector transport and its inverse before and after to act on ``p_{k+1} = R_{p_k}(α_k η_k)``.
 Then the update formula reads
@@ -220,7 +220,7 @@ end
 @doc """
     Broyden <: AbstractQuasiNewtonUpdateRule
 
-indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian Broyden update is used in the Riemannian quasi-Newton method, which is a convex combination of [`BFGS`](@ref) and [`DFP`](@ref).
+indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian Broyden update is used in the Riemannian quasi-Newton method, which is a convex combination of [`BFGS`](@ref) and [`DFP`](@ref), see [HuangGallivanAbsil:2015](@cite).
 
 Denote by ``$(_tex(:widetilde, "H"))_k^$(_tex(:rm, "Br"))`` the operator concatenated with a vector transport and its inverse before and after to act on ``p_{k+1} = R_{p_k}(α_k η_k)``.
 Then the update formula reads
@@ -250,7 +250,7 @@ T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:qua
 $(_tex(:grad))f(p_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{p_{k+1}} $(_math(:Manifold)),
 ```
 
-respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`.
+respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:Davidon`, see [HuangGallivanAbsil:2015; Equation (7.6)](@cite).
 
 # Constructor
     Broyden(φ, update_rule::Symbol = :constant)
@@ -267,6 +267,7 @@ Broyden(φ::Real) = Broyden(φ, :constant)
 Indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian Broyden update
 is used in the Riemannian quasi-Newton method, which is a convex combination
 of [`InverseBFGS`](@ref) and [`InverseDFP`](@ref).
+See [HuangGallivanAbsil:2015](@cite).
 
 Denote by ``$(_tex(:widetilde, "B"))_k^{$(_tex(:rm, "Br"))}`` the operator concatenated with a vector transport
 and its inverse before and after to act on ``p_{k+1} = R_{p_k}(α_k η_k)``.
@@ -301,7 +302,7 @@ T^{S}_{p_k, α_k η_k}(α_k η_k) $(_tex(:quad))$(_tex(:text, "and"))$(_tex(:qua
 $(_tex(:grad))f(p_{k+1}) - T^{S}_{p_k, α_k η_k}($(_tex(:grad))f(p_k)) ∈ T_{p_{k+1}} $(_math(:Manifold)),
 ```
 
-respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:InverseDavidon`.
+respectively, and ``φ_k`` is the Broyden factor which is `:constant` by default but can also be set to `:InverseDavidon`, see [HuangGallivanAbsil:2015; Equation (7.6)](@cite).
 
 # Constructor
     InverseBroyden(φ, update_rule::Symbol = :constant)

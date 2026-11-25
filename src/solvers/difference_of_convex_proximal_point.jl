@@ -144,12 +144,12 @@ $(_args([:M, :sub_problem, :sub_state]))
 
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 $(_kwargs(:inverse_retraction_method))
-* `λ = k -> 1`: a function returning the sequence of prox parameters ``λ_k``
+* `λ = k -> 1 / 2`: a function returning the sequence of prox parameters ``λ_k``
 $(_kwargs(:p; add_properties = [:as_Initial]))
 $(_kwargs(:retraction_method))
 
 $(_kwargs(:stepsize; default = "`[`ConstantLength`](@ref)`()"))
-$(_kwargs(:stopping_criterion; default = "`[`StopWhenChangeLess`](@ref)`(1e-8)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1.0e-9)"))
 $(_kwargs(:X; add_properties = [:as_Memory]))
 """
 mutable struct DifferenceOfConvexProximalState{
@@ -173,10 +173,10 @@ mutable struct DifferenceOfConvexProximalState{
             callbacks::C = Dict{Symbol, Function}(),
             p::P = rand(M), X::T = zero_vector(M, p),
             stepsize::S = ConstantStepsize(M),
-            stopping_criterion::SC = StopWhenChangeLess(M, 1.0e-8),
+            stopping_criterion::SC = StopAfterIteration(300) | StopWhenChangeLess(M, 1.0e-9),
             inverse_retraction_method::I = default_inverse_retraction_method(M, typeof(p)),
             retraction_method::R = default_retraction_method(M, typeof(p)),
-            λ::Fλ = k -> 1,
+            λ::Fλ = k -> 1 / 2,
         ) where {
             P, T, C <: AbstractDict{Symbol}, Pr <: Union{AbstractManoptProblem, F} where {F},
             S <: Stepsize, St <: AbstractManoptSolverState, SC <: StoppingCriterion,

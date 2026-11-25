@@ -592,7 +592,7 @@ using RecursiveArrayTools
             return G
         end
         p0 = fill(-1.2, n)
-        for stepsize in (WolfePowellLinesearch(; max_stepsize = Inf), HagerZhangLinesearch())
+        for stepsize in (WolfePowellLinesearch(; stop_when_stepsize_exceeds = Inf), HagerZhangLinesearch())
             s = quasi_Newton(M, f, grad_f, p0; stepsize = stepsize, return_state = true)
             @test get_count(get_state(s), :Iterations) <= 10
             @test isapprox(get_solver_result(s), repeat([0.8, 0.64], n ÷ 2); atol = 1.0e-6)

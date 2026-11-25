@@ -29,7 +29,7 @@ $(_kwargs(:inverse_retraction_method))
 $(_kwargs(:retraction_method))
 $(_kwargs(:stepsize; default = "`[`ConstantStepsize`](@ref)`(M)"))
   ``α_k`` to determine the ``q_k`` candidate
-$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)"))
+$(_kwargs(:stopping_criterion; default = "`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenProjectedGradientStationary`](@ref)`(M, 1.0e-7)"))
 $(_kwargs(:X))
 """
 struct ProjectedGradientMethodState{P, T, C <: AbstractDict{Symbol}, S, S2, SC, RM, IRM} <: AbstractManoptSolverState
@@ -63,7 +63,8 @@ function ProjectedGradientMethodState(
             M, typeof(p)
         ),
         stepsize::Stepsize = ConstantStepsize(M),
-        stopping_criterion::StoppingCriterion = StopAfterIteration(300),
+        stopping_criterion::StoppingCriterion = StopAfterIteration(300) |
+            StopWhenProjectedGradientStationary(M, 1.0e-7),
         X = zero_vector(M, p),
     ) where {C <: AbstractDict{Symbol}}
     return ProjectedGradientMethodState(;

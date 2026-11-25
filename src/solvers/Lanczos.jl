@@ -4,7 +4,10 @@
 @doc """
     LanczosState{T,R,SC,SCN,B,TM,C,CA} <: AbstractManoptSolverState
 
-Solve the adaptive regularized subproblem with a Lanczos iteration
+Solve the adaptive regularized subproblem with a Lanczos iteration.
+The cubic model is minimized over the Krylov subspace spanned by the Lanczos vectors and the
+resulting tridiagonal problem is solved by an inner Newton iteration,
+see [CartisGouldToint:2011; Sections 6.1 and 6.2](@cite).
 
 # Fields
 

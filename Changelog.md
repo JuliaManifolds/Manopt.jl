@@ -6,7 +6,83 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.16] November 18, 2026
+## [1.0.0] November 25, 2026
+
+### Added
+
+* `BarzilaiBorweinStepsize` and `NonmonotoneLinesearchStepsize` accept the keywords `initial_stepsize` and `bb_initial_stepsize`, the length of the first step
+* `WolfePowellLinesearchStepsize` accepts the keywords `contraction_factor` and `expansion_factor`, the latter defaulting to `1 / contraction_factor`,
+  for the factors of its search phases
+* Added papers using `Manopt.jl` to the about page.
+
+### Changed
+
+We changed the following default keyword values
+
+* In the `ArmijoLinesearch`
+  * `contraction_factor = 0.8` (was `0.95`)
+* `WolfePowellLinesearchStepsize`
+  * `sufficient_curvature = 0.9` (was `0.999`)
+  * `stop_when_stepsize_less = 1e-9` (was `0.0`)
+* `WolfePowellBinaryLinesearchStepsize`
+  * `sufficient_curvature = 0.9` (was `0.999`)
+* `gradient_sampling` and `GradientSamplingState`
+  * the default step size is `ArmijoLinesearchStepsize(M; contraction_factor = 0.5)`, the factor of the paper it implements
+* `HagerZhangInitialGuess`
+  * `ψ1 = 0.1` (was `0.01`), since this was a typo.
+* `HagerZhangLinesearchStepsize`
+  * `max_function_evaluations = 50` (was `20`)
+* `BarzilaiBorweinStepsize` and `NonmonotoneLinesearchStepsize`
+  * `min_stepsize = 1e-30` and `bb_min_stepsize = 1e-30` (were `1e-3`)
+  * the first step has the length `initial_stepsize = 1.0` along the normalized gradient, clamped to the bounds (was `max_stepsize` times the gradient)
+* `NonmonotoneLinesearchStepsize`
+  * `bb_max_stepsize = 1e3` for an infinite injectivity radius (was `1.0`), the value of the paper it implements
+* `conjugate_gradient_descent` and `ConjugateGradientDescentState`
+  * `coefficient = HybridCoefficient(HestenesStiefelCoefficient(), DaiYuanCoefficient())` (was `ConjugateDescentCoefficient()`)
+* `quasi_Newton` and `QuasiNewtonState`
+  * `memory_size = 10` (was `20`)
+* `subgradient_method`
+  * the default step size is `DecreasingStepsize(M; length = min(injectivity_radius(M) / 2, 1.0), type = :absolute)` (was `ConstantStepsize(M)`)
+* `stochastic_gradient_descent`
+  * the default step size is `DecreasingStepsize(M; length = min(injectivity_radius(M) / 2, 1.0))` (was `ConstantStepsize(M)`)
+* `augmented_Lagrangian_method`
+  * `ϵ_exponent = 1/30` (was `1/100`), the value of the paper it implements
+* `exact_penalty_method`
+  * `ϵ_exponent = 1/30` and `u_exponent = 1/30` (were `1/100`), which are the values from the original paper
+* the state constructors `AdaptiveRegularizationState`, `AlternatingGradientDescentState`, `ChambollePockState`, `ConjugateResidualState`, `ConvexBundleMethodState`,
+  `CyclicProximalPointState`, `DifferenceOfConvexProximalState`, `DouglasRachfordState`, `FrankWolfeState`, `GradientSamplingState`, `InteriorPointNewtonState`,
+  `ParticleSwarmState`, `ProjectedGradientMethodState`, `ProximalBundleMethodState`, `ProximalGradientMethodState`, `ProximalPointState`, `QuasiNewtonState`,
+  `StochasticGradientDescentState` and `VectorBundleNewtonState` use the same keyword defaults as their solver functions
+* `StochasticGradientDescentState` and `AlternatingGradientDescentState` fill an empty `order` when the solver starts
+
+The following keyword renames are breaking changes
+
+* `NonmonotoneLinesearchStepsize`: `stepsize_reduction` is now unified to `contraction_factor`
+* `CubicBracketingLinesearchStepsize`: `stepsize_increase` is now unified to `expansion_factor`
+* `CubicBracketingLinesearchStepsize`: `max_stepsize` is now unified to `stop_when_stepsize_exceeds`
+* `WolfePowellLinesearchStepsize`: `max_stepsize` is now unified to `stop_when_stepsize_exceeds`, defaulting to `max_stepsize(M)` or `1e9` when that is infinite
+* `primal_dual_semismooth_Newton`: `reg_param` is now unified to `regularization_parameter`, the name of the state keyword
+* `LevenbergMarquardtState`: `damping_term` is now unified to `initial_damping_term`, the name of the solver keyword
+
+### Fixed
+
+* the secant step of the `HagerZhangLinesearchStepsize` bisects when the two slopes are equal, instead of returning `NaN`
+
+### Removed
+
+The following breaking changes all stem from deprecated features.
+
+* `DebugCallback` is removed, use the `callbacks = ` keyword of a state instead
+* `DebugSolverState` no longer accepts a function as second argument, since that was a shortcut to create a `DebugCallback`
+* `decorate_state!` processed `callback` to a `DebugCallback`. This is discontinued in favour of the `callbacks` keyword
+* `DebugFeasibility` no longer accepts `atol = `, since a constrained objective now handles tolerances itself.
+* the `QuasiNewtonState` no longer accepts the `initial_vector = ` keyword. Use `X = ` instead.
+* the alias `AbstractManifoldGradientObjective` for the `AbstractManifoldFirstOrderObjective` has been removed
+* the `ProjectedGradientMethodState`, `MeshAdaptiveDirectSearchState`, and `CoordinatesNormalSystemState` no longer accept an initial point as second position argument. Use the keyword `p = `.
+* `trust_regions` no longer accepts the keyword `ρ_prime = `. Use its new name `acceptance_rate = ` instead.
+* the abstract type `AbstractSubProblemSolverState` has been removed, use the trait `has_sub_problem` instead.
+
+## [0.6.16] November 19, 2026
 
 ### Added
 

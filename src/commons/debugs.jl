@@ -1,44 +1,4 @@
 @doc """
-    DebugCallback <: DebugAction
-
-Debug for a simple callback function, mainly for compatibility to other solvers and if
-a user already has a callback function or functor available
-
-The expected format of the callback is that of a function with signature `(problem, state, k) -> nothing`.
-A simple callback of the signature `() -> nothing` can be specified by `simple=true`. In this case the callback is wrapped in a function of the generic form above.
-
-!!! note
-    This is for now an internal struct, since its name might still change before
-    it is made public. The functionality with the factory (`callback=f`) will still work,
-    but this debug action might still change its name in the future.
-
-# Constructor
-
-    DebugCallback(callback; simple=false)
-"""
-struct DebugCallback{CB} <: DebugAction
-    callback::CB
-    function DebugCallback(callback; simple::Bool = false)
-        _cb = simple ? (problem, state, k) -> callback() : callback
-        return new{typeof(_cb)}(_cb)
-    end
-end
-function (d::DebugCallback)(
-        problem::AbstractManoptProblem, state::AbstractManoptSolverState, k
-    )
-    d.callback(problem, state, k)
-    return nothing
-end
-function show(io::IO, dc::DebugCallback{CB}) where {CB}
-    return print(io, "DebugCallback($(dc.callback))")
-end
-function status_summary(dc::DebugCallback; context::Symbol = :default)
-    (context === :short) && return "$(dc.callback)"
-    # inline and default
-    return "A DebugAction with a callback that calls $(dc.callback)"
-end
-
-@doc """
     DebugChange(M=DefaultManifold(); kwargs...)
 
 debug for the amount of change of the iterate (stored in `get_iterate` of the [`AbstractManoptSolverState`](@ref))
@@ -495,8 +455,7 @@ mutable struct DebugFeasibility <: DebugAction
     format::Vector{Union{String, Symbol}}
     io::IO
     at_init::Bool
-    function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout, atol = NaN, at_init::Bool = true)
-        isnan(atol) || (@warn "Providing atol= directly to DebugFeasibility is deprecated. Use the keyword for the ConstrainedObjective instead. The value provided here ($(atol)) is ignored")
+    function DebugFeasibility(format = ["feasible: ", :Feasible]; io::IO = stdout, at_init::Bool = true)
         return new(format, io, at_init)
     end
 end
@@ -1709,7 +1668,6 @@ Generate a [`DebugGroup`](@ref) of [`DebugAction`](@ref)s. The following rules a
 2. Any `(Symbol, String)` generates similar actions as in 1., but the string is used for `format=`,
    see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,Any}))
 3. Any `String` is passed to [`DebugActionFactory`](@ref)
-4. Any `Function` generates a [`DebugCallback`](@ref).
 5. Any [`DebugAction`](@ref) is included as is.
 
 If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of these is built.
@@ -1752,22 +1710,11 @@ create a [`DebugAction`](@ref) where
 * a `Symbol` creates a [`DebugEntry`](@ref) of that symbol, with the exceptions
   listed in [`DebugActionFactory`](@ref DebugActionFactory(::Symbol)).
 * a `Tuple{Symbol,Any}` creates a [`DebugEntry`](@ref) of that symbol, where the second entry specifies the format.
-* a `<:Function` creates a [`DebugCallback`](@ref) with the function as callback.
 """
 function DebugActionFactory end
 
 DebugActionFactory(d::String) = DebugDivider(d)
 DebugActionFactory(a::A) where {A <: DebugAction} = a
-# Deprecated
-function DebugActionFactory(f::F) where {F <: Function}
-    @warn """
-        the `DebugCallback` struct is deprecated. Passing functions to `debug = `
-        will no longer work in the next release. Use
-        `callbacks = [:Step => [...]]` to add your callback to the (end of)
-        an iteration step
-    """
-    return DebugCallback(f)
-end
 """
     DebugActionFactory(s::Symbol)
 

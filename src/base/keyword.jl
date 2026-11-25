@@ -235,7 +235,7 @@ function keywords_accepted(
     d = Set{Symbol}()
     a = Set{Symbol}()
     for (k, v) in kwargs
-        # Deprecated?
+        # Is a keyword marked ad deprecated?
         if k in kw.deprecated
             push!(d, k)
         end

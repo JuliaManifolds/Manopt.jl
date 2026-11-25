@@ -30,7 +30,7 @@ _debug_gradient_sampling = false
     @testset "documented constructor" begin
         # the `convex_hull_coeffs` default must not mention the static parameter `R`
         sd = GradientSamplingState(M)
-        @test length(sd.convex_hull_coeffs) == 6
+        @test length(sd.convex_hull_coeffs) == manifold_dimension(M) + 2
         @test eltype(sd.convex_hull_coeffs) === Float64
         sd7 = GradientSamplingState(M; sample_size = 7)
         @test length(sd7.convex_hull_coeffs) == 8

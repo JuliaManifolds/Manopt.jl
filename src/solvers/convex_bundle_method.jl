@@ -35,6 +35,9 @@ $(
 
 where ``ω ≤ κ_p`` for all ``p ∈ $(_tex(:Cal, "U"))`` is a lower bound to the sectional curvature in
 a (strongly geodesically convex) bounded subset ``$(_tex(:Cal, "U")) ⊆ $(_math(:Manifold))`` with diameter ``δ``.
+This is the quantity ``ζ`` of [AlimisisOrvietoBecigneulLucchi:2021; Equation (1)](@cite),
+an upper bound on the largest eigenvalue of an operator similar to the Riemannian Hessian
+of the squared distance.
 """
 function ζ_1(k_min, diameter)
     (k_min < zero(k_min)) && return sqrt(-k_min) * diameter * coth(sqrt(-k_min) * diameter)
@@ -60,6 +63,8 @@ $(
 
 where ``Ω ≥ κ_p`` for all ``p ∈ $(_tex(:Cal, "U"))`` is an upper bound to the sectional curvature in
 a (strongly geodesically convex) bounded subset ``$(_tex(:Cal, "U")) ⊆ $(_math(:Manifold))`` with diameter ``δ``.
+This bound is stated in [AlimisisOrvietoBecigneulLucchi:2021; Lemma 2](@cite) under a different
+symbol, as a lower bound on the smallest eigenvalue of that operator.
 """
 function ζ_2(k_max, diameter)
     (k_max > zero(k_max)) && return sqrt(k_max) * diameter * cot(sqrt(k_max) * diameter)
@@ -135,19 +140,19 @@ $(_args([:M, :sub_problem, :sub_state]))
 
 Most of the following keyword arguments set default values for the fields mentioned before.
 
-* `atol_errors=eps()`
-* `atol_λ=eps()`
+* `atol_errors=sqrt(eps())`
+* `atol_λ=sqrt(eps())`
 * `bundle_cap=25`
 $(_kwargs(:callbacks; add_properties = [:as_dict]))
 * `contraction_factor=0.975`: the contraction factor of the null step; a contraction factor of the `stepsize` replaces it
-* `diameter=50.0`
+* `diameter=π/3`
 * `domain=(M, p) -> true`: a function that evaluates to true when the current candidate is in the domain of the objective
 $(_kwargs(:inverse_retraction_method))
-* `k_max=nothing`: upper bound on the sectional curvature; estimated from `k_size` sample points if `nothing`
-* `k_min=nothing`: lower bound on the sectional curvature; estimated from `k_size` sample points if `nothing`
+* `k_max=0`: upper bound on the sectional curvature; set it to `nothing` to estimate it from `k_size` sample points
+* `k_min=0`: lower bound on the sectional curvature; set it to `nothing` to estimate it from `k_size` sample points
 * `k_size=100`: the number of sample points around `p_estimate` for the curvature estimation
 * `last_stepsize=1.0`
-* `m=1e-2`
+* `m=1e-3`
 $(_kwargs(:p; add_properties = [:as_Initial]))
 * `p_estimate=p`: the center point for the curvature estimation
 $(_kwargs(:retraction_method))
@@ -199,11 +204,11 @@ mutable struct ConvexBundleMethodState{
     step_accepted::Bool
     function ConvexBundleMethodState(
             M::TM, sub_problem::Pr, sub_state::St;
-            atol_errors::Real = eps(), atol_λ::Real = eps(),
+            atol_errors::Real = sqrt(eps()), atol_λ::Real = sqrt(eps()),
             bundle_cap::I = 25, callbacks::TC = Dict{Symbol, Function}(),
-            contraction_factor::Real = 0.975, diameter::Real = 50.0, domain::D = (M, p) -> true,
-            k_max = nothing, k_min = nothing, k_size = 100,
-            last_stepsize = one(number_eltype(atol_λ)), m::Real = 1.0e-2,
+            contraction_factor::Real = 0.975, diameter::Real = π / 3, domain::D = (M, p) -> true,
+            k_max = 0, k_min = 0, k_size = 100,
+            last_stepsize = one(number_eltype(atol_λ)), m::Real = 1.0e-3,
             p::P = rand(M), p_estimate = p,
             inverse_retraction_method::IR = default_inverse_retraction_method(M, typeof(p)),
             retraction_method::TR = default_retraction_method(M, typeof(p)),
@@ -317,7 +322,7 @@ end
 get_subgradient(bms::ConvexBundleMethodState) = bms.g
 function default_stepsize(
         M::AbstractManifold, ::Type{ConvexBundleMethodState};
-        contraction_factor = 0.95, retraction_method = default_retraction_method(M),
+        contraction_factor = 0.975, retraction_method = default_retraction_method(M),
     )
     return DomainBackTrackingStepsize(M; contraction_factor = contraction_factor, retraction_method = retraction_method)
 end
@@ -610,7 +615,7 @@ The subproblem for the convex bundle method is
 ```
 
 where ``J_k = $(_tex(:set, "j ∈ J_{k-1} \\ | \\ λ_j > 0")) ∪ $(_tex(:set, "k"))``.
-See [BergmannHerzogJasa:2024](@cite) for more details
+See [BergmannHerzogJasa:2026](@cite) for more details
 
 !!! tip
     A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
@@ -645,7 +650,7 @@ to the quadratic subproblem provided by the [`convex_bundle_method_subsolver`](@
 Though the subdifferential might be set valued, the argument `∂f` should always
 return one element from the subdifferential, but not necessarily deterministic.
 
-For more details, see [BergmannHerzogJasa:2024](@cite).
+For more details, see [BergmannHerzogJasa:2026](@cite).
 
 # Input
 

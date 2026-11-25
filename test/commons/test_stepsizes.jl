@@ -312,8 +312,12 @@ end
         @test eltype(bb32.y) === Float32
         gds = GradientDescentState(M; p = p, stepsize = bb)
         # Check both modes to use BB
-        # (1) vector transport when providing a last stepsize – no history -> max
-        @test bb(dmp, gds, 1; last_stepsize = 1.0) == bb.max_stepsize
+        # (1) vector transport when providing a last stepsize – no history -> a step of length 1
+        @test bb(dmp, gds, 1; last_stepsize = 1.0) == 1 / norm(M, p, X)
+        # the length of the first step is a keyword
+        bb_two = Manopt.BarzilaiBorweinStepsize(M; p = p, initial_stepsize = 2.0)
+        @test bb_two(dmp, GradientDescentState(M; p = p, stepsize = bb_two), 1) == 2 / norm(M, p, X)
+        @test_throws DomainError Manopt.BarzilaiBorweinStepsize(M; p = p, initial_stepsize = 0.0)
         # (1) vector transport when providing a last stepsize - we did not actually move - still max
         @test bb(dmp, gds, 1) == bb.max_stepsize
         @test get_last_stepsize(bb) == bb.max_stepsize
@@ -349,8 +353,8 @@ end
             ]
             bbs = Manopt.BarzilaiBorweinStepsize(Ms)
             gdss = GradientDescentState(Ms; p = q, stepsize = bbs)
-            @test bbs(dmps, gdss, 1) == bbs.max_stepsize
-            @test get_last_stepsize(bbs) == bbs.max_stepsize
+            @test bbs(dmps, gdss, 1) == 1 / norm(Ms, q, grad_fbb(Ms, q))
+            @test get_last_stepsize(bbs) == 1 / norm(Ms, q, grad_fbb(Ms, q))
         end
         # with a constant gradient ⟨s,y⟩ vanishes, so the `:inverse` and `:alternating`
         # strategies fall back to the maximal step size
@@ -371,7 +375,7 @@ end
         @test Manopt.has_storage(bb2.storage, Manopt.PointStorageKey(:Iterate))
         Manopt.initialize_stepsize!(bb2)
         @test !Manopt.has_storage(bb2.storage, Manopt.PointStorageKey(:Iterate))
-        @test bb2(dmp, gds2, 1) == bb2.max_stepsize
+        @test bb2(dmp, gds2, 1) == 1 / norm(M, p, X)
         # the nonmonotone line search resets both its Barzilai–Borwein step size and its last step
         nls = NonmonotoneLinesearch()(M)
         nls.last_stepsize = 0.5
@@ -957,11 +961,11 @@ end
             hzls_s2 = Manopt.HagerZhangLinesearchStepsize(
                 M; initial_guess = Manopt.ConstantInitialGuess(1.0)
             )
-            # We expect the S2 log
             α = hzls_s2(dmp, gs, 1, η)
-            # the step and the number of evaluations this branch produces
-            @test α ≈ 2.7387570112179483e-6
-            @test hzls_s2.last_evaluation_index == 20
+            # S2: the fourth trial point is the secant through the points at 1 and 0.2
+            @test hzls_s2.triples[4].t ≈ Manopt.secant(hzls_s2.triples[2], hzls_s2.triples[3])
+            # beyond 0.2 the function is flat, no Wolfe condition holds and the search uses all its evaluations
+            @test hzls_s2.last_evaluation_index == length(hzls_s2.triples)
         end
 
         @testset "S3 trigger test" begin
@@ -1442,7 +1446,7 @@ end
         end
         @testset "Wolfe-Powell" begin
             mp10 = box_problem(10.0)
-            wp = Manopt.WolfePowellLinesearchStepsize(M; retraction_method = rm, initial_guess = Manopt.ConstantInitialGuess(5.0), max_stepsize = Inf)
+            wp = Manopt.WolfePowellLinesearchStepsize(M; retraction_method = rm, initial_guess = Manopt.ConstantInitialGuess(5.0), stop_when_stepsize_exceeds = Inf)
             empty!(trials)
             @test wp(mp10, gds, 1, η) == 1.0
             @test all(in_box, trials)
@@ -1453,7 +1457,7 @@ end
         end
         @testset "Cubic bracketing" begin
             mp10 = box_problem(10.0)
-            cbls = Manopt.CubicBracketingLinesearchStepsize(M; retraction_method = rm, initial_stepsize = 5.0, max_stepsize = Inf)
+            cbls = Manopt.CubicBracketingLinesearchStepsize(M; retraction_method = rm, initial_stepsize = 5.0, stop_when_stepsize_exceeds = Inf)
             empty!(trials)
             @test cbls(mp10, gds, 1, η) == 1.0
             @test all(in_box, trials)
@@ -1601,6 +1605,20 @@ end
             α = wpls(dmp, gs, 1, η; stop_when_stepsize_exceeds = 30.0)
             @test 25 ≤ α ≤ 27.5
             @test !Manopt.has_failed(wpls)
+            # along η = 1 the cost -t jumps to 1 at t = 1/3, so the sufficient decrease condition
+            # holds exactly on [0, 1/3], where the curvature condition never holds. Without
+            # a minimal interval width the bisection runs until the interval collapses to
+            # two adjacent floats around 1/3.
+            M1 = Euclidean(1)
+            f1(M, p) = p[1] <= 1 / 3 ? -p[1] : 1.0
+            grad_f1(M, p) = p[1] <= 1 / 3 ? [-1.0] : [0.0]
+            dmp1 = DefaultManoptProblem(M1, ManifoldGradientObjective(f1, grad_f1))
+            gs1 = GradientDescentState(M1; p = [0.0], X = [-1.0])
+            wpls = WolfePowellLinesearch(; stop_when_stepsize_less = 0.0)(M1)
+            α = wpls(dmp1, gs1, 1, [1.0])
+            @test α ≤ 1 / 3 < nextfloat(α)
+            @test wpls.messages[:stepsize_less].at_iteration < 0
+            @test Manopt.has_failed(wpls)
         end
         @testset "WolfePowellBinary" begin
             wpb = WolfePowellBinaryLinesearch(; stop_when_stepsize_less = 1.0e-3)(M)

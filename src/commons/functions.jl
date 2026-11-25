@@ -198,7 +198,8 @@ maybe_wrap_function(f, ::InplaceEvaluation; result::Symbol = :Point, point_index
 @doc """
     ApproxHessianFiniteDifference{P, T, G, RTR, VTR, R <: Real} <: AbstractApproximateHessianFunction
 
-A functor to approximate the Hessian by a finite difference of gradient evaluation.
+A functor to approximate the Hessian by a finite difference of gradient evaluation,
+see [Boumal:2023; Section 10.6](@cite).
 
 Given a point `p` and a direction `X` and the gradient ``$(_tex(:grad)) f(p)``
 of a function ``f`` the Hessian is approximated as follows:
@@ -391,7 +392,7 @@ end
 @doc """
     ApproxHessianBFGS{P, G, T, B<:AbstractBasis{ℝ}, VTR} <: AbstractApproximateHessianFunction
 
-A functor to approximate the Hessian by the BFGS update.
+A functor to approximate the Hessian by the BFGS update, see [HuangGallivanAbsil:2015](@cite).
 
 # Fields
 
